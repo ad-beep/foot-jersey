@@ -7,7 +7,6 @@ import { Dock } from '@/components/layout/Dock';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { ToastProvider } from '@/components/ui/toast';
 import { PayPalProvider } from '@/components/payment/PayPalProvider';
-import { StripeProvider } from '@/components/payment/StripeProvider';
 import type { Locale } from '@/types';
 
 const montserrat = Montserrat({
@@ -52,14 +51,12 @@ export default async function LocaleLayout({
       >
         <ToastProvider>
           <PayPalProvider>
-            <StripeProvider>
-              <Header dict={dict} />
-              <main className="min-h-screen pt-16 pb-20">
-                {children}
-              </main>
-              <Dock />
-              <CartDrawer dict={dict} />
-            </StripeProvider>
+            <Header dict={dict} />
+            <main className="min-h-screen pt-16 pb-20">
+              {children}
+            </main>
+            <Dock />
+            <CartDrawer dict={dict} />
           </PayPalProvider>
         </ToastProvider>
       </body>

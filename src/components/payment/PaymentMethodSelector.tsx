@@ -3,7 +3,7 @@
 import { CreditCard, Smartphone, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export type PaymentMethod = 'bit' | 'paypal' | 'stripe';
+export type PaymentMethod = 'bit' | 'paypal';
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -26,16 +26,8 @@ const methods = [
     id: 'paypal' as PaymentMethod,
     labelEn: 'PayPal',
     labelHe: 'PayPal',
-    descEn: 'Secure online payment',
-    descHe: 'תשלום בטוח מקוון',
-    icon: CreditCard,
-  },
-  {
-    id: 'stripe' as PaymentMethod,
-    labelEn: 'Credit Card',
-    labelHe: 'כרטיס אשראי',
-    descEn: 'Stripe payment processing',
-    descHe: 'עיבוד בעזרת Stripe',
+    descEn: 'Credit card & Secure online payment',
+    descHe: 'כרטיס אשראי ותשלום בטוח מקוון',
     icon: CreditCard,
   },
 ];

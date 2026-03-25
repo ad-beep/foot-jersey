@@ -20,7 +20,6 @@ import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE } from '@/lib/constants';
 import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment/PaymentMethodSelector';
 import { BitPayment } from '@/components/payment/BitPayment';
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
-import { StripePayment } from '@/components/payment/StripePayment';
 import type { CartItem } from '@/types';
 
 // ─── Cart Item Row (full page) ──────────────────────────────────────────────
@@ -554,20 +553,6 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
                 isRtl={isRtl}
                 onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
                 onError={setPaymentError}
-              />
-            )}
-
-            {paymentMethod === 'stripe' && (
-              <StripePayment
-                amount={subtotal}
-                isHe={isHe}
-                isRtl={isRtl}
-                onSuccess={(paymentIntentId) =>
-                  handlePaymentSuccess(paymentIntentId)
-                }
-                onError={setPaymentError}
-                loading={submitting}
-                setLoading={setSubmitting}
               />
             )}
           </motion.div>

@@ -20,12 +20,11 @@ interface OrderData {
     zip: string;
     notes: string;
   };
-  paymentMethod: 'bit' | 'paypal' | 'stripe';
+  paymentMethod: 'bit' | 'paypal';
   paymentStatus: 'pending' | 'completed' | 'failed';
   total: number;
   subtotal: number;
   currency: string;
-  paymentIntentId?: string;
   paypalOrderId?: string;
   bitTransactionId?: string;
 }
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
       shippingInfo: body.shippingInfo,
       paymentMethod: body.paymentMethod,
       paymentStatus: body.paymentStatus,
-      paymentIntentId: body.paymentIntentId,
       paypalOrderId: body.paypalOrderId,
       bitTransactionId: body.bitTransactionId,
       subtotal: body.subtotal,
