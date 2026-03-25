@@ -9,11 +9,11 @@ const stripePromise = loadStripe(
 );
 
 interface StripeProviderProps {
-  amount: number;
+  amount?: number;
   children: ReactNode;
 }
 
-export function StripeProvider({ amount, children }: StripeProviderProps) {
+export function StripeProvider({ amount = 0, children }: StripeProviderProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
