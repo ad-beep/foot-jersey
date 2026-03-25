@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary:    #111111;
+    --bg-secondary:  #1A1A1A;
+    --bg-elevated:   #222222;
+    --accent:        #00C3D8;
+    --accent-hover:  #00E5FF;
+    --accent-glow:   rgba(0, 195, 216, 0.15);
+    --cta:           #FF8C00;
+    --cta-hover:     #FF7A00;
+    --text-primary:  #FFFFFF;
+    --text-secondary:#AAAAAA;
+    --text-muted:    #666666;
+    --border:        #2A2A2A;
+    --border-accent: rgba(0, 195, 216, 0.3);
+    --success:       #00C853;
+    --error:         #FF3D00;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection { background-color: var(--accent); color: #000; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+  [dir="rtl"] { direction: rtl; }
+}
+
+@layer utilities {
+  .scrollbar-hide                         { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar      { display: none; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-shimmer { animation: shimmer 2s infinite ease-in-out; }
+
+/* Hide hover overlay on touch devices */
+[data-hover-overlay] { display: none; }
+@media (hover: hover) {
+  [data-hover-overlay] { display: flex; }
+}
+
+/* Hero marquee — pixel-perfect loop (synced with LandingHero.tsx constants)
+   12 cards × (120px wide + 8px margin) = 1536px per half.
+   Content is doubled → 3072px total. Translate by exactly one half = seamless. */
+@keyframes marqueeLeft {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-1536px); }
+}
+@keyframes marqueeRight {
+  from { transform: translateX(-1536px); }
+  to   { transform: translateX(0); }
+}
+
+/* Pause marquee for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-row { animation-play-state: paused !important; }
+}
+
+/* Hero scroll indicator bounce */
+@keyframes heroBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(8px); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+
+@keyframes searchDropIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

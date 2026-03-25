@@ -1,0 +1,253 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { ChevronDown, Search } from 'lucide-react';
+import { useLocale } from '@/hooks/useLocale';
+import { Button } from '@/components/ui/button';
+import type { Jersey } from '@/types';
+
+// ── Marquee constants ────────────────────────────────────────────────────────
+const CARD_W  = 120;
+const CARD_H  = 160;
+const CARD_MR = 8;
+const HALF    = 12;  // cards per half → 12 × 128px = 1536px
+const STRIP_W = HALF * (CARD_W + CARD_MR); // 1536px — one full copy
+
+const ROWS = [
+  { dir: 'left'  as const, speed: 40 },
+  { dir: 'right' as const, speed: 35 },
+  { dir: 'left'  as const, speed: 45 },
+  { dir: 'right' as const, speed: 38 },
+];
+
+// ── Marquee Row (rAF-driven, no CSS keyframes) ─────────────────────────────
+function MarqueeRow({
+  images,
+  dir,
+  speed,
+}: {
+  images: { id: string; imageUrl: string }[];
+  dir: 'left' | 'right';
+  speed: number;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const pxPerMs = STRIP_W / (speed * 1000);
+    let pos = dir === 'left' ? 0 : -STRIP_W;
+    let prev = performance.now();
+    let raf: number;
+
+    const step = (now: number) => {
+      const dt = Math.min(now - prev, 100); // cap to avoid jump after tab-switch
+      prev = now;
+
+      if (dir === 'left') {
+        pos -= pxPerMs * dt;
+        if (pos <= -STRIP_W) pos += STRIP_W;
+      } else {
+        pos += pxPerMs * dt;
+        if (pos >= 0) pos -= STRIP_W;
+      }
+
+      el.style.transform = `translateX(${pos}px)`;
+      raf = requestAnimationFrame(step);
+    };
+
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [dir, speed]);
+
+  if (images.length === 0) return null;
+
+  // Fill one half by cycling through source images
+  const half: typeof images = [];
+  for (let i = 0; i < HALF; i++) half.push(images[i % images.length]);
+  // Double → seamless loop (second copy fills the gap left by the first)
+  const all = [...half, ...half];
+
+  return (
+    <div style={{ overflow: 'hidden', width: '100%' }}>
+      <div
+        ref={trackRef}
+        style={{
+          display: 'flex',
+          flexWrap: 'nowrap',
+          width: STRIP_W * 2,
+          willChange: 'transform',
+          transform: `translateX(${dir === 'left' ? 0 : -STRIP_W}px)`,
+        }}
+      >
+        {all.map((j, i) => (
+          <div
+            key={`${j.id}-${i}`}
+            style={{
+              width: CARD_W,
+              height: CARD_H,
+              marginRight: CARD_MR,
+              borderRadius: 12,
+              overflow: 'hidden',
+              flexShrink: 0,
+              backgroundColor: '#1a1a1a',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={j.imageUrl}
+              alt=""
+              width={CARD_W}
+              height={CARD_H}
+              loading="eager"
+              decoding="async"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Fade-up variants ───────────────────────────────────────────────────────
+const fadeUp = {
+  hidden:  { opacity: 0, y: 24 },
+  visible: (delay: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] },
+  }),
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
+interface LandingHeroProps {
+  jerseys?: Jersey[];
+}
+
+export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
+  const { locale, isRtl } = useLocale();
+  const router = useRouter();
+  const isHe = locale === 'he';
+
+  const [query, setQuery] = useState('');
+  const [scrolledPast, setScrolledPast] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Only keep jerseys with images, take 20 unique max (5 per row × 4 rows)
+  const pool = jerseys.filter((j) => j.imageUrl).slice(0, 20);
+  const perRow = Math.max(1, Math.ceil(pool.length / ROWS.length));
+  const chunks = ROWS.map((_, i) => {
+    const chunk = pool.slice(i * perRow, (i + 1) * perRow);
+    return chunk.length > 0 ? chunk : pool.slice(0, perRow);
+  });
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => setScrolledPast(!e.isIntersecting),
+      { threshold: 0.1 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (q) router.push(`/${locale}/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const scrollToAbout = () =>
+    document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
+
+  return (
+    <section
+      ref={sectionRef}
+      className="snap-start relative flex flex-col items-center justify-center overflow-hidden"
+      style={{ minHeight: 'calc(100vh - 64px)', backgroundColor: 'var(--bg-primary)' }}
+    >
+      {/* Layer 0 — marquee background */}
+      {pool.length > 0 && (
+        <div
+          className="absolute inset-0 z-0 overflow-hidden flex flex-col justify-evenly"
+          style={{ opacity: 0.35, direction: 'ltr' }}
+          aria-hidden="true"
+        >
+          {ROWS.map((row, i) => (
+            <MarqueeRow key={i} images={chunks[i]} dir={row.dir} speed={row.speed} />
+          ))}
+        </div>
+      )}
+
+      {/* Layer 1 — dark overlay */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(17,17,17,0.4), rgba(17,17,17,0.75) 50%, #111111)',
+        }}
+      />
+
+      {/* Layer 2 — hero content */}
+      <div className="relative z-20 text-center px-6 max-w-3xl mx-auto w-full flex flex-col items-center">
+        <motion.h1
+          custom={0.2} variants={fadeUp} initial="hidden" animate="visible"
+          className="font-bold text-white mb-4 text-4xl md:text-5xl lg:text-6xl max-w-3xl mx-auto"
+          style={{ lineHeight: 1.12, letterSpacing: '-0.02em' }}
+        >
+          {isHe ? 'לקנות חולצה זה חוויה ששווה לחוות' : 'Buying a Jersey is an Experience Worth Having'}
+        </motion.h1>
+
+        <motion.p
+          custom={0.4} variants={fadeUp} initial="hidden" animate="visible"
+          className="text-lg mb-8 max-w-xl mx-auto"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {isHe ? 'חולצות כדורגל פרימיום, מיוצרות לאוהדים אמיתיים' : 'Premium football jerseys, crafted for true fans'}
+        </motion.p>
+
+        <motion.form
+          custom={0.6} variants={fadeUp} initial="hidden" animate="visible"
+          onSubmit={handleSearch} className="w-full max-w-lg mb-8"
+        >
+          <div
+            className="relative flex items-center h-14 rounded-full overflow-hidden transition-all duration-200 focus-within:shadow-[0_0_20px_rgba(0,195,216,0.15)]"
+            style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)' }}
+          >
+            <Search className={`absolute w-5 h-5 ${isRtl ? 'right-5' : 'left-5'}`} style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder={isHe ? '...חפש חולצות' : 'Search jerseys...'}
+              className={`w-full h-full bg-transparent text-lg text-white placeholder:text-[var(--text-muted)] outline-none ${isRtl ? 'pr-14 pl-5' : 'pl-14 pr-5'}`}
+              style={{ direction: isRtl ? 'rtl' : 'ltr' }}
+            />
+          </div>
+        </motion.form>
+
+        <motion.div custom={0.8} variants={fadeUp} initial="hidden" animate="visible" className="flex items-center justify-center gap-4">
+          <Button variant="primary" size="lg" onClick={() => router.push(`/${locale}/discover`)}>
+            {isHe ? 'גלה' : 'Explore'}
+          </Button>
+          <Button variant="secondary" size="lg" onClick={scrollToAbout}>
+            {isHe ? 'עלינו' : 'About Us'}
+          </Button>
+        </motion.div>
+      </div>
+
+      {/* Scroll indicator */}
+      {!scrolledPast && (
+        <motion.div
+          className="absolute bottom-6 z-20 flex flex-col items-center pointer-events-none"
+          initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} transition={{ delay: 1.2, duration: 0.7 }}
+        >
+          <ChevronDown className="w-6 h-6" style={{ color: 'var(--text-muted)', animation: 'heroBounce 1.5s ease-in-out infinite' }} />
+        </motion.div>
+      )}
+    </section>
+  );
+}
