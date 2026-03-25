@@ -16,6 +16,7 @@ export function PayPalProvider({ children }: PayPalProviderProps) {
         clientId,
         currency: 'ILS',
         intent: 'capture',
+        'enable-funding': 'card',
       }}
     >
       {children}

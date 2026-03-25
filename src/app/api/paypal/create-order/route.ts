@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PAYPAL_API_BASE = 'https://api.sandbox.paypal.com';
+const PAYPAL_API_BASE = 'https://api.paypal.com';
 
 async function getPayPalAccessToken() {
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;

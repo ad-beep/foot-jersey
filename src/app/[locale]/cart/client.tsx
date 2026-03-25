@@ -17,8 +17,6 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Reveal } from '@/components/ui/reveal';
 import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE } from '@/lib/constants';
-import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment/PaymentMethodSelector';
-import { BitPayment } from '@/components/payment/BitPayment';
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
 import type { CartItem } from '@/types';
 
@@ -177,7 +175,6 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const [errors, setErrors] = useState<FieldError>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bit');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState('');
 
@@ -213,7 +210,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           body: JSON.stringify({
             items,
             shippingInfo: form,
-            paymentMethod,
+            paymentMethod: 'paypal',
             paymentStatus: 'completed',
             paymentIntentId,
             paypalOrderId,
@@ -233,7 +230,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         throw error;
       }
     },
-    [items, form, paymentMethod, subtotal]
+    [items, form, subtotal]
   );
 
   const handlePaymentSuccess = useCallback(
@@ -465,16 +462,9 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           </div>
         </div>
 
-        {/* Payment Method Selector */}
+        {/* Payment */}
         {!showPaymentForm && (
           <>
-            <PaymentMethodSelector
-              selected={paymentMethod}
-              onSelect={setPaymentMethod}
-              isHe={isHe}
-              isRtl={isRtl}
-            />
-
             {/* Submit */}
             <button
               onClick={handleSubmit}
@@ -500,7 +490,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           </>
         )}
 
-        {/* Payment Form */}
+        {/* PayPal Payment */}
         {showPaymentForm && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -536,25 +526,13 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               </div>
             )}
 
-            {paymentMethod === 'bit' && (
-              <BitPayment
-                amount={subtotal}
-                isHe={isHe}
-                isRtl={isRtl}
-                onConfirm={() => handlePaymentSuccess()}
-                loading={submitting}
-              />
-            )}
-
-            {paymentMethod === 'paypal' && (
-              <PayPalPayment
-                amount={subtotal}
-                isHe={isHe}
-                isRtl={isRtl}
-                onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
-                onError={setPaymentError}
-              />
-            )}
+            <PayPalPayment
+              amount={subtotal}
+              isHe={isHe}
+              isRtl={isRtl}
+              onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
+              onError={setPaymentError}
+            />
           </motion.div>
         )}
 
