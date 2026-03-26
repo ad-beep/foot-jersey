@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Shirt } from 'lucide-react';
+import { Heart, Shirt, Package, X } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
 import { useFavoritesStore } from '@/stores/favorites-store';
@@ -14,8 +14,8 @@ import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, getJerseyName } from '@/lib/utils';
-import { CURRENCY } from '@/lib/constants';
-import type { Jersey, JerseyType, Size } from '@/types';
+import { CURRENCY, KIDS_SIZES } from '@/lib/constants';
+import type { Jersey, JerseyType, Size, KidsSize } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────
 const BADGE_TYPES = new Set<JerseyType>(['retro', 'special', 'kids', 'drip']);
@@ -56,12 +56,34 @@ export const ProductCard = React.memo(function ProductCard({
 
   const [imgError, setImgError] = useState(false);
   const [heartPulse, setHeartPulse] = useState(false);
+  const [sizePickerOpen, setSizePickerOpen] = useState(false);
+  const sizePickerRef = useRef<HTMLDivElement>(null);
 
-  const isHe        = locale === 'he';
-  const displayName = getJerseyName(jersey, locale);
-  const typeLabel   = TYPE_LABELS[jersey.type];
-  const href        = `/${locale}/product/${jersey.id}`;
-  const showBadge   = BADGE_TYPES.has(jersey.type);
+  const isHe          = locale === 'he';
+  const isMysteryBox  = jersey.category === 'mystery-box';
+  const isKids        = jersey.type === 'kids';
+  const displayName   = getJerseyName(jersey, locale);
+  const typeLabel     = TYPE_LABELS[jersey.type];
+  const href          = isMysteryBox
+    ? `/${locale}/category/mystery-box`
+    : `/${locale}/product/${jersey.id}`;
+  const showBadge     = BADGE_TYPES.has(jersey.type);
+
+  const sizes = isKids
+    ? (KIDS_SIZES as readonly string[])
+    : (jersey.availableSizes.length > 0 ? jersey.availableSizes : ['S', 'M', 'L', 'XL', 'XXL']);
+
+  // Close size picker on click outside
+  useEffect(() => {
+    if (!sizePickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (sizePickerRef.current && !sizePickerRef.current.contains(e.target as Node)) {
+        setSizePickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [sizePickerOpen]);
 
   const handleFavorite = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -81,16 +103,18 @@ export const ProductCard = React.memo(function ProductCard({
     try { recordInteraction(jersey.id, 'like'); } catch {}
   }, [jersey.id, toggleFavorite, recordInteraction, toast, isHe]);
 
-  const handleQuickAdd = useCallback((e: React.MouseEvent) => {
+  const openSizePicker = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const isKids = jersey.type === 'kids';
-    const preferred = isKids ? savedKidsSize : savedSize;
-    const size = preferred ? (preferred as Size) : jersey.availableSizes[0] ?? 'M';
-    addItem(jersey, size);
+    setSizePickerOpen(true);
+  }, []);
+
+  const handleSizeSelect = useCallback((size: string) => {
+    addItem(jersey, size as Size);
+    setSizePickerOpen(false);
     toast({
       title: isHe ? 'נוסף לסל' : 'Added to cart',
-      description: displayName,
+      description: `${displayName} — ${size}`,
       variant: 'success',
     });
 
@@ -98,7 +122,7 @@ export const ProductCard = React.memo(function ProductCard({
       recordCartAdd(jersey.id);
       recordInteraction(jersey.id, 'cart');
     } catch {}
-  }, [jersey, addItem, savedSize, savedKidsSize, recordCartAdd, recordInteraction, toast, isHe, displayName]);
+  }, [jersey, addItem, recordCartAdd, recordInteraction, toast, isHe, displayName]);
 
   return (
     <Link
@@ -113,7 +137,14 @@ export const ProductCard = React.memo(function ProductCard({
     >
       {/* Image area */}
       <div className="relative aspect-[3/4] overflow-hidden">
-        {imgError ? (
+        {isMysteryBox ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-secondary)]">
+            <Package className="w-16 h-16" style={{ color: 'var(--accent)' }} />
+            <span className="text-xs font-medium px-3 text-center leading-snug" style={{ color: 'var(--text-muted)' }}>
+              {isHe ? 'קופסת הפתעה' : 'Mystery Box'}
+            </span>
+          </div>
+        ) : imgError ? (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-elevated)]">
             <Shirt className="w-12 h-12" style={{ color: 'var(--text-muted)' }} />
           </div>
@@ -161,24 +192,71 @@ export const ProductCard = React.memo(function ProductCard({
           </Badge>
         )}
 
-        {/* Hover overlay — desktop only */}
-        <div
-          className="absolute inset-0 flex items-end justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto"
-          style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)',
-          }}
-          // Only show on hover-capable devices
-          data-hover-overlay=""
-        >
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleQuickAdd}
-            className="w-full"
+        {/* Hover overlay — desktop only (hidden for mystery boxes) */}
+        {!isMysteryBox && (
+          <div
+            className="absolute inset-0 flex items-end justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto"
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)',
+            }}
+            data-hover-overlay=""
           >
-            {isHe ? 'הוסף לסל' : 'Add to Cart'}
-          </Button>
-        </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={openSizePicker}
+              className="w-full"
+            >
+              {isHe ? 'בחר מידה' : 'Select Size'}
+            </Button>
+          </div>
+        )}
+
+        {/* Size selector modal */}
+        {sizePickerOpen && (
+          <div
+            ref={sizePickerRef}
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSizePickerOpen(false); }}
+              className="absolute top-2.5 end-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+              style={{ color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.1)' }}
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>
+              {isHe ? 'בחר מידה' : 'Select Size'}
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center max-w-[200px]">
+              {sizes.map((s) => (
+                <button
+                  key={s}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSizeSelect(s); }}
+                  className="min-w-[42px] h-9 px-2 rounded-lg text-xs font-bold transition-all duration-150 border"
+                  style={{ color: '#fff', borderColor: 'var(--border)', backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget;
+                    el.style.borderColor = 'var(--accent)';
+                    el.style.color = 'var(--accent)';
+                    el.style.backgroundColor = 'rgba(0,195,216,0.12)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget;
+                    el.style.borderColor = 'var(--border)';
+                    el.style.color = '#fff';
+                    el.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Card body */}
@@ -187,7 +265,9 @@ export const ProductCard = React.memo(function ProductCard({
           {displayName}
         </p>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {jersey.season} · {isHe ? typeLabel.he : typeLabel.en}
+          {isMysteryBox
+            ? (isHe ? 'קופסת הפתעה' : 'Mystery Box')
+            : `${jersey.season} · ${isHe ? typeLabel.he : typeLabel.en}`}
         </p>
         <p className="text-base font-bold mt-1" style={{ color: 'var(--accent)' }}>
           {CURRENCY}{jersey.price}

@@ -115,28 +115,7 @@ export function Header({ dict: _dict }: HeaderProps) {
             <Search className="w-5 h-5" />
           </button>
 
-          {/* Language toggle */}
-          <button
-            onClick={toggleLocale}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold tracking-wider transition-all duration-200"
-            style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-            aria-label={`Switch to ${locale === 'en' ? 'Hebrew' : 'English'}`}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.color       = 'var(--accent)';
-              el.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.color       = 'var(--text-muted)';
-              el.style.borderColor = 'var(--border)';
-            }}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span className="hidden sm:block">{locale === 'en' ? 'HE' : 'EN'}</span>
-          </button>
-
-          {/* Auth: Sign Up or Hello [Name] */}
+          {/* Auth: Sign Up or Hello [Name] — farthest left in cluster */}
           <Link
             href={hydrated && authUser ? `/${locale}/profile` : `/${locale}/auth`}
             className="flex items-center px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 shrink-0"
@@ -166,6 +145,27 @@ export function Header({ dict: _dict }: HeaderProps) {
               ? (locale === 'he' ? `שלום ${firstName}` : `Hello ${firstName}`)
               : (locale === 'he' ? 'הרשמה' : 'Sign Up')}
           </Link>
+
+          {/* Language toggle */}
+          <button
+            onClick={toggleLocale}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold tracking-wider transition-all duration-200"
+            style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            aria-label={`Switch to ${locale === 'en' ? 'Hebrew' : 'English'}`}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.color       = 'var(--accent)';
+              el.style.borderColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.color       = 'var(--text-muted)';
+              el.style.borderColor = 'var(--border)';
+            }}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">{locale === 'en' ? 'HE' : 'EN'}</span>
+          </button>
 
           {/* Favorites */}
           <Link
