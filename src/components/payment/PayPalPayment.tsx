@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { PayPalButtons } from '@paypal/react-paypal-js';
+import { useState, useCallback } from 'react';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { AlertCircle } from 'lucide-react';
+
+const PAYPAL_OPTIONS = {
+  clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test',
+  currency: 'ILS' as const,
+  intent: 'capture' as const,
+  'enable-funding': 'card',
+};
 
 interface ShippingAddress {
   firstName: string;
@@ -105,36 +112,38 @@ export function PayPalPayment({
   );
 
   return (
-    <div className="space-y-4">
-      {errorMessage && (
-        <div
-          className="p-3 rounded-lg flex items-start gap-2"
-          style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}
-        >
-          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#FF4D6D' }} />
-          <p className="text-sm" style={{ color: '#FF4D6D' }}>
-            {errorMessage}
-          </p>
-        </div>
-      )}
+    <PayPalScriptProvider options={PAYPAL_OPTIONS}>
+      <div className="space-y-4">
+        {errorMessage && (
+          <div
+            className="p-3 rounded-lg flex items-start gap-2"
+            style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}
+          >
+            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#FF4D6D' }} />
+            <p className="text-sm" style={{ color: '#FF4D6D' }}>
+              {errorMessage}
+            </p>
+          </div>
+        )}
 
-      <PayPalButtons
-        createOrder={handleCreateOrder}
-        onApprove={handleApprove}
-        onError={handleError}
-        style={{
-          layout: 'vertical',
-          color: 'blue',
-          height: 48,
-          tagline: false,
-        }}
-      />
+        <PayPalButtons
+          createOrder={handleCreateOrder}
+          onApprove={handleApprove}
+          onError={handleError}
+          style={{
+            layout: 'vertical',
+            color: 'blue',
+            height: 48,
+            tagline: false,
+          }}
+        />
 
-      <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-        {isHe
-          ? 'התשלום בעזרת PayPal מאובטח ודעות אישית שלך מוגנות'
-          : 'PayPal payment is secure and your information is protected'}
-      </p>
-    </div>
+        <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+          {isHe
+            ? 'התשלום בעזרת PayPal מאובטח ודעות אישית שלך מוגנות'
+            : 'PayPal payment is secure and your information is protected'}
+        </p>
+      </div>
+    </PayPalScriptProvider>
   );
 }

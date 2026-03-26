@@ -3,8 +3,21 @@
 import dynamic from 'next/dynamic';
 import type { Jersey, Locale } from '@/types';
 
-// Lazy-load heavy components (framer-motion, 3D carousel, marquee animations)
-const LandingHero  = dynamic(() => import('@/components/home/LandingHero'), { ssr: false });
+// Hero loads eagerly for fast LCP — it's the first visible content
+const LandingHero  = dynamic(() => import('@/components/home/LandingHero'), {
+  ssr: false,
+  loading: () => (
+    <section
+      className="flex flex-col items-center justify-center"
+      style={{ minHeight: 'calc(100vh - 64px)', backgroundColor: 'var(--bg-primary)' }}
+    >
+      <h1 className="font-bold text-white text-4xl md:text-5xl lg:text-6xl text-center px-6 max-w-3xl">
+        Buying a Jersey is an Experience Worth Having
+      </h1>
+    </section>
+  ),
+});
+// Below-fold components — lazy-loaded with no SSR
 const WhatsHot     = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })), { ssr: false });
 const CategoryGrid = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })), { ssr: false });
 const AboutUs      = dynamic(() => import('@/components/home/AboutUs').then(m => ({ default: m.AboutUs })), { ssr: false });

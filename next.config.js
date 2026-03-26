@@ -6,7 +6,8 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
-    unoptimized: true, // Skip Next.js image optimization for external images (much faster)
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
