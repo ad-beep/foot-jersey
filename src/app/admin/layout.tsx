@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr" className={montserrat.variable}>
-      <body className="font-sans bg-[#0a0a0a] text-white min-h-screen">
+    <html lang="en" dir="ltr" className={montserrat.variable} suppressHydrationWarning>
+      <body className="font-sans bg-[#0a0a0a] text-white min-h-screen" suppressHydrationWarning>
         <AdminGuard>
           <div className="flex min-h-screen">
             <AdminSidebar />

@@ -12,9 +12,10 @@ export function middleware(request: NextRequest) {
 
   if (pathnameHasLocale) return NextResponse.next();
 
-  // Skip API routes, static files, etc.
+  // Skip API routes, admin panel, static files, etc.
   if (
     pathname.startsWith('/api/') ||
+    pathname.startsWith('/admin') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/images/') ||
     pathname.includes('.') // Static files
@@ -33,5 +34,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images).*)'],
+  matcher: ['/((?!api|admin|_next/static|_next/image|favicon.ico|images).*)'],
 };

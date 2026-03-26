@@ -27,6 +27,7 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: '/', destination: '/en' },
+      { source: '/favicon.ico', destination: '/favicon.svg' },
     ];
   },
 };
