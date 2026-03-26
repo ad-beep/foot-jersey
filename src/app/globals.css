@@ -40,6 +40,15 @@
   [dir="rtl"] { direction: rtl; }
 }
 
+@layer components {
+  /* Admin form inputs */
+  .input {
+    @apply w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white
+           placeholder:text-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30
+           transition-colors;
+  }
+}
+
 @layer utilities {
   .scrollbar-hide                         { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar      { display: none; }
