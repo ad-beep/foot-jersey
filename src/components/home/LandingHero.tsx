@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronDown, Search } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
@@ -95,16 +96,16 @@ function MarqueeRow({
               overflow: 'hidden',
               flexShrink: 0,
               backgroundColor: '#1a1a1a',
+              position: 'relative',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={j.imageUrl}
               alt=""
               width={CARD_W}
               height={CARD_H}
-              loading="eager"
-              decoding="async"
+              priority={i < HALF}
+              sizes={`${CARD_W}px`}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           </div>

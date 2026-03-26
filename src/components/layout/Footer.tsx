@@ -9,7 +9,7 @@ export function Footer() {
 
   return (
     <footer
-      className="hidden border-t"
+      className="border-t"
       style={{ backgroundColor: '#0A0A0A', borderColor: 'var(--border)' }}
     >
       <div className="max-w-[1200px] mx-auto px-6 py-12">
@@ -72,7 +72,7 @@ export function Footer() {
               {[
                 { en: 'Privacy Policy',   he: 'מדיניות פרטיות', href: `/${locale}/privacy`  },
                 { en: 'Terms of Service', he: 'תנאי שימוש',      href: `/${locale}/terms`    },
-                { en: 'Shipping Policy',  he: 'מדיניות משלוח',   href: `/${locale}/shipping` },
+                { en: 'Refund Policy',    he: 'מדיניות החזרים',  href: `/${locale}/refund`   },
               ].map((item) => (
                 <li key={item.href}>
                   <Link

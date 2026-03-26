@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProductCard } from '@/components/product/ProductCard';
@@ -57,6 +57,13 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
   const [isInView,    setIsInView]    = useState(false);
   const [isPaused,    setIsPaused]    = useState(false);
   const [isMobile,    setIsMobile]    = useState(false);
+  const [carouselReady, setCarouselReady] = useState(false);
+
+  // Mark carousel as ready after a brief delay (allows 3D transforms to initialize)
+  useEffect(() => {
+    const t = setTimeout(() => setCarouselReady(true), 200);
+    return () => clearTimeout(t);
+  }, []);
 
   // ── Responsive ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -215,6 +222,16 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
         {header}
 
         {/* ── 3D Carousel ──────────────────────────────────────────── */}
+        {!carouselReady && (
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4" style={{ scrollSnapType: 'x mandatory' }}>
+            {hotJerseys.slice(0, 5).map((jersey, i) => (
+              <div key={jersey.id} className="shrink-0" style={{ width: cardWidth, scrollSnapAlign: 'center' }}>
+                <ProductCard jersey={jersey} priority={i < 3} />
+              </div>
+            ))}
+          </div>
+        )}
+        {carouselReady && (
         <div
           className="relative overflow-hidden select-none"
           style={{ height: isMobile ? 460 : 520 }}
@@ -283,6 +300,8 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
             );
           })}
         </div>
+
+        )}
 
         {/* ── Progress bar + counter ───────────────────────────────── */}
         <div className="mt-6 max-w-sm mx-auto">

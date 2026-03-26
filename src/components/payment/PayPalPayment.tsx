@@ -4,10 +4,22 @@ import { useState, useCallback, useEffect } from 'react';
 import { PayPalButtons } from '@paypal/react-paypal-js';
 import { AlertCircle } from 'lucide-react';
 
+interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  street: string;
+  city: string;
+  zip: string;
+  country: string;
+  phone: string;
+  email: string;
+}
+
 interface PayPalPaymentProps {
   amount: number;
   isHe: boolean;
   isRtl: boolean;
+  shippingAddress?: ShippingAddress;
   onSuccess: (orderId: string) => void;
   onError: (error: string) => void;
 }
@@ -16,6 +28,7 @@ export function PayPalPayment({
   amount,
   isHe,
   isRtl,
+  shippingAddress,
   onSuccess,
   onError,
 }: PayPalPaymentProps) {
@@ -33,6 +46,7 @@ export function PayPalPayment({
             amount: amount.toFixed(2),
             returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout-success`,
             cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/cart`,
+            shippingAddress,
           }),
         });
 
@@ -50,7 +64,7 @@ export function PayPalPayment({
         throw err;
       }
     },
-    [amount, onError]
+    [amount, onError, shippingAddress]
   );
 
   const handleApprove = useCallback(

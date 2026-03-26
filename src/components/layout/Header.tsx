@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, Heart, ShoppingBag, User, Globe, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Search, Heart, ShoppingBag, Globe, X } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
 import { useCartStore } from '@/stores/cart-store';
@@ -18,6 +19,7 @@ interface HeaderProps {
 
 export function Header({ dict: _dict }: HeaderProps) {
   const { locale, isRtl, switchLocale } = useLocale();
+  const pathname    = usePathname();
   const hydrated    = useHydration();
   const cartCount   = useCartStore((s) => s.items.length);
   const favCount    = useFavoritesStore((s) => s.favoriteIds.length);
@@ -34,6 +36,24 @@ export function Header({ dict: _dict }: HeaderProps) {
   }, []);
 
   const toggleLocale = () => switchLocale(locale === 'en' ? 'he' : 'en');
+
+  const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+
+  const handleCollectionsClick = useCallback(() => {
+    if (isHomePage) {
+      const el = document.getElementById('collections-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+    window.location.href = `/${locale}#collections-section`;
+  }, [locale, isHomePage]);
+
+  // Derive first name from displayName
+  const firstName = hydrated && authUser?.displayName
+    ? authUser.displayName.split(' ')[0]
+    : null;
 
   // Icon button shared style helpers
   const iconBtn = 'relative w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-200';
@@ -64,16 +84,16 @@ export function Header({ dict: _dict }: HeaderProps) {
           </span>
         </Link>
 
-        {/* ── Desktop "Explore" link ───────────────────────────── */}
-        <Link
-          href={`/${locale}/discover`}
-          className="hidden md:inline-flex text-sm font-medium transition-colors duration-200 shrink-0"
+        {/* ── Desktop "Our Collections" button ─────────────────── */}
+        <button
+          onClick={handleCollectionsClick}
+          className="hidden md:inline-flex text-sm font-medium transition-colors duration-200 shrink-0 cursor-pointer"
           style={{ color: 'var(--text-secondary)' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
         >
-          {locale === 'he' ? 'גלה' : 'Explore'}
-        </Link>
+          {locale === 'he' ? 'הקולקציות שלנו' : 'Our Collections'}
+        </button>
 
         {/* ── Desktop search bar ────────────────────────────────── */}
         <div className="hidden md:flex flex-1 max-w-md mx-auto">
@@ -116,22 +136,35 @@ export function Header({ dict: _dict }: HeaderProps) {
             <span className="hidden sm:block">{locale === 'en' ? 'HE' : 'EN'}</span>
           </button>
 
-          {/* Profile */}
+          {/* Auth: Sign Up or Hello [Name] */}
           <Link
             href={hydrated && authUser ? `/${locale}/profile` : `/${locale}/auth`}
-            className={iconBtn}
-            style={{ color: 'var(--text-muted)' }}
-            aria-label="Profile"
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+            className="flex items-center px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 shrink-0"
+            style={{
+              color: hydrated && firstName ? 'var(--accent)' : '#111',
+              backgroundColor: hydrated && firstName ? 'transparent' : 'var(--accent)',
+              border: hydrated && firstName ? '1px solid var(--accent)' : '1px solid transparent',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              if (hydrated && firstName) {
+                el.style.backgroundColor = 'rgba(0,195,216,0.1)';
+              } else {
+                el.style.opacity = '0.85';
+              }
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              if (hydrated && firstName) {
+                el.style.backgroundColor = 'transparent';
+              } else {
+                el.style.opacity = '1';
+              }
+            }}
           >
-            <User className="w-5 h-5" />
-            {hydrated && authUser && (
-              <span
-                className="absolute bottom-2 right-2 w-2 h-2 rounded-full"
-                style={{ backgroundColor: 'var(--success)', boxShadow: '0 0 4px var(--success)' }}
-              />
-            )}
+            {hydrated && firstName
+              ? (locale === 'he' ? `שלום ${firstName}` : `Hello ${firstName}`)
+              : (locale === 'he' ? 'הרשמה' : 'Sign Up')}
           </Link>
 
           {/* Favorites */}

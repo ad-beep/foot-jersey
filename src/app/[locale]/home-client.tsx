@@ -1,10 +1,12 @@
 'use client';
 
+import { lazy, Suspense } from 'react';
 import LandingHero from '@/components/home/LandingHero';
 import { WhatsHot } from '@/components/home/WhatsHot';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
-import { AboutUs } from '@/components/home/AboutUs';
 import type { Jersey, Locale } from '@/types';
+
+const AboutUs = lazy(() => import('@/components/home/AboutUs').then(m => ({ default: m.AboutUs })));
 
 interface HomeClientProps {
   locale:     Locale;
@@ -18,12 +20,17 @@ export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
       style={{
         height: 'calc(100vh - 64px)',
         scrollSnapType: 'y mandatory',
+        willChange: 'scroll-position',
       }}
     >
       <LandingHero jerseys={hotJerseys} />
       <WhatsHot locale={locale} hotJerseys={hotJerseys.slice(0, 15)} />
-      <CategoryGrid />
-      <AboutUs />
+      <div id="collections-section">
+        <CategoryGrid />
+      </div>
+      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+        <AboutUs />
+      </Suspense>
     </div>
   );
 }

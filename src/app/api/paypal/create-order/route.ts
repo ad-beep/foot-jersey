@@ -32,7 +32,7 @@ async function getPayPalAccessToken() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, returnUrl, cancelUrl } = body;
+    const { amount, returnUrl, cancelUrl, shippingAddress } = body;
 
     const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
 
@@ -59,11 +59,26 @@ export async function POST(request: NextRequest) {
               currency_code: 'ILS',
               value: parsedAmount.toFixed(2),
             },
+            ...(shippingAddress && {
+              shipping: {
+                type: 'SHIPPING',
+                name: {
+                  full_name: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
+                },
+                address: {
+                  address_line_1: shippingAddress.street || '',
+                  admin_area_2: shippingAddress.city || '',
+                  postal_code: shippingAddress.zip || '',
+                  country_code: 'IL',
+                },
+              },
+            }),
           },
         ],
         application_context: {
           return_url: returnUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/cart?payment=success`,
           cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/cart?payment=cancelled`,
+          shipping_preference: shippingAddress ? 'SET_PROVIDED_ADDRESS' : 'NO_SHIPPING',
         },
       }),
     });

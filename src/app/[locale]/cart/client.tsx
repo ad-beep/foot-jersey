@@ -16,7 +16,7 @@ import { useToast } from '@/components/ui/toast';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Reveal } from '@/components/ui/reveal';
 import { getJerseyName } from '@/lib/utils';
-import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE } from '@/lib/constants';
+import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
 import type { CartItem } from '@/types';
 
@@ -136,7 +136,8 @@ function CartItemCard({ item }: { item: CartItem }) {
 // ─── Checkout Form ──────────────────────────────────────────────────────────
 
 interface CheckoutForm {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   country: string;
@@ -144,19 +145,28 @@ interface CheckoutForm {
   street: string;
   zip: string;
   notes: string;
+  // Billing address fields
+  billingCountry: string;
+  billingCity: string;
+  billingStreet: string;
+  billingZip: string;
 }
 
 const EMPTY_FORM: CheckoutForm = {
-  name: '', phone: '', email: '', country: '', city: '', street: '', zip: '', notes: '',
+  firstName: '', lastName: '', phone: '', email: '',
+  country: '', city: '', street: '', zip: '', notes: '',
+  billingCountry: '', billingCity: '', billingStreet: '', billingZip: '',
 };
 
 interface FieldError {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   email?: string;
   country?: string;
   city?: string;
   street?: string;
+  zip?: string;
 }
 
 function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
@@ -177,6 +187,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const [success, setSuccess] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [sameAsBilling, setSameAsBilling] = useState(true);
 
   const freeShipping = itemCount >= SHIPPING_POLICY.freeShippingMinItems;
 
@@ -189,7 +200,8 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
 
   const validate = (): boolean => {
     const e: FieldError = {};
-    if (!form.name.trim()) e.name = isHe ? 'שם הוא שדה חובה' : 'Name is required';
+    if (!form.firstName.trim()) e.firstName = isHe ? 'שם פרטי הוא שדה חובה' : 'First name is required';
+    if (!form.lastName.trim()) e.lastName = isHe ? 'שם משפחה הוא שדה חובה' : 'Last name is required';
     if (!form.phone.trim()) e.phone = isHe ? 'טלפון הוא שדה חובה' : 'Phone is required';
     else if (!/^[\d\-+() ]{7,15}$/.test(form.phone.trim())) e.phone = isHe ? 'מספר טלפון לא תקין' : 'Invalid phone number';
     if (!form.email.trim()) e.email = isHe ? 'אימייל הוא שדה חובה' : 'Email is required';
@@ -197,6 +209,8 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     if (!form.country.trim()) e.country = isHe ? 'מדינה היא שדה חובה' : 'Country is required';
     if (!form.city.trim()) e.city = isHe ? 'עיר היא שדה חובה' : 'City is required';
     if (!form.street.trim()) e.street = isHe ? 'רחוב הוא שדה חובה' : 'Street is required';
+    if (!form.zip.trim()) e.zip = isHe ? 'מיקוד הוא שדה חובה' : 'Zip code is required';
+    else if (!/^\d{7}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד חייב להיות 7 ספרות' : 'Zip code must be exactly 7 digits';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -209,13 +223,28 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items,
-            shippingInfo: form,
+            shippingInfo: {
+              firstName: form.firstName,
+              lastName: form.lastName,
+              phone: form.phone,
+              email: form.email,
+              country: form.country,
+              city: form.city,
+              street: form.street,
+              zip: form.zip,
+              notes: form.notes,
+              billingCountry: sameAsBilling ? form.country : form.billingCountry,
+              billingCity: sameAsBilling ? form.city : form.billingCity,
+              billingStreet: sameAsBilling ? form.street : form.billingStreet,
+              billingZip: sameAsBilling ? form.zip : form.billingZip,
+            },
             paymentMethod: 'paypal',
             paymentStatus: 'completed',
             paymentIntentId,
             paypalOrderId,
             subtotal,
-            total: subtotal,
+            shipping: freeShipping ? 0 : PRICES.shippingFlat,
+            total: subtotal + (freeShipping ? 0 : PRICES.shippingFlat),
             currency: CURRENCY_CODE,
           }),
         });
@@ -313,20 +342,36 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
       </div>
 
       <div className="space-y-4">
-        {/* Name */}
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-            {isHe ? 'שם מלא *' : 'Full Name *'}
-          </label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => set('name', e.target.value)}
-            placeholder={isHe ? 'ישראל ישראלי' : 'John Doe'}
-            className={inputClass}
-            style={inputStyle(!!errors.name)}
-          />
-          {errors.name && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.name}</p>}
+        {/* First Name + Last Name */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              {isHe ? 'שם פרטי *' : 'First Name *'}
+            </label>
+            <input
+              type="text"
+              value={form.firstName}
+              onChange={(e) => set('firstName', e.target.value)}
+              placeholder={isHe ? 'ישראל' : 'John'}
+              className={inputClass}
+              style={inputStyle(!!errors.firstName)}
+            />
+            {errors.firstName && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.firstName}</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              {isHe ? 'שם משפחה *' : 'Last Name *'}
+            </label>
+            <input
+              type="text"
+              value={form.lastName}
+              onChange={(e) => set('lastName', e.target.value)}
+              placeholder={isHe ? 'ישראלי' : 'Doe'}
+              className={inputClass}
+              style={inputStyle(!!errors.lastName)}
+            />
+            {errors.lastName && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.lastName}</p>}
+          </div>
         </div>
 
         {/* Phone + Email */}
@@ -393,18 +438,20 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             />
             {errors.city && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.city}</p>}
           </div>
-          <div className="sm:w-28">
+          <div className="sm:w-32">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              {isHe ? 'מיקוד' : 'Zip'}
+              {isHe ? 'מיקוד *' : 'Zip Code *'}
             </label>
             <input
               type="text"
               value={form.zip}
-              onChange={(e) => set('zip', e.target.value)}
+              onChange={(e) => set('zip', e.target.value.replace(/\D/g, '').slice(0, 7))}
               placeholder="6100000"
+              maxLength={7}
               className={inputClass}
-              style={{ ...inputStyle(false), direction: 'ltr' }}
+              style={{ ...inputStyle(!!errors.zip), direction: 'ltr' }}
             />
+            {errors.zip && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.zip}</p>}
           </div>
         </div>
 
@@ -439,6 +486,55 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           />
         </div>
 
+        {/* Billing address */}
+        <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sameAsBilling}
+              onChange={(e) => setSameAsBilling(e.target.checked)}
+              className="w-4 h-4 rounded accent-[var(--accent)]"
+            />
+            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              {isHe ? 'כתובת חיוב זהה לכתובת משלוח' : 'Billing address same as shipping'}
+            </span>
+          </label>
+        </div>
+
+        {!sameAsBilling && (
+          <div className="space-y-4 pt-2">
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              {isHe ? 'כתובת חיוב' : 'Billing Address'}
+            </p>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                {isHe ? 'מדינה *' : 'Country *'}
+              </label>
+              <input type="text" value={form.billingCountry} onChange={(e) => set('billingCountry', e.target.value)} placeholder={isHe ? 'ישראל' : 'Israel'} className={inputClass} style={inputStyle(false)} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  {isHe ? 'עיר *' : 'City *'}
+                </label>
+                <input type="text" value={form.billingCity} onChange={(e) => set('billingCity', e.target.value)} placeholder={isHe ? 'תל אביב' : 'Tel Aviv'} className={inputClass} style={inputStyle(false)} />
+              </div>
+              <div className="sm:w-32">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  {isHe ? 'מיקוד' : 'Zip'}
+                </label>
+                <input type="text" value={form.billingZip} onChange={(e) => set('billingZip', e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="6100000" maxLength={7} className={inputClass} style={{ ...inputStyle(false), direction: 'ltr' }} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                {isHe ? 'רחוב *' : 'Street *'}
+              </label>
+              <input type="text" value={form.billingStreet} onChange={(e) => set('billingStreet', e.target.value)} placeholder={isHe ? 'רחוב הרצל 1' : '1 Herzl St'} className={inputClass} style={inputStyle(false)} />
+            </div>
+          </div>
+        )}
+
         {/* Order summary mini */}
         <div
           className="rounded-xl p-4 space-y-2"
@@ -453,12 +549,14 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           <div className="flex justify-between text-sm">
             <span style={{ color: 'var(--text-secondary)' }}>{isHe ? 'משלוח' : 'Shipping'}</span>
             <span style={{ color: freeShipping ? 'var(--accent)' : 'var(--text-secondary)' }}>
-              {freeShipping ? (isHe ? 'חינם!' : 'Free!') : (isHe ? 'ייקבע בהמשך' : 'Calculated later')}
+              {freeShipping ? (isHe ? 'חינם!' : 'Free!') : `${CURRENCY}${PRICES.shippingFlat}`}
             </span>
           </div>
           <div className="flex justify-between pt-2" style={{ borderTop: '1px solid var(--border)' }}>
             <span className="font-bold text-white">{isHe ? 'סה"כ' : 'Total'}</span>
-            <span className="text-lg font-bold" style={{ color: 'var(--cta)' }}>{CURRENCY}{subtotal}</span>
+            <span className="text-lg font-bold" style={{ color: 'var(--cta)' }}>
+              {CURRENCY}{subtotal + (freeShipping ? 0 : PRICES.shippingFlat)}
+            </span>
           </div>
         </div>
 
@@ -483,7 +581,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               ) : (
                 <>
                   <Package className="w-5 h-5" />
-                  {isHe ? 'בצע הזמנה' : 'Place Order'}
+                  {isHe ? 'המשך לעמוד תשלום' : 'Go to Payment Page'}
                 </>
               )}
             </button>
@@ -527,9 +625,19 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             )}
 
             <PayPalPayment
-              amount={subtotal}
+              amount={subtotal + (freeShipping ? 0 : PRICES.shippingFlat)}
               isHe={isHe}
               isRtl={isRtl}
+              shippingAddress={{
+                firstName: form.firstName,
+                lastName: form.lastName,
+                street: form.street,
+                city: form.city,
+                zip: form.zip,
+                country: form.country,
+                phone: form.phone,
+                email: form.email,
+              }}
               onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
               onError={setPaymentError}
             />

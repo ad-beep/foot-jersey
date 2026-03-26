@@ -13,7 +13,9 @@
     "search": "חיפוש",
     "language": "שפה",
     "darkMode": "מצב כהה",
-    "lightMode": "מצב בהיר"
+    "lightMode": "מצב בהיר",
+    "ourCollections": "הקולקציות שלנו",
+    "signUp": "הרשמה"
   },
   "hero": {
     "title": "",
@@ -197,7 +199,8 @@
     "followUs": "עקבו אחרינו",
     "rights": "כל הזכויות שמורות.",
     "privacy": "מדיניות פרטיות",
-    "terms": "תנאי שימוש"
+    "terms": "תנאי שימוש",
+    "refund": "מדיניות החזרים"
   },
   "common": {
     "loading": "טוען...",

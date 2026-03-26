@@ -3,8 +3,10 @@ import { isValidLocale, getDirection } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { DEFAULT_LOCALE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { Dock } from '@/components/layout/Dock';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 import { ToastProvider } from '@/components/ui/toast';
 import { PayPalProvider } from '@/components/payment/PayPalProvider';
 import type { Locale } from '@/types';
@@ -55,8 +57,10 @@ export default async function LocaleLayout({
             <main className="min-h-screen pt-16 pb-20">
               {children}
             </main>
+            <Footer />
             <Dock />
             <CartDrawer dict={dict} />
+            <WhatsAppButton />
           </PayPalProvider>
         </ToastProvider>
       </body>

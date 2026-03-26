@@ -56,14 +56,21 @@ const DEFAULT_CUSTOMIZATION: CartCustomization = {
 };
 
 const SIZE_GUIDE = {
-  headers: { en: ['Size', 'Chest (cm)', 'Length (cm)'], he: ['מידה', 'חזה (ס"מ)', 'אורך (ס"מ)'] },
+  headers: {
+    en: ['Size', 'Height (cm)', 'Weight (kg)', 'Chest (cm)'],
+    he: ['מידה', 'גובה (ס"מ)', 'משקל (ק"ג)', 'חזה (ס"מ)'],
+  },
   rows: [
-    { size: 'S',   chest: '96-100', length: '70' },
-    { size: 'M',   chest: '100-104', length: '72' },
-    { size: 'L',   chest: '104-110', length: '74' },
-    { size: 'XL',  chest: '110-116', length: '76' },
-    { size: 'XXL', chest: '116-122', length: '78' },
+    { size: 'S',   height: '165–170', weight: '55–65',  chest: '88–94' },
+    { size: 'M',   height: '170–175', weight: '65–75',  chest: '94–100' },
+    { size: 'L',   height: '175–180', weight: '75–85',  chest: '100–106' },
+    { size: 'XL',  height: '180–186', weight: '85–95',  chest: '106–112' },
+    { size: 'XXL', height: '186–192', weight: '95–105', chest: '112–120' },
   ],
+  playerVersionNote: {
+    en: 'We suggest taking a size up for Player Version jerseys.',
+    he: 'אנו ממליצים לקחת מידה אחת למעלה עבור חולצות גרסת שחקן.',
+  },
 };
 
 // ─── Accordion ───────────────────────────────────────────────────────────────
@@ -320,11 +327,10 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
 
             {/* Accordions */}
             <div className="mt-8" style={{ borderTop: '1px solid var(--border)' }}>
-              <Accordion title={isHe ? 'משלוח והחזרות' : 'Shipping & Returns'}>
+              <Accordion title={isHe ? 'משלוח' : 'Shipping'}>
                 <ul className="space-y-2 list-disc ps-5">
                   <li>{shippingPolicy.delivery}</li>
                   <li>{shippingPolicy.freeShipping}</li>
-                  <li>{shippingPolicy.returns}</li>
                   <li>{shippingPolicy.damaged}</li>
                   <li>{shippingPolicy.secure}</li>
                 </ul>
@@ -344,13 +350,20 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
                       {SIZE_GUIDE.rows.map((row) => (
                         <tr key={row.size} style={{ borderTop: '1px solid var(--border)' }}>
                           <td className="py-2 pe-4 font-medium text-white">{row.size}</td>
-                          <td className="py-2 pe-4">{row.chest}</td>
-                          <td className="py-2">{row.length}</td>
+                          <td className="py-2 pe-4">{row.height}</td>
+                          <td className="py-2 pe-4">{row.weight}</td>
+                          <td className="py-2">{row.chest}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                <p
+                  className="mt-3 p-3 rounded-lg text-xs font-semibold"
+                  style={{ backgroundColor: 'rgba(0,195,216,0.08)', color: 'var(--accent)' }}
+                >
+                  ⚠️ {SIZE_GUIDE.playerVersionNote[isHe ? 'he' : 'en']}
+                </p>
               </Accordion>
             </div>
           </Reveal>

@@ -27,7 +27,7 @@ interface SearchableJersey {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 12;
 const SUGGESTED_LIMIT = 100;
 
 // ─── Bilingual labels ────────────────────────────────────────────────────────
@@ -714,8 +714,8 @@ export function DiscoverClient() {
               style={{ opacity: transitioning ? 0.5 : 1 }}
             >
               {visibleJerseys.map((jersey, i) => (
-                <Reveal key={jersey.id} delay={Math.min(i * 50, 300)}>
-                  <ProductCard jersey={jersey} priority={i < 8} />
+                <Reveal key={jersey.id} delay={i < 4 ? i * 50 : 0}>
+                  <ProductCard jersey={jersey} priority={i < 4} />
                 </Reveal>
               ))}
             </div>

@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { Jersey, JerseyType, SheetRow, Size } from '@/types';
-import { PRICES, RETRO_SEASON_THRESHOLD } from './constants';
+import { PRICES, RETRO_SEASON_THRESHOLD } from '@/lib/constants';
 
 // ─── Tailwind Merge ──────────────────────────────────────────
 export function cn(...inputs: ClassValue[]) {
@@ -51,7 +51,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     : 'regular';
 
   const isLongSleeve = row.is_long_sleeve?.trim().toLowerCase() === 'true';
-  const price = getBasePrice(type) + (isLongSleeve ? 30 : 0);
+  const price = getBasePrice(type) + (isLongSleeve ? PRICES.longSleeveExtra : 0);
 
   // Parse additional images from pipe-separated string
   const additionalImages = row.additional_images

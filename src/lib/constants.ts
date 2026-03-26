@@ -2,8 +2,8 @@ import type { League, LocaleConfig } from '@/types';
 
 // ─── Pricing ─────────────────────────────────────────────────
 export const PRICES = {
-  regular: 89,
-  retro: 99,
+  regular: 99,
+  retro: 109,
   kids: 99,
   special: 99,
   coat: 149,
@@ -15,6 +15,8 @@ export const PRICES = {
     pants: 50,
     playerVersion: 10,
   },
+  longSleeveExtra: 20,
+  shippingFlat: 15,
 } as const;
 
 // ─── Season Threshold ────────────────────────────────────────
@@ -67,8 +69,8 @@ export const SPECIAL_SECTIONS: {
 
 // ─── Mystery Box Options ─────────────────────────────────────
 export const MYSTERY_BOX_OPTIONS = [
-  { slug: 'retro-mystery', labelEn: 'Retro Mystery Box', labelHe: 'קופסת הפתעה רטרו', price: 99, description: { en: 'A surprise retro jersey from the golden eras', he: 'חולצת רטרו הפתעה מתקופות הזהב' } },
-  { slug: '2526-mystery', labelEn: '25/26 Mystery Box', labelHe: 'קופסת הפתעה 25/26', price: 89, description: { en: 'A surprise jersey from the current 25/26 season', he: 'חולצת הפתעה מעונת 25/26' } },
+  { slug: 'retro-mystery', labelEn: 'Retro Mystery Box', labelHe: 'קופסת הפתעה רטרו', price: 109, description: { en: 'A surprise retro jersey from the golden eras', he: 'חולצת רטרו הפתעה מתקופות הזהב' } },
+  { slug: '2526-mystery', labelEn: '25/26 Mystery Box', labelHe: 'קופסת הפתעה 25/26', price: 99, description: { en: 'A surprise jersey from the current 25/26 season', he: 'חולצת הפתעה מעונת 25/26' } },
   { slug: 'world-cup-mystery', labelEn: 'World Cup Mystery Box', labelHe: 'קופסת הפתעה מונדיאל', price: 99, description: { en: 'A surprise World Cup national team jersey', he: 'חולצת נבחרת הפתעה ממונדיאל' } },
   { slug: 'mixed-mystery', labelEn: 'Mixed Mystery Box', labelHe: 'קופסת הפתעה מיקס', price: 99, description: { en: 'Any jersey from our entire collection — total surprise', he: 'חולצה כלשהי מכל הקולקציה — הפתעה מוחלטת' } },
   { slug: 'player-version-mystery', labelEn: 'Player Version Mystery Box', labelHe: 'קופסת הפתעה גרסת שחקן', price: 99, description: { en: 'A surprise player version jersey — premium quality', he: 'חולצת גרסת שחקן הפתעה — איכות פרימיום' } },

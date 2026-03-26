@@ -13,7 +13,9 @@
     "search": "Search",
     "language": "Language",
     "darkMode": "Dark Mode",
-    "lightMode": "Light Mode"
+    "lightMode": "Light Mode",
+    "ourCollections": "Our Collections",
+    "signUp": "Sign Up"
   },
   "hero": {
     "title": "",
@@ -197,7 +199,8 @@
     "followUs": "Follow Us",
     "rights": "All rights reserved.",
     "privacy": "Privacy Policy",
-    "terms": "Terms of Service"
+    "terms": "Terms of Service",
+    "refund": "Refund Policy"
   },
   "common": {
     "loading": "Loading...",

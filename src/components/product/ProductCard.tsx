@@ -183,7 +183,7 @@ export const ProductCard = React.memo(function ProductCard({
 
       {/* Card body */}
       <div className="p-3 flex flex-col gap-0.5">
-        <p className="text-sm font-semibold text-white leading-tight truncate">
+        <p className="text-sm font-semibold leading-tight truncate" style={{ color: 'var(--accent)' }}>
           {displayName}
         </p>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
