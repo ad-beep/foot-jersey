@@ -7,7 +7,7 @@ export const PRICES = {
   kids: 99.99,
   special: 99.99,
   coat: 149.99,
-  drip: 99.99,
+  drip: 109.99,
   scarf: 59.99,
   customization: {
     nameAndNumber: 10,
