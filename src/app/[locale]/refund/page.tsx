@@ -29,18 +29,6 @@ export default async function RefundPage({ params }: { params: { locale: string 
             : 'If you receive a damaged product, we will provide a free replacement. Contact us within 7 days of receiving your order with photos of the defect.'
           }</p>
 
-          <h2 className="text-lg font-semibold text-white">{isHe ? 'מידה לא מתאימה' : 'Wrong Size'}</h2>
-          <p>{isHe
-            ? 'אנו ממליצים לעיין במדריך המידות לפני ההזמנה. במקרה של מידה שגויה, ניתן להחליף לגודל אחר — עלות המשלוח חלה על הלקוח.'
-            : 'We recommend checking the size guide before ordering. In case of wrong size, we can exchange for a different size — shipping cost is on the customer.'
-          }</p>
-
-          <h2 className="text-lg font-semibold text-white">{isHe ? 'ביטולים' : 'Cancellations'}</h2>
-          <p>{isHe
-            ? 'ניתן לבטל הזמנה תוך 24 שעות מביצוע ההזמנה לקבלת החזר מלא. לאחר שההזמנה נשלחה, לא ניתן לבטלה.'
-            : 'Orders can be cancelled within 24 hours of placing the order for a full refund. Once the order has been shipped, it cannot be cancelled.'
-          }</p>
-
           <h2 className="text-lg font-semibold text-white">{isHe ? 'קופסאות הפתעה' : 'Mystery Boxes'}</h2>
           <p>{isHe
             ? 'קופסאות הפתעה אינן ניתנות להחזרה או להחלפה, למעט במקרה של מוצר פגום.'
