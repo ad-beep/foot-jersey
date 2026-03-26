@@ -6,14 +6,15 @@ import { storage } from '@/lib/firebase';
 import { PRICES } from '@/lib/constants';
 import { Upload, Loader2, CheckCircle, AlertCircle, X, ImagePlus } from 'lucide-react';
 
+// ─── Updated type options ───────────────────────────────
 const JERSEY_TYPES = [
   { value: 'regular', label: 'Regular' },
   { value: 'retro', label: 'Retro' },
-  { value: 'kids', label: 'Kids' },
   { value: 'special', label: 'Special Edition' },
-  { value: 'coat', label: 'Coat / Jacket' },
   { value: 'drip', label: 'Drip' },
-  { value: 'scarf', label: 'Scarf' },
+  { value: 'kids', label: 'Kids' },
+  { value: 'world-cup', label: 'World Cup' },
+  { value: 'other', label: 'Other Products' },
 ];
 
 const LEAGUES = [
@@ -26,9 +27,39 @@ const LEAGUES = [
   { value: 'rest_of_world', label: 'Rest of the World' },
 ];
 
-const CATEGORIES = [
-  'home', 'away', 'third', 'goalkeeper', 'training', 'special', 'retro',
-];
+// ─── Auto-category mapping ──────────────────────────────
+function deriveCategory(type: string, league: string): string {
+  switch (type) {
+    case 'retro':     return 'retro';
+    case 'special':   return 'special';
+    case 'drip':      return 'drip';
+    case 'kids':      return 'kids';
+    case 'world-cup': return 'world-cup';
+    case 'other':     return 'accessories';
+    default:          return league; // regular → league slug as category
+  }
+}
+
+// Map form type to the sheet/system type value
+function sheetType(type: string): string {
+  if (type === 'world-cup') return 'regular'; // stored as regular, tagged as World Cup
+  if (type === 'other') return 'coat';        // closest price bracket
+  return type;
+}
+
+// Auto-price from type
+function getAutoPrice(type: string, isLongSleeve: boolean): number {
+  const priceMap: Record<string, number> = {
+    regular: PRICES.regular,
+    retro: PRICES.retro,
+    special: PRICES.special,
+    drip: PRICES.drip,
+    kids: PRICES.kids,
+    'world-cup': PRICES.regular,
+    other: PRICES.coat,
+  };
+  return (priceMap[type] ?? PRICES.regular) + (isLongSleeve ? PRICES.longSleeveExtra : 0);
+}
 
 type Status = 'idle' | 'uploading' | 'saving' | 'success' | 'error';
 
@@ -38,26 +69,21 @@ export default function AddProductPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Form state
-  const [teamName, setTeamName] = useState('');
+  const [nameHe, setNameHe] = useState('');
+  const [nameEn, setNameEn] = useState('');
   const [league, setLeague] = useState('england');
   const [season, setSeason] = useState('24/25');
   const [type, setType] = useState('regular');
-  const [category, setCategory] = useState('home');
   const [isLongSleeve, setIsLongSleeve] = useState(false);
-  const [isWorldCup, setIsWorldCup] = useState(false);
-  const [internationalTeam, setInternationalTeam] = useState('');
-  const [tags, setTags] = useState('');
   const [availableSizes, setAvailableSizes] = useState('S,M,L,XL,XXL');
 
   // Images
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
-  // Computed price
-  const basePrice = PRICES[type as keyof typeof PRICES];
-  const computedPrice = typeof basePrice === 'number'
-    ? basePrice + (isLongSleeve ? PRICES.longSleeveExtra : 0)
-    : PRICES.regular + (isLongSleeve ? PRICES.longSleeveExtra : 0);
+  // Derived values
+  const autoCategory = deriveCategory(type, league);
+  const computedPrice = getAutoPrice(type, isLongSleeve);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -67,7 +93,6 @@ export default function AddProductPage() {
       const url = URL.createObjectURL(file);
       setPreviews((prev) => [...prev, url]);
     });
-    // Reset input so same file can be re-selected
     e.target.value = '';
   }
 
@@ -83,8 +108,8 @@ export default function AddProductPage() {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!teamName.trim()) {
-      setErrorMsg('Team name is required');
+    if (!nameHe.trim()) {
+      setErrorMsg('Hebrew name is required');
       return;
     }
     if (imageFiles.length === 0) {
@@ -95,7 +120,8 @@ export default function AddProductPage() {
     try {
       // 1. Upload images to Firebase Storage
       setStatus('uploading');
-      const id = `${teamName.toLowerCase().replace(/\s+/g, '-')}-${season.replace('/', '-')}-${Date.now()}`;
+      const slug = nameHe.toLowerCase().replace(/\s+/g, '-');
+      const id = `${slug}-${season.replace('/', '-')}-${Date.now()}`;
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < imageFiles.length; i++) {
@@ -110,30 +136,31 @@ export default function AddProductPage() {
       const mainImage = uploadedUrls[0];
       const additionalImages = uploadedUrls.slice(1).join('|');
 
-      // 2. Write to Google Sheets via API route
-      setStatus('saving');
-      const tagList = [
-        tags,
-        isLongSleeve ? 'ארוך' : '',
-        isWorldCup ? 'מונדיאל' : '',
-      ].filter(Boolean).join('|');
+      // 2. Build tags automatically
+      const autoTags: string[] = [];
+      if (isLongSleeve) autoTags.push('ארוך');
+      if (type === 'world-cup') autoTags.push('מונדיאל');
+      if (type === 'other') autoTags.push('Other');
 
+      // 3. Write to Google Sheets via API route
+      setStatus('saving');
       const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
-          team_name: teamName.trim(),
+          team_name: nameHe.trim(),
+          team_name_en: nameEn.trim(),
           league,
           season,
-          type,
-          category,
+          type: sheetType(type),
+          category: autoCategory,
           image_url: mainImage,
           additional_images: additionalImages,
-          is_world_cup: isWorldCup ? 'true' : 'false',
-          international_team: internationalTeam.trim(),
+          is_world_cup: type === 'world-cup' ? 'true' : 'false',
+          international_team: '',
           available_sizes: availableSizes,
-          tags: tagList,
+          tags: autoTags.join('|'),
           is_long_sleeve: isLongSleeve ? 'true' : 'false',
         }),
       });
@@ -144,17 +171,13 @@ export default function AddProductPage() {
       }
 
       setStatus('success');
-      // Reset form after 2s
       setTimeout(() => {
-        setTeamName('');
+        setNameHe('');
+        setNameEn('');
         setSeason('24/25');
         setType('regular');
-        setCategory('home');
         setLeague('england');
         setIsLongSleeve(false);
-        setIsWorldCup(false);
-        setInternationalTeam('');
-        setTags('');
         setAvailableSizes('S,M,L,XL,XXL');
         setImageFiles([]);
         setPreviews([]);
@@ -175,28 +198,39 @@ export default function AddProductPage() {
       <p className="text-sm text-gray-400 mb-8">Upload a new jersey to the catalogue</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Team Name */}
-        <Field label="Team / Product Name" required>
-          <input
-            type="text"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            placeholder="e.g. ברצלונה חולצת בית"
-            className="input"
-          />
-        </Field>
+        {/* Name (Hebrew) + Name (English) side-by-side */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Name (Hebrew)" required>
+            <input
+              type="text"
+              value={nameHe}
+              onChange={(e) => setNameHe(e.target.value)}
+              placeholder="e.g. ברצלונה חולצת בית"
+              className="admin-input"
+            />
+          </Field>
+          <Field label="Name (English)">
+            <input
+              type="text"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              placeholder="e.g. Barcelona Home Kit"
+              className="admin-input"
+            />
+          </Field>
+        </div>
 
         {/* Type + League row */}
         <div className="grid grid-cols-2 gap-4">
           <Field label="Type">
-            <select value={type} onChange={(e) => setType(e.target.value)} className="input">
+            <select value={type} onChange={(e) => setType(e.target.value)} className="admin-select">
               {JERSEY_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </Field>
           <Field label="League">
-            <select value={league} onChange={(e) => setLeague(e.target.value)} className="input">
+            <select value={league} onChange={(e) => setLeague(e.target.value)} className="admin-select">
               {LEAGUES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
               ))}
@@ -204,7 +238,7 @@ export default function AddProductPage() {
           </Field>
         </div>
 
-        {/* Season + Category row */}
+        {/* Season + Sizes row */}
         <div className="grid grid-cols-2 gap-4">
           <Field label="Season">
             <input
@@ -212,82 +246,53 @@ export default function AddProductPage() {
               value={season}
               onChange={(e) => setSeason(e.target.value)}
               placeholder="24/25"
-              className="input"
+              className="admin-input"
             />
           </Field>
-          <Field label="Category">
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="input">
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        {/* Checkboxes row */}
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isLongSleeve}
-              onChange={(e) => setIsLongSleeve(e.target.checked)}
-              className="accent-cyan-500"
-            />
-            Long Sleeve (+₪{PRICES.longSleeveExtra})
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isWorldCup}
-              onChange={(e) => setIsWorldCup(e.target.checked)}
-              className="accent-cyan-500"
-            />
-            World Cup
-          </label>
-        </div>
-
-        {/* International Team (conditional) */}
-        {isWorldCup && (
-          <Field label="International Team">
+          <Field label="Available Sizes" hint="Comma-separated">
             <input
               type="text"
-              value={internationalTeam}
-              onChange={(e) => setInternationalTeam(e.target.value)}
-              placeholder="e.g. Brazil"
-              className="input"
+              value={availableSizes}
+              onChange={(e) => setAvailableSizes(e.target.value)}
+              placeholder="S,M,L,XL,XXL"
+              className="admin-input"
             />
           </Field>
-        )}
+        </div>
 
-        {/* Tags */}
-        <Field label="Tags" hint="Pipe-separated (e.g. מונדיאל|רטרו)">
+        {/* Long Sleeve checkbox */}
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="tag1|tag2"
-            className="input"
+            type="checkbox"
+            checked={isLongSleeve}
+            onChange={(e) => setIsLongSleeve(e.target.checked)}
+            className="accent-cyan-500"
           />
-        </Field>
+          Long Sleeve (+₪{PRICES.longSleeveExtra})
+        </label>
 
-        {/* Available Sizes */}
-        <Field label="Available Sizes" hint="Comma-separated">
-          <input
-            type="text"
-            value={availableSizes}
-            onChange={(e) => setAvailableSizes(e.target.value)}
-            placeholder="S,M,L,XL,XXL"
-            className="input"
-          />
-        </Field>
-
-        {/* Auto-priced display */}
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-          <span className="text-sm text-gray-400">Auto-price:</span>
-          <span className="text-lg font-bold text-cyan-400">₪{computedPrice}</span>
-          <span className="text-xs text-gray-500">
-            ({type}{isLongSleeve ? ' + long sleeve' : ''})
-          </span>
+        {/* Auto-derived info strip */}
+        <div className="flex items-center gap-5 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+          <div>
+            <span className="text-xs text-gray-500 block">Auto-price</span>
+            <span className="text-lg font-bold text-cyan-400">₪{computedPrice}</span>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div>
+            <span className="text-xs text-gray-500 block">Category</span>
+            <span className="text-sm font-medium text-white">{autoCategory}</span>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div>
+            <span className="text-xs text-gray-500 block">Tags</span>
+            <span className="text-sm text-gray-300">
+              {[
+                isLongSleeve && 'ארוך',
+                type === 'world-cup' && 'מונדיאל',
+                type === 'other' && 'Other',
+              ].filter(Boolean).join(', ') || '—'}
+            </span>
+          </div>
         </div>
 
         {/* Image Upload */}

@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     const {
       id,
       team_name,
+      team_name_en,
       league,
       season,
       type,
@@ -42,26 +43,28 @@ export async function POST(request: NextRequest) {
     const auth = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
+    // Columns A–O (15 columns)
     const row = [
-      id,
-      team_name,
-      league || '',
-      season || '',
-      type || 'regular',
-      category || '',
-      image_url,
-      additional_images || '',
-      is_world_cup || 'false',
-      international_team || '',
-      available_sizes || 'S,M,L,XL,XXL',
-      tags || '',
-      is_long_sleeve || 'false',
-      new Date().toISOString(),
+      id,                                    // A: id
+      team_name,                             // B: team_name (Hebrew)
+      league || '',                          // C: league
+      season || '',                          // D: season
+      type || 'regular',                     // E: type
+      category || '',                        // F: category
+      image_url,                             // G: image_url
+      additional_images || '',               // H: additional_images
+      is_world_cup || 'false',               // I: is_world_cup
+      international_team || '',              // J: international_team
+      available_sizes || 'S,M,L,XL,XXL',    // K: available_sizes
+      tags || '',                            // L: tags
+      is_long_sleeve || 'false',             // M: is_long_sleeve
+      new Date().toISOString(),              // N: created_at
+      team_name_en || '',                    // O: team_name_en
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:N`,
+      range: `${SHEET_NAME}!A:O`,
       valueInputOption: 'RAW',
       requestBody: { values: [row] },
     });
