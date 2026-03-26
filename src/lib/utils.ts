@@ -50,17 +50,20 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     ? rawType as JerseyType
     : 'regular';
 
-  const isLongSleeve = row.is_long_sleeve?.trim().toLowerCase() === 'true';
+  // Parse tags early — needed for long sleeve detection
+  const tags = row.tags
+    ? row.tags.split('|').filter(Boolean)
+    : [];
+
+  // Detect long sleeve from column OR tag (some sheets only use the tag)
+  const isLongSleeve =
+    row.is_long_sleeve?.trim().toLowerCase() === 'true' ||
+    tags.some((t) => t.includes('ארוך'));
   const price = getBasePrice(type) + (isLongSleeve ? PRICES.longSleeveExtra : 0);
 
   // Parse additional images from pipe-separated string
   const additionalImages = row.additional_images
     ? row.additional_images.split('|').filter(Boolean)
-    : [];
-
-  // Parse tags
-  const tags = row.tags
-    ? row.tags.split('|').filter(Boolean)
     : [];
 
   return {
@@ -76,7 +79,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     internationalTeam: row.international_team?.trim() || '',
     availableSizes: parseSizes(row.available_sizes),
     tags,
-    isLongSleeve: row.is_long_sleeve?.trim().toLowerCase() === 'true',
+    isLongSleeve,
     createdAt: row.created_at?.trim() || new Date().toISOString(),
     price,
     slug: generateSlug(row.team_name?.trim() || '', season),
