@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { isValidLocale } from '@/i18n/config';
-import { DEFAULT_LOCALE, MYSTERY_BOX_OPTIONS } from '@/lib/constants';
+import { DEFAULT_LOCALE } from '@/lib/constants';
+import { fetchJerseys } from '@/lib/google-sheets';
 import HomeClient from './home-client';
 import type { Locale, Jersey } from '@/types';
 
@@ -22,48 +23,22 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   };
 }
 
-async function getHotJerseys(): Promise<Jersey[]> {
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const res  = await fetch(`${base}/api/products`, { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
-    const json = await res.json();
-    const all: Jersey[] = json.data ?? [];
-    const drip = all.filter((j) => j.type === 'drip');
-    // Inject mystery box virtual products into hot jerseys
-    const mysteryJerseys: Jersey[] = MYSTERY_BOX_OPTIONS.map((box) => ({
-      id: box.slug,
-      teamName: box.labelEn,
-      league: 'rest_of_world' as const,
-      season: '',
-      type: 'special' as const,
-      category: 'mystery-box',
-      imageUrl: '',
-      additionalImages: [],
-      isWorldCup: false,
-      internationalTeam: '',
-      availableSizes: ['S', 'M', 'L', 'XL', 'XXL'] as const,
-      tags: ['mystery-box'],
-      isLongSleeve: false,
-      createdAt: new Date().toISOString(),
-      price: box.price,
-      slug: box.slug,
-    }));
-    const combined = [...drip, ...mysteryJerseys];
-    const shuffled = combined.sort(() => Math.random() - 0.5);
-    return shuffled;
-  } catch {
-    return [];
-  }
-}
-
 export default async function HomePage({
   params,
 }: {
   params: { locale: string };
 }) {
   const locale: Locale = isValidLocale(params.locale) ? params.locale : DEFAULT_LOCALE;
-  const hotJerseys = await getHotJerseys();
 
-  return <HomeClient locale={locale} hotJerseys={hotJerseys} />;
+  let jerseys: Jersey[] = [];
+  try {
+    jerseys = await fetchJerseys();
+  } catch {
+    jerseys = [];
+  }
+
+  // Select hot jerseys — first 10 shuffled for variety
+  const hotJerseys = [...jerseys].sort(() => Math.random() - 0.5).slice(0, 10);
+
+  return <HomeClient locale={locale} jerseys={jerseys} hotJerseys={hotJerseys} />;
 }

@@ -11,10 +11,11 @@ const AboutUs      = dynamic(() => import('@/components/home/AboutUs').then(m =>
 
 interface HomeClientProps {
   locale:     Locale;
+  jerseys:    Jersey[];
   hotJerseys: Jersey[];
 }
 
-export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
+export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientProps) {
   return (
     <div
       className="overflow-y-auto scrollbar-hide"
@@ -24,8 +25,8 @@ export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
         willChange: 'scroll-position',
       }}
     >
-      <LandingHero jerseys={hotJerseys} />
-      <WhatsHot locale={locale} hotJerseys={hotJerseys.slice(0, 15)} />
+      <LandingHero jerseys={jerseys} />
+      <WhatsHot locale={locale} hotJerseys={hotJerseys} />
       <div id="collections-section">
         <CategoryGrid />
       </div>
