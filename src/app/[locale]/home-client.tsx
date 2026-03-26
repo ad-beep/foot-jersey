@@ -1,12 +1,13 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
-import LandingHero from '@/components/home/LandingHero';
-import { WhatsHot } from '@/components/home/WhatsHot';
-import { CategoryGrid } from '@/components/home/CategoryGrid';
+import dynamic from 'next/dynamic';
 import type { Jersey, Locale } from '@/types';
 
-const AboutUs = lazy(() => import('@/components/home/AboutUs').then(m => ({ default: m.AboutUs })));
+// Lazy-load heavy components (framer-motion, 3D carousel, marquee animations)
+const LandingHero  = dynamic(() => import('@/components/home/LandingHero'), { ssr: false });
+const WhatsHot     = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })), { ssr: false });
+const CategoryGrid = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })), { ssr: false });
+const AboutUs      = dynamic(() => import('@/components/home/AboutUs').then(m => ({ default: m.AboutUs })), { ssr: false });
 
 interface HomeClientProps {
   locale:     Locale;
@@ -28,9 +29,7 @@ export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
       <div id="collections-section">
         <CategoryGrid />
       </div>
-      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
-        <AboutUs />
-      </Suspense>
+      <AboutUs />
     </div>
   );
 }

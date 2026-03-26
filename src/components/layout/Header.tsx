@@ -88,9 +88,9 @@ export function Header({ dict: _dict }: HeaderProps) {
         <button
           onClick={handleCollectionsClick}
           className="hidden md:inline-flex text-sm font-medium transition-colors duration-200 shrink-0 cursor-pointer"
-          style={{ color: 'var(--text-secondary)' }}
+          style={{ color: '#E0E0E0' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#E0E0E0'; }}
         >
           {locale === 'he' ? 'הקולקציות שלנו' : 'Our Collections'}
         </button>
@@ -120,7 +120,7 @@ export function Header({ dict: _dict }: HeaderProps) {
             href={hydrated && authUser ? `/${locale}/profile` : `/${locale}/auth`}
             className="flex items-center px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 shrink-0"
             style={{
-              color: hydrated && firstName ? 'var(--accent)' : '#111',
+              color: hydrated && firstName ? 'var(--accent)' : '#000',
               backgroundColor: hydrated && firstName ? 'transparent' : 'var(--accent)',
               border: hydrated && firstName ? '1px solid var(--accent)' : '1px solid transparent',
             }}
