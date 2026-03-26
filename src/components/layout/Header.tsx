@@ -118,7 +118,7 @@ export function Header({ dict: _dict }: HeaderProps) {
           {/* Auth: Sign Up or Hello [Name] — farthest left in cluster */}
           <Link
             href={hydrated && authUser ? `/${locale}/profile` : `/${locale}/auth`}
-            className="flex items-center px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 shrink-0"
+            className="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 shrink-0 min-h-[44px]"
             style={{
               color: hydrated && firstName ? 'var(--accent)' : '#000',
               backgroundColor: hydrated && firstName ? 'transparent' : 'var(--accent)',
@@ -149,7 +149,7 @@ export function Header({ dict: _dict }: HeaderProps) {
           {/* Language toggle */}
           <button
             onClick={toggleLocale}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold tracking-wider transition-all duration-200"
+            className="flex items-center gap-1 px-2.5 py-2.5 rounded-xl text-[11px] font-bold tracking-wider transition-all duration-200 min-h-[44px]"
             style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
             aria-label={`Switch to ${locale === 'en' ? 'Hebrew' : 'English'}`}
             onMouseEnter={(e) => {

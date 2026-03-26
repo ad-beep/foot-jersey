@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Ticket,
+  Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Ticket, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 
 interface Discount {
@@ -21,6 +21,7 @@ export default function DiscountsPage() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Form state
   const [code, setCode] = useState('');
@@ -29,6 +30,13 @@ export default function DiscountsPage() {
   const [minOrder, setMinOrder] = useState('');
   const [maxUses, setMaxUses] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const fetchDiscounts = useCallback(async () => {
     try {
@@ -67,15 +75,21 @@ export default function DiscountsPage() {
       });
 
       if (res.ok) {
+        const created = code.toUpperCase().trim();
         setCode('');
         setValue('');
         setMinOrder('');
         setMaxUses('');
         setExpiryDate('');
         await fetchDiscounts();
+        setToast({ message: `Discount code "${created}" created successfully!`, type: 'success' });
+      } else {
+        const json = await res.json();
+        setToast({ message: json.error || 'Failed to create discount code', type: 'error' });
       }
     } catch (err) {
       console.error(err);
+      setToast({ message: 'Network error — could not create discount code', type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -83,20 +97,30 @@ export default function DiscountsPage() {
 
   async function toggleActive(d: Discount) {
     const newActive = d.is_active === 'false' ? 'true' : 'false';
-    await fetch('/api/admin/discounts', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: d.code, is_active: newActive }),
-    });
-    await fetchDiscounts();
+    try {
+      await fetch('/api/admin/discounts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: d.code, is_active: newActive }),
+      });
+      await fetchDiscounts();
+      setToast({ message: `"${d.code}" ${newActive === 'true' ? 'activated' : 'deactivated'}`, type: 'success' });
+    } catch {
+      setToast({ message: 'Failed to update code', type: 'error' });
+    }
   }
 
   async function handleDelete(d: Discount) {
     if (!window.confirm(`Delete code "${d.code}"?`)) return;
-    await fetch(`/api/admin/discounts?code=${encodeURIComponent(d.code)}`, {
-      method: 'DELETE',
-    });
-    await fetchDiscounts();
+    try {
+      await fetch(`/api/admin/discounts?code=${encodeURIComponent(d.code)}`, {
+        method: 'DELETE',
+      });
+      await fetchDiscounts();
+      setToast({ message: `"${d.code}" deleted`, type: 'success' });
+    } catch {
+      setToast({ message: 'Failed to delete code', type: 'error' });
+    }
   }
 
   function getStatus(d: Discount): { label: string; cls: string } {
@@ -118,6 +142,24 @@ export default function DiscountsPage() {
 
   return (
     <div className="p-8 max-w-4xl">
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-lg transition-all duration-300 ${
+            toast.type === 'success'
+              ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+              : 'bg-red-500/15 text-red-400 border border-red-500/30'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold mb-1">Discount Codes</h1>
       <p className="text-sm text-gray-400 mb-8">Create and manage promotional codes</p>
 

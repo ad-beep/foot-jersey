@@ -50,7 +50,7 @@ export function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm transition-colors duration-200 hover:text-white"
+                    className="text-sm transition-colors duration-200 hover:text-white inline-block py-1"
                     style={{ color: 'var(--text-muted)' }}
                   >
                     {isHe ? item.he : item.en}
@@ -77,7 +77,7 @@ export function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm transition-colors duration-200 hover:text-white"
+                    className="text-sm transition-colors duration-200 hover:text-white inline-block py-1"
                     style={{ color: 'var(--text-muted)' }}
                   >
                     {isHe ? item.he : item.en}
