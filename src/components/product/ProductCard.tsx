@@ -207,7 +207,7 @@ export const ProductCard = React.memo(function ProductCard({
               onClick={openSizePicker}
               className="w-full"
             >
-              {isHe ? 'בחר מידה' : 'Select Size'}
+              {isHe ? 'הוסף לסל' : 'Add to Cart'}
             </Button>
           </div>
         )}

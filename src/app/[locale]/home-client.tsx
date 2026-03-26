@@ -21,7 +21,7 @@ export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientPr
       className="overflow-y-auto scrollbar-hide"
       style={{
         height: 'calc(100vh - 64px)',
-        scrollSnapType: 'y mandatory',
+        scrollSnapType: 'y proximity',
         willChange: 'scroll-position',
       }}
     >

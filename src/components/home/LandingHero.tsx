@@ -104,7 +104,7 @@ function MarqueeRow({
               alt=""
               width={CARD_W}
               height={CARD_H}
-              priority={i < HALF}
+              loading="lazy"
               sizes={`${CARD_W}px`}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
@@ -139,8 +139,11 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
   const [scrolledPast, setScrolledPast] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Only keep jerseys with images, take 20 unique max (5 per row × 4 rows)
-  const pool = jerseys.filter((j) => j.imageUrl).slice(0, 20);
+  // Keep jerseys with images, shuffle for variety, use up to 48 (12 per row × 4 rows)
+  const pool = jerseys
+    .filter((j) => j.imageUrl)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, HALF * ROWS.length);
   const perRow = Math.max(1, Math.ceil(pool.length / ROWS.length));
   const chunks = ROWS.map((_, i) => {
     const chunk = pool.slice(i * perRow, (i + 1) * perRow);

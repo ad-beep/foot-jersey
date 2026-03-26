@@ -37,8 +37,11 @@ export default async function HomePage({
     jerseys = [];
   }
 
-  // Select hot jerseys — first 10 shuffled for variety
-  const hotJerseys = [...jerseys].sort(() => Math.random() - 0.5).slice(0, 10);
+  // What's Hot — only drip jerseys, shuffled
+  const hotJerseys = jerseys
+    .filter((j) => j.type === 'drip')
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 15);
 
   return <HomeClient locale={locale} jerseys={jerseys} hotJerseys={hotJerseys} />;
 }
