@@ -19,7 +19,7 @@ import type { Jersey, JerseyType } from '@/types';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 20;
-const EXCLUSIVE_TYPES: JerseyType[] = ['kids', 'drip'];
+const EXCLUSIVE_TYPES: JerseyType[] = ['kids', 'drip', 'other_products'];
 
 // ─── Bilingual labels ────────────────────────────────────────────────────────
 
@@ -51,8 +51,8 @@ const TYPE_LABELS: Record<string, { en: string; he: string }> = {
   special: { en: 'Special', he: 'מיוחד' },
   kids:    { en: 'Kids',    he: 'ילדים' },
   drip:    { en: 'Drip',    he: 'דריפ' },
-  coat:    { en: 'Coat',    he: 'מעיל' },
-  scarf:   { en: 'Scarf',   he: 'צעיף' },
+  world_cup:       { en: 'World Cup', he: 'מונדיאל' },
+  other_products:  { en: 'Other',    he: 'אחר' },
 };
 
 const SORT_OPTIONS = [
@@ -81,7 +81,7 @@ function filterByCategory(jerseys: Jersey[], slug: string): Jersey[] {
 
   switch (section.filterMode) {
     case 'type':
-      if (slug === 'other-products') return jerseys.filter((j) => j.type === 'coat' || j.type === 'scarf');
+      if (slug === 'other-products') return jerseys.filter((j) => j.type === 'other_products');
       return jerseys.filter((j) => j.type === section.typeMatch);
     case 'tag':
       return section.tagMatch

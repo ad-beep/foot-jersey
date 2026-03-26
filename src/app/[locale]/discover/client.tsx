@@ -174,11 +174,11 @@ function collectionMatchesJersey(colId: string, j: Jersey): boolean {
     case 'retro':       return j.type === 'retro';
     case 'season-2526': return j.type === 'regular' && (j.season.includes('24/25') || j.season.includes('25/26'));
     case 'special':     return j.type === 'special';
-    case 'world-cup':   return j.tags.some((t) => t.includes('מונדיאל'));
+    case 'world-cup':   return j.type === 'world_cup';
     case 'kids':        return j.type === 'kids';
     case 'long-sleeve': return j.tags.some((t) => t.includes('ארוך'));
     case 'drip':             return j.type === 'drip';
-    case 'other-products':   return j.type === 'coat' || j.type === 'scarf';
+    case 'other-products':   return j.type === 'other_products';
     default:                 return false;
   }
 }

@@ -2,13 +2,13 @@ import type { League, LocaleConfig } from '@/types';
 
 // ─── Pricing ─────────────────────────────────────────────────
 export const PRICES = {
-  regular: 99.99,
-  retro: 109.99,
-  kids: 99.99,
-  special: 99.99,
-  coat: 149.99,
-  drip: 109.99,
-  scarf: 59.99,
+  regular: 99,
+  retro: 109,
+  kids: 99,
+  special: 99,
+  drip: 109,
+  world_cup: 99,
+  other_products: 149,
   customization: {
     nameAndNumber: 10,
     patch: 10,
@@ -56,25 +56,25 @@ export const SPECIAL_SECTIONS: {
   filterMode: 'type' | 'tag' | 'season';
   description?: { en: string; he: string };
 }[] = [
-  { slug: 'world-cup-2026', labelKey: 'categories.worldCup2026', labelHe: 'מונדיאל 2026', labelEn: 'World Cup 2026', icon: 'world-cup', typeMatch: '', tagMatch: 'מונדיאל', filterMode: 'tag', description: { en: 'Official World Cup 2026 jerseys', he: 'חולצות מונדיאל 2026 רשמיות' } },
+  { slug: 'world-cup-2026', labelKey: 'categories.worldCup2026', labelHe: 'מונדיאל 2026', labelEn: 'World Cup 2026', icon: 'world-cup', typeMatch: 'world_cup', filterMode: 'type', description: { en: 'Official World Cup 2026 jerseys', he: 'חולצות מונדיאל 2026 רשמיות' } },
   { slug: 'retro', labelKey: 'categories.retro', labelHe: 'רטרו', labelEn: 'Retro', icon: 'retro', typeMatch: 'retro', filterMode: 'type', description: { en: 'Classic jerseys from the golden eras', he: 'חולצות קלאסיות מתקופות הזהב' } },
   { slug: 'season-2526', labelKey: 'categories.season2526', labelHe: 'עונת 25/26', labelEn: '2025/26 Season', icon: 'season-2526', typeMatch: '', tagMatch: '', filterMode: 'season', description: { en: 'Latest season jerseys', he: 'חולצות העונה האחרונה' } },
   { slug: 'special', labelKey: 'categories.special', labelHe: 'מהדורה מיוחדת', labelEn: 'Special Edition', icon: 'special-edition', typeMatch: 'special', filterMode: 'type', description: { en: 'Limited edition and special releases', he: 'מהדורות מוגבלות ומיוחדות' } },
   { slug: 'drip', labelKey: 'categories.drip', labelHe: 'דריפ', labelEn: 'Drip', icon: 'drip', typeMatch: 'drip', filterMode: 'type', description: { en: 'Fashion-forward football style', he: 'סטייל כדורגל אופנתי' } },
   { slug: 'kids', labelKey: 'categories.kids', labelHe: 'ילדים', labelEn: 'Kids', icon: 'kids', typeMatch: 'kids', filterMode: 'type', description: { en: 'Kids sizes for young fans', he: 'מידות ילדים לאוהדים צעירים' } },
   { slug: 'long-sleeve', labelKey: 'categories.longSleeve', labelHe: 'שרוול ארוך', labelEn: 'Long Sleeve', icon: 'long-sleeve', typeMatch: '', tagMatch: 'ארוך', filterMode: 'tag', description: { en: 'Long sleeve jerseys', he: 'חולצות שרוול ארוך' } },
-  { slug: 'other-products', labelKey: 'categories.otherProducts', labelHe: 'מוצרים נוספים', labelEn: 'Other Products', icon: 'other-products', typeMatch: '', tagMatch: '', filterMode: 'type', description: { en: 'Scarves, jackets, training wear', he: 'צעיפים, ז׳קטים, ביגוד אימון' } },
+  { slug: 'other-products', labelKey: 'categories.otherProducts', labelHe: 'מוצרים נוספים', labelEn: 'Other Products', icon: 'other-products', typeMatch: 'other_products', filterMode: 'type', description: { en: 'Scarves, jackets, training wear', he: 'צעיפים, ז׳קטים, ביגוד אימון' } },
   { slug: 'mystery-box', labelKey: 'categories.mysteryBox', labelHe: 'קופסת הפתעה', labelEn: 'Mystery Box', icon: 'mystery-box', typeMatch: 'mystery-box', filterMode: 'type', description: { en: 'Surprise jersey boxes — pick your style, we pick the shirt', he: 'קופסאות הפתעה — בחר סגנון, אנחנו נבחר את החולצה' } },
 ];
 
 // ─── Mystery Box Options ─────────────────────────────────────
 export const MYSTERY_BOX_OPTIONS = [
-  { slug: 'retro-mystery', labelEn: 'Retro Mystery Box', labelHe: 'קופסת הפתעה רטרו', price: 109.99, description: { en: 'A surprise retro jersey from the golden eras', he: 'חולצת רטרו הפתעה מתקופות הזהב' } },
-  { slug: '2526-mystery', labelEn: '25/26 Mystery Box', labelHe: 'קופסת הפתעה 25/26', price: 99.99, description: { en: 'A surprise jersey from the current 25/26 season', he: 'חולצת הפתעה מעונת 25/26' } },
-  { slug: 'world-cup-mystery', labelEn: 'World Cup Mystery Box', labelHe: 'קופסת הפתעה מונדיאל', price: 99.99, description: { en: 'A surprise World Cup national team jersey', he: 'חולצת נבחרת הפתעה ממונדיאל' } },
-  { slug: 'mixed-mystery', labelEn: 'Mixed Mystery Box', labelHe: 'קופסת הפתעה מיקס', price: 109.99, description: { en: 'Any jersey from our entire collection — total surprise', he: 'חולצה כלשהי מכל הקולקציה — הפתעה מוחלטת' } },
-  { slug: 'player-version-mystery', labelEn: 'Player Version Mystery Box', labelHe: 'קופסת הפתעה גרסת שחקן', price: 109.99, description: { en: 'A surprise player version jersey — premium quality', he: 'חולצת גרסת שחקן הפתעה — איכות פרימיום' } },
-  { slug: 'special-edition-mystery', labelEn: 'Special Edition Mystery Box', labelHe: 'קופסת הפתעה מהדורה מיוחדת', price: 99.99, description: { en: 'A surprise special edition jersey — limited and unique', he: 'חולצת מהדורה מיוחדת הפתעה — מוגבלת וייחודית' } },
+  { slug: 'retro-mystery', labelEn: 'Retro Mystery Box', labelHe: 'קופסת הפתעה רטרו', price: 109, description: { en: 'A surprise retro jersey from the golden eras', he: 'חולצת רטרו הפתעה מתקופות הזהב' } },
+  { slug: '2526-mystery', labelEn: '25/26 Mystery Box', labelHe: 'קופסת הפתעה 25/26', price: 99, description: { en: 'A surprise jersey from the current 25/26 season', he: 'חולצת הפתעה מעונת 25/26' } },
+  { slug: 'world-cup-mystery', labelEn: 'World Cup Mystery Box', labelHe: 'קופסת הפתעה מונדיאל', price: 99, description: { en: 'A surprise World Cup national team jersey', he: 'חולצת נבחרת הפתעה ממונדיאל' } },
+  { slug: 'mixed-mystery', labelEn: 'Mixed Mystery Box', labelHe: 'קופסת הפתעה מיקס', price: 109, description: { en: 'Any jersey from our entire collection — total surprise', he: 'חולצה כלשהי מכל הקולקציה — הפתעה מוחלטת' } },
+  { slug: 'player-version-mystery', labelEn: 'Player Version Mystery Box', labelHe: 'קופסת הפתעה גרסת שחקן', price: 109, description: { en: 'A surprise player version jersey — premium quality', he: 'חולצת גרסת שחקן הפתעה — איכות פרימיום' } },
+  { slug: 'special-edition-mystery', labelEn: 'Special Edition Mystery Box', labelHe: 'קופסת הפתעה מהדורה מיוחדת', price: 99, description: { en: 'A surprise special edition jersey — limited and unique', he: 'חולצת מהדורה מיוחדת הפתעה — מוגבלת וייחודית' } },
 ] as const;
 
 // ─── Locales ─────────────────────────────────────────────────

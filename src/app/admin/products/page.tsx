@@ -6,8 +6,8 @@ import { storage } from '@/lib/firebase';
 import { PRICES } from '@/lib/constants';
 import { Upload, Loader2, CheckCircle, AlertCircle, X, ImagePlus } from 'lucide-react';
 
-// ─── Updated type options ───────────────────────────────
-const JERSEY_TYPES = [
+// ─── Tag options (user-facing label is "Tag") ──────────
+const JERSEY_TAGS = [
   { value: 'regular', label: 'Regular' },
   { value: 'retro', label: 'Retro' },
   { value: 'special', label: 'Special Edition' },
@@ -40,14 +40,14 @@ function deriveCategory(type: string, league: string): string {
   }
 }
 
-// Map form type to the sheet/system type value
+// Map form tag to the sheet/system type value
 function sheetType(type: string): string {
-  if (type === 'world-cup') return 'regular'; // stored as regular, tagged as World Cup
-  if (type === 'other') return 'coat';        // closest price bracket
+  if (type === 'world-cup') return 'world_cup';
+  if (type === 'other') return 'other_products';
   return type;
 }
 
-// Auto-price from type
+// Auto-price from tag
 function getAutoPrice(type: string, isLongSleeve: boolean): number {
   const priceMap: Record<string, number> = {
     regular: PRICES.regular,
@@ -55,8 +55,8 @@ function getAutoPrice(type: string, isLongSleeve: boolean): number {
     special: PRICES.special,
     drip: PRICES.drip,
     kids: PRICES.kids,
-    'world-cup': PRICES.regular,
-    other: PRICES.coat,
+    'world-cup': PRICES.world_cup,
+    other: PRICES.other_products,
   };
   return (priceMap[type] ?? PRICES.regular) + (isLongSleeve ? PRICES.longSleeveExtra : 0);
 }
@@ -220,11 +220,11 @@ export default function AddProductPage() {
           </Field>
         </div>
 
-        {/* Type + League row */}
+        {/* Tag + League row */}
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Type">
+          <Field label="Tag">
             <select value={type} onChange={(e) => setType(e.target.value)} className="admin-select">
-              {JERSEY_TYPES.map((t) => (
+              {JERSEY_TAGS.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>

@@ -45,15 +45,26 @@ export function generateSlug(teamName: string, season: string): string {
 // ─── Sheet Row to Jersey Mapping ─────────────────────────────
 export function mapSheetRowToJersey(row: SheetRow): Jersey {
   const season = row.season?.trim() || '';
-  const rawType = (row.type?.trim().toLowerCase() || 'regular') as JerseyType;
-  const type: JerseyType = ['regular', 'retro', 'kids', 'special', 'coat', 'drip', 'scarf'].includes(rawType)
-    ? rawType as JerseyType
-    : 'regular';
+  const rawType = row.type?.trim().toLowerCase() || 'regular';
 
-  // Parse tags early — needed for long sleeve detection
+  // Parse tags early — needed for long sleeve + world_cup detection
   const tags = row.tags
     ? row.tags.split('|').filter(Boolean)
     : [];
+
+  // Backward-compat: coat/scarf → other_products, detect world_cup from tag
+  let type: JerseyType;
+  if (rawType === 'coat' || rawType === 'scarf') {
+    type = 'other_products';
+  } else if (rawType === 'world_cup') {
+    type = 'world_cup';
+  } else if (rawType === 'regular' && tags.some((t) => t.includes('מונדיאל'))) {
+    type = 'world_cup'; // legacy: regular + מונדיאל tag → world_cup
+  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products'].includes(rawType)) {
+    type = rawType as JerseyType;
+  } else {
+    type = 'regular';
+  }
 
   // Detect long sleeve from column OR tag (some sheets only use the tag)
   const isLongSleeve =
