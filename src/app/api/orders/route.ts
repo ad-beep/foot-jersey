@@ -36,6 +36,8 @@ interface OrderData {
   currency: string;
   paypalOrderId?: string;
   bitTransactionId?: string;
+  discountCode?: string;
+  discountAmount?: number;
 }
 
 // ─── Google Sheets auth (reuse same service account) ────
@@ -110,6 +112,36 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
   }
 }
 
+async function incrementDiscountUsage(code: string) {
+  try {
+    const auth = getSheetsAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: 'DiscountCodes!A:I',
+    });
+
+    const rows = res.data.values;
+    if (!rows || rows.length < 2) return;
+
+    const rowIndex = rows.findIndex(
+      (r, i) => i > 0 && r[0]?.toUpperCase().trim() === code.toUpperCase().trim()
+    );
+    if (rowIndex === -1) return;
+
+    const currentUses = parseInt(rows[rowIndex][5]) || 0;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: `DiscountCodes!F${rowIndex + 1}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[String(currentUses + 1)]] },
+    });
+  } catch (error) {
+    console.error('Failed to increment discount usage:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: OrderData = await request.json();
@@ -159,6 +191,8 @@ export async function POST(request: NextRequest) {
       paymentStatus: body.paymentStatus,
       paypalOrderId: body.paypalOrderId || null,
       bitTransactionId: body.bitTransactionId || null,
+      discountCode: body.discountCode || null,
+      discountAmount: body.discountAmount || 0,
       subtotal: body.subtotal,
       total: body.total,
       currency: body.currency,
@@ -168,6 +202,11 @@ export async function POST(request: NextRequest) {
 
     // 2. Append to Google Sheets Orders Log (fire-and-forget)
     appendOrderToSheet(orderDoc.id, body);
+
+    // 3. Increment discount code usage (fire-and-forget)
+    if (body.discountCode) {
+      incrementDiscountUsage(body.discountCode);
+    }
 
     return NextResponse.json(
       {

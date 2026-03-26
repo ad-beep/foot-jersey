@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PackagePlus, ClipboardList, LogOut } from 'lucide-react';
+import { LayoutDashboard, PackagePlus, Ticket, ClipboardList, LogOut } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 const NAV = [
-  { href: '/admin',          label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/admin/products', label: 'Add Product', icon: PackagePlus },
-  { href: '/admin/orders',   label: 'Orders',      icon: ClipboardList },
+  { href: '/admin',           label: 'Dashboard',   icon: LayoutDashboard },
+  { href: '/admin/products',  label: 'Add Product', icon: PackagePlus },
+  { href: '/admin/discounts', label: 'Discounts',   icon: Ticket },
+  { href: '/admin/orders',    label: 'Orders',      icon: ClipboardList },
 ];
 
 export function AdminSidebar() {

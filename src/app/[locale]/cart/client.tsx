@@ -189,7 +189,41 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const [paymentError, setPaymentError] = useState('');
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
+  // Discount code
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountApplied, setDiscountApplied] = useState<{ code: string; type: string; value: number; amount: number } | null>(null);
+  const [discountError, setDiscountError] = useState('');
+  const [discountLoading, setDiscountLoading] = useState(false);
+
   const freeShipping = itemCount >= SHIPPING_POLICY.freeShippingMinItems;
+  const shippingCost = freeShipping ? 0 : PRICES.shippingFlat;
+  const discountAmount = discountApplied?.amount ?? 0;
+  const finalTotal = subtotal + shippingCost - discountAmount;
+
+  const applyDiscount = async () => {
+    if (!discountCode.trim()) return;
+    setDiscountError('');
+    setDiscountLoading(true);
+    try {
+      const res = await fetch('/api/discounts/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode.trim(), subtotal }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setDiscountApplied({ code: data.code, type: data.type, value: data.value, amount: data.discountAmount });
+        setDiscountError('');
+      } else {
+        setDiscountApplied(null);
+        setDiscountError(data.error || (isHe ? 'קוד לא תקין' : 'Invalid code'));
+      }
+    } catch {
+      setDiscountError(isHe ? 'שגיאה בבדיקת הקוד' : 'Error validating code');
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
 
   const set = (key: keyof CheckoutForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -243,8 +277,10 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             paymentIntentId,
             paypalOrderId,
             subtotal,
-            shipping: freeShipping ? 0 : PRICES.shippingFlat,
-            total: subtotal + (freeShipping ? 0 : PRICES.shippingFlat),
+            shipping: shippingCost,
+            discountCode: discountApplied?.code || '',
+            discountAmount,
+            total: finalTotal,
             currency: CURRENCY_CODE,
           }),
         });
@@ -259,7 +295,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         throw error;
       }
     },
-    [items, form, subtotal]
+    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling]
   );
 
   const handlePaymentSuccess = useCallback(
@@ -535,6 +571,47 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           </div>
         )}
 
+        {/* Discount code */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={discountCode}
+            onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+            placeholder={isHe ? 'קוד הנחה' : 'Discount code'}
+            className="flex-1 px-3 py-2 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+            style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}
+            disabled={!!discountApplied}
+          />
+          {discountApplied ? (
+            <button
+              type="button"
+              onClick={() => { setDiscountApplied(null); setDiscountCode(''); }}
+              className="px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              style={{ border: '1px solid var(--border)' }}
+            >
+              {isHe ? 'הסר' : 'Remove'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={applyDiscount}
+              disabled={discountLoading || !discountCode.trim()}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-black transition-colors disabled:opacity-50"
+              style={{ backgroundColor: 'var(--accent)' }}
+            >
+              {discountLoading ? '...' : isHe ? 'החל' : 'Apply'}
+            </button>
+          )}
+        </div>
+        {discountError && (
+          <p className="text-xs" style={{ color: '#FF4D6D' }}>{discountError}</p>
+        )}
+        {discountApplied && (
+          <p className="text-xs" style={{ color: 'var(--accent)' }}>
+            {isHe ? `קוד ${discountApplied.code} הוחל!` : `Code ${discountApplied.code} applied!`}
+          </p>
+        )}
+
         {/* Order summary mini */}
         <div
           className="rounded-xl p-4 space-y-2"
@@ -546,6 +623,14 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             </span>
             <span className="text-white font-semibold">{CURRENCY}{subtotal}</span>
           </div>
+          {discountApplied && (
+            <div className="flex justify-between text-sm">
+              <span style={{ color: 'var(--accent)' }}>
+                {isHe ? 'הנחה' : 'Discount'} ({discountApplied.code})
+              </span>
+              <span style={{ color: 'var(--accent)' }}>-{CURRENCY}{discountAmount}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span style={{ color: 'var(--text-secondary)' }}>{isHe ? 'משלוח' : 'Shipping'}</span>
             <span style={{ color: freeShipping ? 'var(--accent)' : 'var(--text-secondary)' }}>
@@ -555,7 +640,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           <div className="flex justify-between pt-2" style={{ borderTop: '1px solid var(--border)' }}>
             <span className="font-bold text-white">{isHe ? 'סה"כ' : 'Total'}</span>
             <span className="text-lg font-bold" style={{ color: 'var(--cta)' }}>
-              {CURRENCY}{subtotal + (freeShipping ? 0 : PRICES.shippingFlat)}
+              {CURRENCY}{finalTotal}
             </span>
           </div>
         </div>
@@ -625,7 +710,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             )}
 
             <PayPalPayment
-              amount={subtotal + (freeShipping ? 0 : PRICES.shippingFlat)}
+              amount={finalTotal}
               isHe={isHe}
               isRtl={isRtl}
               shippingAddress={{
