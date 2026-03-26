@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronDown, Search } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
@@ -99,13 +98,15 @@ function MarqueeRow({
               position: 'relative',
             }}
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={j.imageUrl}
               alt=""
               width={CARD_W}
               height={CARD_H}
               loading="lazy"
-              sizes={`${CARD_W}px`}
+              decoding="async"
+              fetchPriority="low"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           </div>
@@ -139,9 +140,9 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
   const [scrolledPast, setScrolledPast] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Keep jerseys with images, shuffle for variety, use up to 48 (12 per row × 4 rows)
+  // Only special edition jerseys for marquee background, shuffled for variety
   const pool = jerseys
-    .filter((j) => j.imageUrl)
+    .filter((j) => j.imageUrl && j.type === 'special')
     .sort(() => Math.random() - 0.5)
     .slice(0, HALF * ROWS.length);
   const perRow = Math.max(1, Math.ceil(pool.length / ROWS.length));
