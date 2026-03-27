@@ -28,6 +28,7 @@ const TYPE_LABELS: Record<JerseyType, { en: string; he: string }> = {
   drip:           { en: 'Drip',      he: 'דריפ'  },
   world_cup:      { en: 'World Cup', he: 'מונדיאל' },
   other_products: { en: 'Other',     he: 'אחר'   },
+  stussy:         { en: 'Stussy',    he: 'סטוסי'  },
 };
 
 // ─── Props ────────────────────────────────────────────────────
