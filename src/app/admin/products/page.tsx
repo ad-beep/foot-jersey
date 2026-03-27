@@ -192,17 +192,27 @@ export default function AddProductPage() {
 
     try {
       setStatus('uploading');
-      const slug = nameHe.toLowerCase().replace(/\s+/g, '-');
-      const id = `${slug}-${season.replace('/', '-')}-${Date.now()}`;
+      // Use English name for slug if available, otherwise generate a safe ASCII id
+      const rawSlug = nameEn.trim()
+        ? nameEn.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        : `jersey-${league}`;
+      const id = `${rawSlug}-${season.replace('/', '-')}-${Date.now()}`;
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
-        const ext = file.name.split('.').pop() || 'jpg';
-        const storageRef = ref(storage, `jerseys/${id}/${i === 0 ? 'main' : `extra-${i}`}.${ext}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(snapshot.ref);
-        uploadedUrls.push(url);
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const fileName = i === 0 ? 'main' : `extra-${i}`;
+        const storagePath = `jerseys/${id}/${fileName}.${ext}`;
+        try {
+          const storageRef = ref(storage, storagePath);
+          const snapshot = await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(snapshot.ref);
+          uploadedUrls.push(url);
+        } catch (uploadErr) {
+          console.error(`Failed to upload image ${i}:`, uploadErr);
+          throw new Error(`Image upload failed (${fileName}.${ext}). Check Firebase Storage permissions.`);
+        }
       }
 
       const mainImage = uploadedUrls[0];
