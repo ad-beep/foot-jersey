@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Search, Heart, ShoppingBag, Globe, X } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
@@ -9,9 +10,22 @@ import { useHydration } from '@/hooks/useHydration';
 import { useCartStore } from '@/stores/cart-store';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { SearchBar } from '@/components/search/SearchBar';
 import { cn } from '@/lib/utils';
 import type { Dictionary } from '@/i18n/dictionaries';
+
+// SearchBar is heavy (fuzzy matching, Levenshtein, debounce) — lazy-load it
+const SearchBar = dynamic(
+  () => import('@/components/search/SearchBar').then(m => ({ default: m.SearchBar })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="w-full h-11 rounded-full"
+        style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+      />
+    ),
+  },
+);
 
 interface HeaderProps {
   dict: Dictionary;

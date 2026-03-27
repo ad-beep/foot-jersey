@@ -1,6 +1,18 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 export function WhatsAppButton() {
+  const [show, setShow] = useState(false);
+
+  // Delay 3 s so the widget never competes with First Paint / LCP work
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!show) return null;
+
   const phone = '972584140508';
   const url = `https://wa.me/${phone}`;
 
