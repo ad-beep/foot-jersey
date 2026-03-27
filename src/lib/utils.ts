@@ -47,10 +47,29 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
   const season = row.season?.trim() || '';
   const rawType = row.type?.trim().toLowerCase() || 'regular';
 
-  // Parse tags early — needed for long sleeve + world_cup detection
-  const tags = row.tags
+  // Parse tags (pipe-separated) — used for long sleeve, world_cup, images, etc.
+  const rawTags = row.tags
     ? row.tags.split('|').filter(Boolean)
     : [];
+
+  // Extract structured tags (images:..., en:..., etc.) and plain tags
+  const tags: string[] = [];
+  let additionalImages: string[] = [];
+  let englishName = '';
+  for (const t of rawTags) {
+    if (t.startsWith('images:')) {
+      additionalImages = t.slice(7).split(',').filter(Boolean);
+    } else if (t.startsWith('en:')) {
+      englishName = t.slice(3);
+    } else {
+      tags.push(t);
+    }
+  }
+
+  // Backward-compat: also check legacy additional_images column
+  if (additionalImages.length === 0 && row.additional_images) {
+    additionalImages = row.additional_images.split('|').filter(Boolean);
+  }
 
   // Backward-compat: coat/scarf → other_products, detect world_cup from tag
   let type: JerseyType;
@@ -59,39 +78,42 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
   } else if (rawType === 'world_cup') {
     type = 'world_cup';
   } else if (rawType === 'regular' && tags.some((t) => t.includes('מונדיאל'))) {
-    type = 'world_cup'; // legacy: regular + מונדיאל tag → world_cup
+    type = 'world_cup';
   } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products'].includes(rawType)) {
     type = rawType as JerseyType;
   } else {
     type = 'regular';
   }
 
-  // Detect long sleeve from column OR tag (some sheets only use the tag)
+  // Detect long sleeve from tag (ארוך or long_sleeve) or legacy column
   const isLongSleeve =
     row.is_long_sleeve?.trim().toLowerCase() === 'true' ||
-    tags.some((t) => t.includes('ארוך'));
-  const price = getBasePrice(type) + (isLongSleeve ? PRICES.longSleeveExtra : 0);
+    tags.some((t) => t === 'long_sleeve' || t.includes('ארוך'));
 
-  // Parse additional images from pipe-separated string
-  const additionalImages = row.additional_images
-    ? row.additional_images.split('|').filter(Boolean)
-    : [];
+  // Price: use sheet value if present, otherwise compute
+  const sheetPrice = row.price ? parseFloat(row.price) : NaN;
+  const price = !isNaN(sheetPrice)
+    ? sheetPrice
+    : getBasePrice(type) + (isLongSleeve ? PRICES.longSleeveExtra : 0);
+
+  // Category: derive from type/league (no longer a dedicated column for new rows)
+  const category = row.category?.trim() || rawType;
 
   return {
     id: row.id,
-    teamName: row.team_name?.trim() || '',
+    teamName: row.team_name?.trim() || englishName || '',
     league: normalizeLeague(row.league?.trim() || ''),
     season,
     type,
-    category: row.category?.trim() || '',
+    category,
     imageUrl: row.image_url?.trim() || '',
     additionalImages,
-    isWorldCup: row.is_world_cup?.trim().toLowerCase() === 'true',
+    isWorldCup: row.is_world_cup?.trim().toLowerCase() === 'true' || type === 'world_cup',
     internationalTeam: row.international_team?.trim() || '',
     availableSizes: parseSizes(row.available_sizes),
     tags,
     isLongSleeve,
-    createdAt: row.created_at?.trim() || new Date().toISOString(),
+    createdAt: row.date_added?.trim() || row.created_at?.trim() || new Date().toISOString(),
     price,
     slug: generateSlug(row.team_name?.trim() || '', season),
   };

@@ -2,6 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { invalidateJerseysCache } from '@/lib/google-sheets';
 import { SHEET_NAME } from '@/lib/constants';
+import crypto from 'crypto';
+
+// ─── Strict Header Map ──────────────────────────────────────
+// A = id
+// B = team_name
+// C = league
+// D = season
+// E = type
+// F = tags
+// G = image_url
+// H = available_sizes
+// I = price
+// J = date_added
+const HEADER_LENGTH = 10; // A through J
+
+// ─── Helpers ────────────────────────────────────────────────
+
+/** Generate a sheet-safe ID: sh-<6 hex chars> */
+function generateId(): string {
+  return 'sh-' + crypto.randomBytes(3).toString('hex');
+}
+
+/** Strip Hebrew characters and non-ASCII from a URL/filename to prevent column drift */
+function slugifyUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    // Only sanitize the pathname portion
+    parsed.pathname = parsed.pathname
+      .split('/')
+      .map((segment) =>
+        segment.replace(/[^\x20-\x7E]/g, '').replace(/\s+/g, '-')
+      )
+      .join('/');
+    return parsed.toString();
+  } catch {
+    // Not a valid URL — strip Hebrew/non-ASCII from the raw string
+    return url.replace(/[^\x20-\x7E]/g, '').replace(/\s+/g, '-');
+  }
+}
+
+/** Format today as YYYY-MM-DD */
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function getAuth() {
   return new google.auth.GoogleAuth({
@@ -13,58 +57,56 @@ function getAuth() {
   });
 }
 
+// ─── POST Handler ───────────────────────────────────────────
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      id,
       team_name,
-      team_name_en,
       league,
       season,
       type,
-      category,
       image_url,
-      additional_images,
-      is_world_cup,
-      international_team,
       available_sizes,
       tags,
-      is_long_sleeve,
+      price,
     } = body;
 
-    if (!id || !team_name || !image_url) {
+    if (!team_name || !image_url) {
       return NextResponse.json(
-        { error: 'Missing required fields: id, team_name, image_url' },
+        { error: 'Missing required fields: team_name, image_url' },
         { status: 400 }
       );
     }
 
+    const id = generateId();
+    const safeImageUrl = slugifyUrl(image_url);
+
+    // Build a single, clean row matching HEADER_LENGTH exactly (A–J)
+    const row: string[] = [
+      id,                                    // A: id
+      (team_name as string).trim(),          // B: team_name
+      (league as string) || '',              // C: league
+      (season as string) || '',              // D: season
+      (type as string) || 'regular',         // E: type
+      (tags as string) || '',                // F: tags
+      safeImageUrl,                          // G: image_url
+      (available_sizes as string) || 'S,M,L,XL,XXL', // H: available_sizes
+      String(price ?? ''),                   // I: price
+      todayISO(),                            // J: date_added
+    ];
+
+    // Safety: ensure row length matches header exactly
+    while (row.length < HEADER_LENGTH) row.push('');
+    if (row.length > HEADER_LENGTH) row.length = HEADER_LENGTH;
+
     const auth = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Columns A–O (15 columns)
-    const row = [
-      id,                                    // A: id
-      team_name,                             // B: team_name (Hebrew)
-      league || '',                          // C: league
-      season || '',                          // D: season
-      type || 'regular',                     // E: type
-      category || '',                        // F: category
-      image_url,                             // G: image_url
-      additional_images || '',               // H: additional_images
-      is_world_cup || 'false',               // I: is_world_cup
-      international_team || '',              // J: international_team
-      available_sizes || 'S,M,L,XL,XXL',    // K: available_sizes
-      tags || '',                            // L: tags
-      is_long_sleeve || 'false',             // M: is_long_sleeve
-      new Date().toISOString(),              // N: created_at
-      team_name_en || '',                    // O: team_name_en
-    ];
-
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:O`,
+      range: `${SHEET_NAME}!A:J`,
       valueInputOption: 'RAW',
       requestBody: { values: [row] },
     });

@@ -80,20 +80,23 @@ export interface ApiResponse<T> {
 }
 
 export interface SheetRow {
-  id: string;
-  team_name: string;
-  league: string;
-  season: string;
-  type: string;
-  category: string;
-  image_url: string;
-  additional_images: string;
-  is_world_cup: string;
-  international_team: string;
-  available_sizes: string;
-  tags: string;
-  is_long_sleeve: string;
-  created_at: string;
+  id: string;           // A
+  team_name: string;    // B
+  league: string;       // C
+  season: string;       // D
+  type: string;         // E
+  tags: string;         // F
+  image_url: string;    // G
+  available_sizes: string; // H
+  price: string;        // I
+  date_added: string;   // J
+  // Legacy columns (kept for backward compat with old sheet format)
+  category?: string;
+  additional_images?: string;
+  is_world_cup?: string;
+  international_team?: string;
+  is_long_sleeve?: string;
+  created_at?: string;
 }
 
 // ─── SEO Types ───────────────────────────────────────────────

@@ -216,33 +216,32 @@ export default function AddProductPage() {
       }
 
       const mainImage = uploadedUrls[0];
-      const additionalImages = uploadedUrls.slice(1).join('|');
+      const extraImages = uploadedUrls.slice(1);
 
-      // Build tags automatically
+      // Build tags automatically (pipe-separated)
       const autoTags: string[] = [];
       if (isLongSleeve) autoTags.push('ארוך');
       if (tag === 'world-cup') autoTags.push('מונדיאל');
       if (tag === 'stussy') autoTags.push('stussy');
+      // Pack additional image URLs into tags so they survive the 10-column schema
+      if (extraImages.length > 0) autoTags.push(`images:${extraImages.join(',')}`);
+      if (isLongSleeve) autoTags.push('long_sleeve');
+      if (tag === 'world-cup') autoTags.push('world_cup');
+      if (nameEn.trim()) autoTags.push(`en:${nameEn.trim()}`);
 
       setStatus('saving');
       const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id,
           team_name: nameHe.trim(),
-          team_name_en: nameEn.trim(),
           league: effectiveLeague,
           season,
           type: sheetType(tag),
-          category: autoCategory,
           image_url: mainImage,
-          additional_images: additionalImages,
-          is_world_cup: tag === 'world-cup' ? 'true' : 'false',
-          international_team: '',
           available_sizes: availableSizes,
           tags: autoTags.join('|'),
-          is_long_sleeve: isLongSleeve ? 'true' : 'false',
+          price: computedPrice,
         }),
       });
 

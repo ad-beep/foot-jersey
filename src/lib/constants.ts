@@ -107,7 +107,7 @@ export const MOST_SOLD_COUNT = 8;
 
 // ─── Google Sheets ───────────────────────────────────────────
 export const SHEET_NAME = 'Jerseys';
-export const SHEET_RANGE = 'A:N';
+export const SHEET_RANGE = 'A:J';
 
 // ─── Site ────────────────────────────────────────────────────
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'FootJersey';
