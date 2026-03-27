@@ -36,7 +36,6 @@ export function BitPayment({
   const ownerPhone = '058-414-0508';
   const ownerCleanPhone = '0584140508';
   const ownerName = isHe ? 'אדיב חזאן' : 'Adib Hazzan';
-  const ownerId = '331841072';
 
   // Deep link for Bit app
   const bitDeepLink = `bit://pay?phone=${ownerCleanPhone}&amount=${amount}&note=FootJersey+Order`;
@@ -108,9 +107,6 @@ export function BitPayment({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-sm text-white font-semibold">{ownerName}</span>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {isHe ? 'ת.ז.' : 'ID'}: {ownerId}
-            </span>
           </div>
           <div className="flex items-center gap-2">
             <input

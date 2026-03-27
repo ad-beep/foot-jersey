@@ -4,12 +4,16 @@ import { useState, useCallback } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { AlertCircle } from 'lucide-react';
 
-const PAYPAL_OPTIONS = {
-  clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test',
-  currency: 'ILS' as const,
-  intent: 'capture' as const,
-  'enable-funding': 'card',
-};
+function getPayPalOptions(fundingSource: 'paypal' | 'card') {
+  return {
+    clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test',
+    currency: 'ILS' as const,
+    intent: 'capture' as const,
+    ...(fundingSource === 'card'
+      ? { 'enable-funding': 'card', 'disable-funding': 'paylater' }
+      : { 'disable-funding': 'card,paylater' }),
+  };
+}
 
 interface ShippingAddress {
   firstName: string;
@@ -26,6 +30,7 @@ interface PayPalPaymentProps {
   amount: number;
   isHe: boolean;
   isRtl: boolean;
+  fundingSource?: 'paypal' | 'card';
   shippingAddress?: ShippingAddress;
   onSuccess: (orderId: string) => void;
   onError: (error: string) => void;
@@ -35,6 +40,7 @@ export function PayPalPayment({
   amount,
   isHe,
   isRtl,
+  fundingSource = 'paypal',
   shippingAddress,
   onSuccess,
   onError,
@@ -111,8 +117,11 @@ export function PayPalPayment({
     [onError]
   );
 
+  const isCard = fundingSource === 'card';
+  const paypalOptions = getPayPalOptions(fundingSource);
+
   return (
-    <PayPalScriptProvider options={PAYPAL_OPTIONS}>
+    <PayPalScriptProvider options={paypalOptions}>
       <div className="space-y-4">
         {errorMessage && (
           <div
@@ -130,18 +139,23 @@ export function PayPalPayment({
           createOrder={handleCreateOrder}
           onApprove={handleApprove}
           onError={handleError}
+          fundingSource={isCard ? 'card' : undefined}
           style={{
             layout: 'vertical',
-            color: 'blue',
+            color: isCard ? 'black' : 'blue',
             height: 48,
             tagline: false,
           }}
         />
 
         <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-          {isHe
-            ? 'התשלום בעזרת PayPal מאובטח ודעות אישית שלך מוגנות'
-            : 'PayPal payment is secure and your information is protected'}
+          {isCard
+            ? (isHe
+              ? 'תשלום בכרטיס אשראי מאובטח ומעובד דרך PayPal'
+              : 'Credit card payment is secure and processed via PayPal')
+            : (isHe
+              ? 'התשלום בעזרת PayPal מאובטח ודעות אישית שלך מוגנות'
+              : 'PayPal payment is secure and your information is protected')}
         </p>
       </div>
     </PayPalScriptProvider>

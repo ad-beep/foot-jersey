@@ -261,6 +261,8 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     }) => {
       try {
         const isBit = options.method === 'bit';
+        // credit-card goes through PayPal gateway, so map to 'paypal' for backend
+        const backendMethod = options.method === 'credit-card' ? 'paypal' : options.method;
         const response = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -281,7 +283,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               billingStreet: sameAsBilling ? form.street : form.billingStreet,
               billingZip: sameAsBilling ? form.zip : form.billingZip,
             },
-            paymentMethod: options.method,
+            paymentMethod: backendMethod,
             paymentStatus: isBit ? 'pending' : 'completed',
             paymentIntentId: options.paymentIntentId,
             paypalOrderId: options.paypalOrderId,
@@ -311,7 +313,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const handlePaymentSuccess = useCallback(
     async (paymentIntentId?: string, paypalOrderId?: string) => {
       try {
-        await saveOrder({ paymentIntentId, paypalOrderId, method: 'paypal' });
+        await saveOrder({ paymentIntentId, paypalOrderId, method: paymentMethod });
         setSuccess(true);
         clearCart();
         toast({
@@ -330,7 +332,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         setSubmitting(false);
       }
     },
-    [saveOrder, clearCart, toast, isHe, router, locale]
+    [saveOrder, clearCart, toast, isHe, router, locale, paymentMethod]
   );
 
   const handleBitConfirm = useCallback(
@@ -768,11 +770,20 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               </div>
             )}
 
-            {paymentMethod === 'paypal' ? (
+            {paymentMethod === 'bit' ? (
+              <BitPayment
+                amount={finalTotal}
+                isHe={isHe}
+                isRtl={isRtl}
+                onConfirm={handleBitConfirm}
+                loading={submitting}
+              />
+            ) : (
               <PayPalPayment
                 amount={finalTotal}
                 isHe={isHe}
                 isRtl={isRtl}
+                fundingSource={paymentMethod === 'credit-card' ? 'card' : 'paypal'}
                 shippingAddress={{
                   firstName: form.firstName,
                   lastName: form.lastName,
@@ -785,14 +796,6 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
                 }}
                 onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
                 onError={setPaymentError}
-              />
-            ) : (
-              <BitPayment
-                amount={finalTotal}
-                isHe={isHe}
-                isRtl={isRtl}
-                onConfirm={handleBitConfirm}
-                loading={submitting}
               />
             )}
           </motion.div>

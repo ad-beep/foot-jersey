@@ -1,9 +1,9 @@
 'use client';
 
-import { CreditCard, Smartphone, AlertCircle } from 'lucide-react';
+import { CreditCard, Smartphone, AlertCircle, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export type PaymentMethod = 'bit' | 'paypal';
+export type PaymentMethod = 'bit' | 'paypal' | 'credit-card';
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -26,8 +26,16 @@ const methods = [
     id: 'paypal' as PaymentMethod,
     labelEn: 'PayPal',
     labelHe: 'PayPal',
-    descEn: 'Credit card & Secure online payment',
-    descHe: 'כרטיס אשראי ותשלום בטוח מקוון',
+    descEn: 'Pay with your PayPal account',
+    descHe: 'שלם עם חשבון PayPal שלך',
+    icon: Wallet,
+  },
+  {
+    id: 'credit-card' as PaymentMethod,
+    labelEn: 'Credit Card',
+    labelHe: 'כרטיס אשראי',
+    descEn: 'Visa, Mastercard, Amex',
+    descHe: 'ויזה, מאסטרקארד, אמקס',
     icon: CreditCard,
   },
 ];
