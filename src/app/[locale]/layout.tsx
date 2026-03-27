@@ -4,7 +4,11 @@ import { isValidLocale, getDirection } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { DEFAULT_LOCALE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+// Footer is below-fold on every page — lazy-load to trim initial JS
+const Footer = dynamic(
+  () => import('@/components/layout/Footer').then(m => ({ default: m.Footer })),
+  { ssr: false },
+);
 import { Dock } from '@/components/layout/Dock';
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 import { ToastProvider } from '@/components/ui/toast';

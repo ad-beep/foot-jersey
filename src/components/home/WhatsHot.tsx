@@ -226,7 +226,7 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
           <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4" style={{ scrollSnapType: 'x mandatory' }}>
             {hotJerseys.slice(0, 5).map((jersey, i) => (
               <div key={jersey.id} className="shrink-0" style={{ width: cardWidth, scrollSnapAlign: 'center' }}>
-                <ProductCard jersey={jersey} priority={i < 3} />
+                <ProductCard jersey={jersey} priority={i < 3} imageSizes="320px" imageQuality={50} />
               </div>
             ))}
           </div>
@@ -295,7 +295,7 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
                     style={{ boxShadow: '0 0 30px rgba(0,195,216,0.15)' }}
                   />
                 )}
-                <ProductCard jersey={jersey} priority={isCenter} />
+                <ProductCard jersey={jersey} priority={isCenter} imageSizes="320px" imageQuality={50} />
               </motion.div>
             );
           })}

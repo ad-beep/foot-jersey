@@ -35,6 +35,8 @@ interface ProductCardProps {
   jersey: Jersey;
   priority?: boolean;
   className?: string;
+  imageSizes?: string;
+  imageQuality?: number;
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -42,6 +44,8 @@ export const ProductCard = React.memo(function ProductCard({
   jersey,
   priority = false,
   className,
+  imageSizes,
+  imageQuality,
 }: ProductCardProps) {
   const { locale }     = useLocale();
   const hydrated       = useHydration();
@@ -153,7 +157,8 @@ export const ProductCard = React.memo(function ProductCard({
             src={jersey.imageUrl}
             alt={displayName}
             fill
-            sizes="(max-width: 768px) 50vw, 25vw"
+            sizes={imageSizes ?? '(max-width: 768px) 50vw, 25vw'}
+            quality={imageQuality}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             priority={priority}
             onError={() => setImgError(true)}

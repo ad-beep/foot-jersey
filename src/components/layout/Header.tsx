@@ -199,7 +199,7 @@ export function Header({ dict: _dict }: HeaderProps) {
             <ShoppingBag className="w-5 h-5" />
             {hydrated && cartCount > 0 && (
               <span
-                className="absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                className="absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-black"
                 style={{ backgroundColor: 'var(--cta)' }}
               >
                 {cartCount > 9 ? '9+' : cartCount}
