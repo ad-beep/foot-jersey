@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { AlertCircle } from 'lucide-react';
 
@@ -46,6 +46,9 @@ export function PayPalPayment({
   onError,
 }: PayPalPaymentProps) {
   const [errorMessage, setErrorMessage] = useState<string>('');
+  // Ref-based flag prevents double-capture without triggering a re-render
+  // (a re-render would reinitialize PayPalScriptProvider and re-enable the button)
+  const isCapturing = useRef(false);
 
   const handleCreateOrder = useCallback(
     async (data: any, actions: any) => {
@@ -82,6 +85,12 @@ export function PayPalPayment({
 
   const handleApprove = useCallback(
     async (data: any, actions: any) => {
+      // Guard: if a capture is already in flight, ignore this call entirely.
+      // Using a ref (not state) so this check is synchronous and doesn't
+      // cause a re-render that would reinitialize the PayPal SDK.
+      if (isCapturing.current) return;
+      isCapturing.current = true;
+
       try {
         const response = await fetch('/api/paypal/capture-order', {
           method: 'POST',
@@ -98,7 +107,10 @@ export function PayPalPayment({
 
         const order = await response.json();
         onSuccess(order.orderId);
+        // Do NOT reset isCapturing — once captured, this component is done.
       } catch (err) {
+        // Reset flag on failure so the user can retry.
+        isCapturing.current = false;
         const message = err instanceof Error ? err.message : 'Failed to capture PayPal order';
         setErrorMessage(message);
         onError(message);

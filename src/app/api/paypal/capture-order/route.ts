@@ -43,6 +43,31 @@ export async function POST(request: NextRequest) {
 
     const accessToken = await getPayPalAccessToken();
 
+    // Defense-in-depth: check current order status before attempting capture.
+    // If the order is already COMPLETED, return success without re-capturing.
+    const statusResponse = await fetch(
+      `${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (statusResponse.ok) {
+      const existingOrder = await statusResponse.json();
+      if (existingOrder.status === 'COMPLETED') {
+        console.warn(`PayPal order ${orderId} already captured — returning existing result`);
+        return NextResponse.json({
+          orderId: existingOrder.id,
+          status: existingOrder.status,
+          payerId: existingOrder.payer?.email_address || '',
+        });
+      }
+    }
+
     const response = await fetch(
       `${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`,
       {
