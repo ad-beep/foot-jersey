@@ -105,7 +105,20 @@ export async function POST(request: NextRequest) {
       discountAmount,
     });
   } catch (error) {
-    console.error('Validate discount error:', error);
-    return NextResponse.json({ valid: false, error: 'Validation failed' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Validate discount error:', msg);
+
+    let hint = 'Validation failed';
+    if (msg.includes('Unable to parse range')) {
+      hint = 'DiscountCodes tab not found in spreadsheet';
+    } else if (msg.includes('Missing Google credentials')) {
+      hint = 'Server credentials not configured';
+    } else if (msg.includes('403')) {
+      hint = 'Permission denied — check spreadsheet sharing';
+    } else if (msg.includes('GOOGLE_SHEETS_SPREADSHEET_ID')) {
+      hint = 'Spreadsheet ID not configured';
+    }
+
+    return NextResponse.json({ valid: false, error: hint }, { status: 500 });
   }
 }
