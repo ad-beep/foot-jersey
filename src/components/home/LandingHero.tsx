@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { ChevronDown, Search } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { Button } from '@/components/ui/button';
@@ -23,15 +22,23 @@ const ROWS = [
   { dir: 'right' as const, speed: 38 },
 ];
 
+// ── CSS fade-up helper ──────────────────────────────────────────────────────
+const fadeUpStyle = (delaySec: number): React.CSSProperties => ({
+  opacity: 0,
+  animation: `heroFadeUp 0.65s cubic-bezier(0.16,1,0.3,1) ${delaySec}s forwards`,
+});
+
 // ── Marquee Row (rAF-driven, no CSS keyframes) ─────────────────────────────
 function MarqueeRow({
   images,
   dir,
   speed,
+  eager = false,
 }: {
   images: { id: string; imageUrl: string }[];
   dir: 'left' | 'right';
   speed: number;
+  eager?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -105,7 +112,7 @@ function MarqueeRow({
               width={CARD_W}
               height={CARD_H}
               sizes="120px"
-              loading="lazy"
+              {...(eager && i < 4 ? { priority: true } : { loading: 'lazy' as const })}
               quality={60}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
@@ -115,16 +122,6 @@ function MarqueeRow({
     </div>
   );
 }
-
-// ── Fade-up variants ───────────────────────────────────────────────────────
-const fadeUp = {
-  hidden:  { opacity: 0, y: 24 },
-  visible: (delay: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] },
-  }),
-};
 
 // ── Component ──────────────────────────────────────────────────────────────
 interface LandingHeroProps {
@@ -185,7 +182,7 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
           aria-hidden="true"
         >
           {ROWS.map((row, i) => (
-            <MarqueeRow key={i} images={chunks[i]} dir={row.dir} speed={row.speed} />
+            <MarqueeRow key={i} images={chunks[i]} dir={row.dir} speed={row.speed} eager={i === 0} />
           ))}
         </div>
       )}
@@ -200,25 +197,23 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
 
       {/* Layer 2 — hero content */}
       <div className="relative z-20 text-center px-6 max-w-3xl mx-auto w-full flex flex-col items-center">
-        <motion.h1
-          custom={0.2} variants={fadeUp} initial="hidden" animate="visible"
+        <h1
           className="font-bold text-white mb-4 text-4xl md:text-5xl lg:text-6xl max-w-3xl mx-auto"
-          style={{ lineHeight: 1.12, letterSpacing: '-0.02em' }}
+          style={{ ...fadeUpStyle(0.2), lineHeight: 1.12, letterSpacing: '-0.02em' }}
         >
           {isHe ? 'לקנות חולצה זה חוויה ששווה לחוות' : 'Buying a Jersey is an Experience Worth Having'}
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          custom={0.4} variants={fadeUp} initial="hidden" animate="visible"
+        <p
           className="text-lg mb-8 max-w-xl mx-auto"
-          style={{ color: 'var(--text-secondary)' }}
+          style={{ ...fadeUpStyle(0.4), color: 'var(--text-secondary)' }}
         >
           {isHe ? 'חולצות כדורגל פרימיום, מיוצרות לאוהדים אמיתיים' : 'Premium football jerseys, crafted for true fans'}
-        </motion.p>
+        </p>
 
-        <motion.form
-          custom={0.6} variants={fadeUp} initial="hidden" animate="visible"
+        <form
           onSubmit={handleSearch} className="w-full max-w-lg mb-8"
+          style={fadeUpStyle(0.6)}
         >
           <div
             className="relative flex items-center h-14 rounded-full overflow-hidden transition-all duration-200 focus-within:shadow-[0_0_20px_rgba(0,195,216,0.15)]"
@@ -232,26 +227,26 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
               style={{ direction: isRtl ? 'rtl' : 'ltr' }}
             />
           </div>
-        </motion.form>
+        </form>
 
-        <motion.div custom={0.8} variants={fadeUp} initial="hidden" animate="visible" className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4" style={fadeUpStyle(0.8)}>
           <Button variant="primary" size="lg" onClick={() => router.push(`/${locale}/discover`)}>
             {isHe ? 'גלה' : 'Explore'}
           </Button>
           <Button variant="secondary" size="lg" onClick={scrollToAbout}>
             {isHe ? 'עלינו' : 'About Us'}
           </Button>
-        </motion.div>
+        </div>
       </div>
 
       {/* Scroll indicator */}
       {!scrolledPast && (
-        <motion.div
+        <div
           className="absolute bottom-6 z-20 flex flex-col items-center pointer-events-none"
-          initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} transition={{ delay: 1.2, duration: 0.7 }}
+          style={{ opacity: 0, animation: 'heroIndicatorIn 0.7s ease 1.2s forwards' }}
         >
           <ChevronDown className="w-6 h-6" style={{ color: 'var(--text-muted)', animation: 'heroBounce 1.5s ease-in-out infinite' }} />
-        </motion.div>
+        </div>
       )}
     </section>
   );

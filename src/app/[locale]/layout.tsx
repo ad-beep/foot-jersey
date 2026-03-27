@@ -8,6 +8,8 @@ import { Footer } from '@/components/layout/Footer';
 import { Dock } from '@/components/layout/Dock';
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 import { ToastProvider } from '@/components/ui/toast';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { Locale } from '@/types';
 
 // Lazy-load heavy components that aren't needed for initial paint
@@ -70,6 +72,8 @@ export default async function LocaleLayout({
           <CartDrawer dict={dict} />
           <WhatsAppButton />
         </ToastProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

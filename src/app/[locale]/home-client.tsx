@@ -14,6 +14,9 @@ const LandingHero  = dynamic(() => import('@/components/home/LandingHero'), {
       <h1 className="font-bold text-white text-4xl md:text-5xl lg:text-6xl text-center px-6 max-w-3xl">
         Buying a Jersey is an Experience Worth Having
       </h1>
+      <p className="text-lg mt-4 max-w-xl mx-auto text-center" style={{ color: 'var(--text-secondary)' }}>
+        Premium football jerseys, crafted for true fans
+      </p>
     </section>
   ),
 });

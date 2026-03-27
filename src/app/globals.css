@@ -14,7 +14,7 @@
     --cta-hover:     #FF7A00;
     --text-primary:  #FFFFFF;
     --text-secondary:#AAAAAA;
-    --text-muted:    #8A8A8A;
+    --text-muted:    #ADADAD;
     --border:        #2A2A2A;
     --border-accent: rgba(0, 195, 216, 0.3);
     --success:       #00C853;
@@ -97,6 +97,16 @@
 /* Pause marquee for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .marquee-row { animation-play-state: paused !important; }
+}
+
+/* Hero content fade-up — replaces Framer Motion for zero-JS-dep first paint */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroIndicatorIn {
+  from { opacity: 0; }
+  to   { opacity: 0.6; }
 }
 
 /* Hero scroll indicator bounce */
