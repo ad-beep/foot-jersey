@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 const FROM_EMAIL = 'FootJersey <orders@shopfootjersey.com>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shopfootjersey.com';
@@ -128,7 +133,8 @@ function renderItems(items: OrderItem[]): string {
 
 // ─── Order Confirmation Email (PayPal/Credit Card) ────────────────────────────
 export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResend();
+  if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set — skipping order confirmation email');
     return;
   }
@@ -195,7 +201,8 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
 
 // ─── BIT Pending Email (sent immediately on BIT order) ────────────────────────
 export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResend();
+  if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set — skipping BIT pending email');
     return;
   }
@@ -242,7 +249,8 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
 
 // ─── BIT Approved Email (sent by admin after approval) ────────────────────────
 export async function sendBitApprovedEmail(opts: { to: string; customerName: string; orderId: string; total: number }): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResend();
+  if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set — skipping BIT approved email');
     return;
   }
@@ -282,7 +290,8 @@ export async function sendBitApprovedEmail(opts: { to: string; customerName: str
 
 // ─── Password Reset Email ─────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(opts: { to: string; resetLink: string }): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResend();
+  if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set — skipping password reset email');
     return;
   }
