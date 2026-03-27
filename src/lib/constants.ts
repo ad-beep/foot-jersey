@@ -6,6 +6,7 @@ export const PRICES = {
   retro: 109,
   kids: 99,
   special: 99,
+  stussy: 125,
   drip: 109,
   world_cup: 99,
   other_products: 149,

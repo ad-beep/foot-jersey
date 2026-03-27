@@ -119,7 +119,7 @@ function getAutoPrice(tag: string, isLongSleeve: boolean): number {
     regular: PRICES.regular,
     retro: PRICES.retro,
     special: PRICES.special,
-    stussy: PRICES.special,
+    stussy: PRICES.stussy,
     drip: PRICES.drip,
     kids: PRICES.kids,
     'world-cup': PRICES.world_cup,
