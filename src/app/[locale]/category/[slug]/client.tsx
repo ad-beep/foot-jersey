@@ -42,6 +42,7 @@ const CATEGORY_NAMES: Record<string, { en: string; he: string }> = {
   'drip':           { en: 'Drip',            he: 'דריפ' },
   'mystery-box':    { en: 'Mystery Box',     he: 'קופסת הפתעה' },
   'other-products': { en: 'Other Products',  he: 'מוצרים נוספים' },
+  'stussy-edition': { en: 'Stussy Edition',  he: 'מהדורת סטוסי' },
 };
 
 const TYPE_LABELS: Record<string, { en: string; he: string }> = {

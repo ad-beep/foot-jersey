@@ -6,6 +6,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
+import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
 
 interface ShippingInfo {
@@ -25,6 +26,12 @@ interface ShippingInfo {
   billingZip?: string;
 }
 
+interface BitSenderDetails {
+  senderName: string;
+  senderPhone: string;
+  amountPaid: string;
+}
+
 interface OrderData {
   items: CartItem[];
   shippingInfo: ShippingInfo;
@@ -36,6 +43,7 @@ interface OrderData {
   currency: string;
   paypalOrderId?: string;
   bitTransactionId?: string;
+  bitSenderDetails?: BitSenderDetails;
   discountCode?: string;
   discountAmount?: number;
 }
@@ -191,13 +199,14 @@ export async function POST(request: NextRequest) {
       paymentStatus: body.paymentStatus,
       paypalOrderId: body.paypalOrderId || null,
       bitTransactionId: body.bitTransactionId || null,
+      bitSenderDetails: body.bitSenderDetails || null,
       discountCode: body.discountCode || null,
       discountAmount: body.discountAmount || 0,
       subtotal: body.subtotal,
       total: body.total,
       currency: body.currency,
       createdAt: serverTimestamp(),
-      status: 'pending',
+      status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
     });
 
     // 2. Append to Google Sheets Orders Log (fire-and-forget)
@@ -206,6 +215,47 @@ export async function POST(request: NextRequest) {
     // 3. Increment discount code usage (fire-and-forget)
     if (body.discountCode) {
       incrementDiscountUsage(body.discountCode);
+    }
+
+    // 4. Send confirmation or pending email
+    const emailCustomerName =
+      body.shippingInfo.name ||
+      `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
+
+    if (body.paymentMethod === 'paypal' && body.paymentStatus === 'completed') {
+      // Instant confirmation for PayPal orders
+      sendOrderConfirmation({
+        to: body.shippingInfo.email,
+        customerName: emailCustomerName,
+        orderId: orderDoc.id,
+        items: body.items.map((item) => ({
+          teamName: item.jersey?.teamName || item.jerseyId || '',
+          size: item.size,
+          quantity: item.quantity,
+          totalPrice: item.totalPrice,
+          customization: item.customization,
+        })),
+        total: body.total,
+        subtotal: body.subtotal,
+        shipping: body.shipping ?? 0,
+        discountAmount: body.discountAmount,
+        discountCode: body.discountCode,
+        shippingAddress: {
+          street: body.shippingInfo.street,
+          city: body.shippingInfo.city,
+          zip: body.shippingInfo.zip,
+          country: body.shippingInfo.country,
+        },
+        paymentMethod: body.paymentMethod,
+      }).catch((e) => console.error('Email send error:', e));
+    } else if (body.paymentMethod === 'bit') {
+      // BIT: send "waiting for approval" email immediately
+      sendBitPendingEmail({
+        to: body.shippingInfo.email,
+        customerName: emailCustomerName,
+        orderId: orderDoc.id,
+        total: body.total,
+      }).catch((e) => console.error('Email send error:', e));
     }
 
     return NextResponse.json(

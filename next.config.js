@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
@@ -8,6 +10,7 @@ const nextConfig = {
     minimumCacheTTL: 2592000, // 30 days for optimized images
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    dangerouslyAllowSVG: false,
   },
   experimental: {
     optimizePackageImports: [
@@ -19,6 +22,7 @@ const nextConfig = {
       '@radix-ui/react-select',
       '@radix-ui/react-toast',
       '@radix-ui/react-tooltip',
+      'resend',
     ],
   },
   async headers() {

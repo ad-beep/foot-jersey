@@ -184,6 +184,17 @@ const CATEGORIES: CategoryDef[] = [
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
   },
+
+  // ── Row 7 (desktop) ────────────────────────────────────────────
+  {
+    slug: 'stussy-edition',
+    en: 'Stussy Edition',
+    he: 'מהדורת סטוסי',
+    bg: 'rgba(30,20,60,0.7)',
+    grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
+    size: 'lg',
+    special: true,
+  },
 ];
 
 // ── Discover URL helpers ─────────────────────────────────────────────────────
@@ -201,8 +212,10 @@ const COLLECTION_SLUG_MAP: Record<string, string> = {
   'other-products': 'other-products',
 };
 
+const CATEGORY_PAGE_SLUGS = new Set(['mystery-box', 'stussy-edition']);
+
 function getCategoryHref(locale: string, slug: string): string {
-  if (slug === 'mystery-box') return `/${locale}/category/${slug}`;
+  if (CATEGORY_PAGE_SLUGS.has(slug)) return `/${locale}/category/${slug}`;
   if (LEAGUE_SLUGS.has(slug)) return `/${locale}/discover?leagues=${slug}`;
   const collectionId = COLLECTION_SLUG_MAP[slug];
   if (collectionId) return `/${locale}/discover?collections=${collectionId}`;

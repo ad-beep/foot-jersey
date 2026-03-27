@@ -18,6 +18,8 @@ import { Reveal } from '@/components/ui/reveal';
 import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
+import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment/PaymentMethodSelector';
+import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
 import type { CartItem } from '@/types';
 
 // ─── Cart Item Row (full page) ──────────────────────────────────────────────
@@ -186,6 +188,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bit');
   const [paymentError, setPaymentError] = useState('');
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
@@ -250,8 +253,14 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   };
 
   const saveOrder = useCallback(
-    async (paymentIntentId?: string, paypalOrderId?: string) => {
+    async (options: {
+      paymentIntentId?: string;
+      paypalOrderId?: string;
+      method: PaymentMethod;
+      bitSenderDetails?: BitSenderDetails;
+    }) => {
       try {
+        const isBit = options.method === 'bit';
         const response = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -272,10 +281,11 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               billingStreet: sameAsBilling ? form.street : form.billingStreet,
               billingZip: sameAsBilling ? form.zip : form.billingZip,
             },
-            paymentMethod: 'paypal',
-            paymentStatus: 'completed',
-            paymentIntentId,
-            paypalOrderId,
+            paymentMethod: options.method,
+            paymentStatus: isBit ? 'pending' : 'completed',
+            paymentIntentId: options.paymentIntentId,
+            paypalOrderId: options.paypalOrderId,
+            bitSenderDetails: options.bitSenderDetails,
             subtotal,
             shipping: shippingCost,
             discountCode: discountApplied?.code || '',
@@ -301,7 +311,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const handlePaymentSuccess = useCallback(
     async (paymentIntentId?: string, paypalOrderId?: string) => {
       try {
-        await saveOrder(paymentIntentId, paypalOrderId);
+        await saveOrder({ paymentIntentId, paypalOrderId, method: 'paypal' });
         setSuccess(true);
         clearCart();
         toast({
@@ -323,6 +333,27 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     [saveOrder, clearCart, toast, isHe, router, locale]
   );
 
+  const handleBitConfirm = useCallback(
+    async (senderDetails: BitSenderDetails) => {
+      try {
+        await saveOrder({ method: 'bit', bitSenderDetails: senderDetails });
+        setSuccess(true);
+        clearCart();
+        toast({
+          title: isHe ? 'ההזמנה התקבלה! ממתינים לאישור תשלום.' : 'Order received! Waiting for payment approval.',
+          variant: 'success',
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save order';
+        setPaymentError(message);
+        toast({ title: message, variant: 'error' });
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [saveOrder, clearCart, toast, isHe]
+  );
+
   const handleSubmit = useCallback(async () => {
     if (!validate()) {
       toast({
@@ -339,6 +370,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   }, [form, isHe]);
 
   if (success) {
+    const isBitOrder = paymentMethod === 'bit';
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -347,16 +379,36 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
       >
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,195,216,0.12)' }}
+          style={{ backgroundColor: isBitOrder ? 'rgba(255,190,50,0.12)' : 'rgba(0,195,216,0.12)' }}
         >
-          <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+          {isBitOrder ? (
+            <Package className="w-8 h-8" style={{ color: '#FFBE32' }} />
+          ) : (
+            <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+          )}
         </div>
         <h3 className="text-xl font-bold text-white">
-          {isHe ? 'ההזמנה בוצעה!' : 'Order Placed!'}
+          {isBitOrder
+            ? (isHe ? 'ההזמנה התקבלה!' : 'Order Received!')
+            : (isHe ? 'ההזמנה בוצעה!' : 'Order Placed!')}
         </h3>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {isHe ? 'תודה רבה! ניצור איתך קשר בקרוב.' : "Thank you! We'll be in touch soon."}
+        <p className="text-sm max-w-sm" style={{ color: 'var(--text-secondary)' }}>
+          {isBitOrder
+            ? (isHe
+              ? 'אנחנו ממתינים לאישור התשלום. תקבל אימייל ברגע שנאשר את ההעברה ב-Bit.'
+              : 'We are waiting for payment confirmation. You will receive an email once we approve the Bit transfer.')
+            : (isHe ? 'תודה רבה! ניצור איתך קשר בקרוב.' : "Thank you! We'll be in touch soon.")}
         </p>
+        {isBitOrder && (
+          <div
+            className="rounded-xl p-4 mt-2 text-xs max-w-sm"
+            style={{ backgroundColor: 'rgba(255,190,50,0.08)', border: '1px solid rgba(255,190,50,0.2)', color: '#FFBE32' }}
+          >
+            {isHe
+              ? 'שים לב: ההזמנה תטופל רק לאחר אישור התשלום. זמן אישור: עד 24 שעות.'
+              : 'Note: Your order will only be processed after payment approval. Approval time: up to 24 hours.'}
+          </div>
+        )}
       </motion.div>
     );
   }
@@ -645,9 +697,16 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           </div>
         </div>
 
-        {/* Payment */}
+        {/* Payment Method Selection */}
         {!showPaymentForm && (
           <>
+            <PaymentMethodSelector
+              selected={paymentMethod}
+              onSelect={setPaymentMethod}
+              isHe={isHe}
+              isRtl={isRtl}
+            />
+
             {/* Submit */}
             <button
               onClick={handleSubmit}
@@ -673,7 +732,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           </>
         )}
 
-        {/* PayPal Payment */}
+        {/* Payment Form (PayPal or BIT) */}
         {showPaymentForm && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -709,23 +768,33 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               </div>
             )}
 
-            <PayPalPayment
-              amount={finalTotal}
-              isHe={isHe}
-              isRtl={isRtl}
-              shippingAddress={{
-                firstName: form.firstName,
-                lastName: form.lastName,
-                street: form.street,
-                city: form.city,
-                zip: form.zip,
-                country: form.country,
-                phone: form.phone,
-                email: form.email,
-              }}
-              onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
-              onError={setPaymentError}
-            />
+            {paymentMethod === 'paypal' ? (
+              <PayPalPayment
+                amount={finalTotal}
+                isHe={isHe}
+                isRtl={isRtl}
+                shippingAddress={{
+                  firstName: form.firstName,
+                  lastName: form.lastName,
+                  street: form.street,
+                  city: form.city,
+                  zip: form.zip,
+                  country: form.country,
+                  phone: form.phone,
+                  email: form.email,
+                }}
+                onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
+                onError={setPaymentError}
+              />
+            ) : (
+              <BitPayment
+                amount={finalTotal}
+                isHe={isHe}
+                isRtl={isRtl}
+                onConfirm={handleBitConfirm}
+                loading={submitting}
+              />
+            )}
           </motion.div>
         )}
 

@@ -61,6 +61,51 @@ export default async function LocaleLayout({
       <head>
         <link rel="preconnect" href="https://photo.yupoo.com" />
         <link rel="dns-prefetch" href="https://photo.yupoo.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  '@id': 'https://shopfootjersey.com/#organization',
+                  name: 'FootJersey',
+                  url: 'https://shopfootjersey.com',
+                  logo: {
+                    '@type': 'ImageObject',
+                    url: 'https://shopfootjersey.com/favicon.svg',
+                  },
+                  contactPoint: {
+                    '@type': 'ContactPoint',
+                    contactType: 'customer service',
+                    availableLanguage: ['Hebrew', 'English'],
+                  },
+                  areaServed: 'IL',
+                  description: 'Premium football jerseys from every league worldwide, shipped to Israel.',
+                },
+                {
+                  '@type': 'WebSite',
+                  '@id': 'https://shopfootjersey.com/#website',
+                  url: 'https://shopfootjersey.com',
+                  name: 'FootJersey',
+                  publisher: { '@id': 'https://shopfootjersey.com/#organization' },
+                  inLanguage: ['en', 'he'],
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target: {
+                      '@type': 'EntryPoint',
+                      urlTemplate: 'https://shopfootjersey.com/en/search?q={search_term_string}',
+                    },
+                    'query-input': 'required name=search_term_string',
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body
         className={locale === 'he' ? 'font-heebo' : 'font-sans'}

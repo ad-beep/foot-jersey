@@ -172,7 +172,6 @@ export function getJerseyName(jersey: Jersey, locale: 'en' | 'he'): string {
 }
 
 // ─── Debounce ────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   ms: number

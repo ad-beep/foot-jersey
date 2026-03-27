@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -41,6 +42,7 @@ const L = {
   signUp:        { en: 'Sign Up',                    he: 'הירשם' },
   noAccount:     { en: "Don't have an account?",     he: 'אין לך חשבון?' },
   hasAccount:    { en: 'Already have an account?',   he: 'כבר יש לך חשבון?' },
+  forgotPass:    { en: 'Forgot password?',           he: 'שכחת סיסמה?' },
 } as const;
 
 // ─── Component ───────────────────────────────────────────────────
@@ -245,9 +247,20 @@ export default function AuthClient() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              {isHe ? L.password.he : L.password.en}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                {isHe ? L.password.he : L.password.en}
+              </label>
+              {mode === 'signIn' && (
+                <Link
+                  href={`/${locale}/forgot-password`}
+                  className="text-xs transition-colors hover:underline"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  {isHe ? L.forgotPass.he : L.forgotPass.en}
+                </Link>
+              )}
+            </div>
             <input
               type="password"
               value={password}

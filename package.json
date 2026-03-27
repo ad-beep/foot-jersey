@@ -38,6 +38,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "resend": "^6.9.4",
     "sharp": "^0.33.0",
     "stripe": "^20.4.1",
     "tailwind-merge": "^2.2.0",

@@ -11,6 +11,7 @@ const JERSEY_TAGS = [
   { value: 'regular', label: 'Regular' },
   { value: 'retro', label: 'Retro' },
   { value: 'special', label: 'Special Edition' },
+  { value: 'stussy', label: 'Stussy Edition' },
   { value: 'drip', label: 'Drip' },
   { value: 'kids', label: 'Kids' },
   { value: 'world-cup', label: 'World Cup' },
@@ -51,6 +52,7 @@ function deriveCategory(tag: string, league: string): string {
   switch (tag) {
     case 'retro':     return 'retro';
     case 'special':   return 'special';
+    case 'stussy':    return 'special';
     case 'drip':      return 'drip';
     case 'kids':      return 'kids';
     case 'world-cup': return 'world-cup';
@@ -78,6 +80,10 @@ function deriveCollections(tag: string, season: string, isLongSleeve: boolean): 
     case 'special':
       collections.push('Special Edition');
       break;
+    case 'stussy':
+      collections.push('Special Edition');
+      collections.push('Stussy Edition');
+      break;
     case 'drip':
       collections.push('Drip');
       break;
@@ -103,6 +109,7 @@ function deriveCollections(tag: string, season: string, isLongSleeve: boolean): 
 function sheetType(tag: string): string {
   if (tag === 'world-cup') return 'world_cup';
   if (tag === 'other') return 'other_products';
+  if (tag === 'stussy') return 'special'; // stussy is a special edition type
   return tag;
 }
 
@@ -112,6 +119,7 @@ function getAutoPrice(tag: string, isLongSleeve: boolean): number {
     regular: PRICES.regular,
     retro: PRICES.retro,
     special: PRICES.special,
+    stussy: PRICES.special,
     drip: PRICES.drip,
     kids: PRICES.kids,
     'world-cup': PRICES.world_cup,
@@ -204,6 +212,7 @@ export default function AddProductPage() {
       const autoTags: string[] = [];
       if (isLongSleeve) autoTags.push('ארוך');
       if (tag === 'world-cup') autoTags.push('מונדיאל');
+      if (tag === 'stussy') autoTags.push('stussy');
 
       setStatus('saving');
       const res = await fetch('/api/admin/products', {
@@ -378,6 +387,7 @@ export default function AddProductPage() {
             <div className="grid grid-cols-4 gap-3">
               {previews.map((src, i) => (
                 <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-white/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={src} alt="" className="w-full h-full object-cover" />
                   {i === 0 && (
                     <span className="absolute top-1 left-1 bg-cyan-500 text-[10px] font-bold px-1.5 py-0.5 rounded text-black">
@@ -457,6 +467,7 @@ export default function AddProductPage() {
             {/* Image */}
             <div className="aspect-[3/4] bg-[#1a1a1a] relative overflow-hidden">
               {previews[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={previews[0]} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-600">

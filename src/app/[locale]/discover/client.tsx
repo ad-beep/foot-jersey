@@ -51,6 +51,7 @@ const labels = {
     longSleeve: 'Long Sleeve',
     drip: 'Drip',
     otherProducts: 'Other Products',
+    stussyEdition: 'Stussy Edition',
     clearAll: 'Clear All',
     showingSuggested: (n: number) => `Showing ${n} suggested jerseys`,
     showingFiltered: (n: number) => `Showing ${n} jerseys`,
@@ -81,6 +82,7 @@ const labels = {
     longSleeve: 'שרוול ארוך',
     drip: 'דריפ',
     otherProducts: 'מוצרים נוספים',
+    stussyEdition: 'מהדורת סטוסי',
     clearAll: 'נקה הכל',
     showingSuggested: (n: number) => `מציג ${n} חולצות מומלצות`,
     showingFiltered: (n: number) => `מציג ${n} חולצות`,
@@ -113,14 +115,15 @@ const LEAGUE_PILLS: Pill[] = [
 ];
 
 const COLLECTION_PILLS: Pill[] = [
-  { id: 'retro',       labelKey: 'retro' },
-  { id: 'season-2526', labelKey: 'season2526' },
-  { id: 'special',     labelKey: 'special' },
-  { id: 'world-cup',   labelKey: 'worldCup' },
-  { id: 'kids',        labelKey: 'kids' },
-  { id: 'long-sleeve', labelKey: 'longSleeve' },
-  { id: 'drip',             labelKey: 'drip' },
-  { id: 'other-products',  labelKey: 'otherProducts' },
+  { id: 'retro',          labelKey: 'retro' },
+  { id: 'season-2526',    labelKey: 'season2526' },
+  { id: 'special',        labelKey: 'special' },
+  { id: 'stussy-edition', labelKey: 'stussyEdition' },
+  { id: 'world-cup',      labelKey: 'worldCup' },
+  { id: 'kids',           labelKey: 'kids' },
+  { id: 'long-sleeve',    labelKey: 'longSleeve' },
+  { id: 'drip',           labelKey: 'drip' },
+  { id: 'other-products', labelKey: 'otherProducts' },
 ];
 
 const SORT_OPTIONS = [
@@ -171,15 +174,16 @@ function leagueMatchesJersey(leagueId: string, j: Jersey): boolean {
 
 function collectionMatchesJersey(colId: string, j: Jersey): boolean {
   switch (colId) {
-    case 'retro':       return j.type === 'retro';
-    case 'season-2526': return j.type === 'regular' && (j.season.includes('24/25') || j.season.includes('25/26'));
-    case 'special':     return j.type === 'special';
-    case 'world-cup':   return j.type === 'world_cup';
-    case 'kids':        return j.type === 'kids';
-    case 'long-sleeve': return j.tags.some((t) => t.includes('ארוך'));
-    case 'drip':             return j.type === 'drip';
-    case 'other-products':   return j.type === 'other_products';
-    default:                 return false;
+    case 'retro':          return j.type === 'retro';
+    case 'season-2526':    return j.type === 'regular' && (j.season.includes('24/25') || j.season.includes('25/26'));
+    case 'special':        return j.type === 'special';
+    case 'stussy-edition': return j.tags.some((t) => t.toLowerCase().includes('stussy'));
+    case 'world-cup':      return j.type === 'world_cup';
+    case 'kids':           return j.type === 'kids';
+    case 'long-sleeve':    return j.tags.some((t) => t.includes('ארוך'));
+    case 'drip':           return j.type === 'drip';
+    case 'other-products': return j.type === 'other_products';
+    default:               return false;
   }
 }
 

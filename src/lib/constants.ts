@@ -65,6 +65,7 @@ export const SPECIAL_SECTIONS: {
   { slug: 'long-sleeve', labelKey: 'categories.longSleeve', labelHe: 'שרוול ארוך', labelEn: 'Long Sleeve', icon: 'long-sleeve', typeMatch: '', tagMatch: 'ארוך', filterMode: 'tag', description: { en: 'Long sleeve jerseys', he: 'חולצות שרוול ארוך' } },
   { slug: 'other-products', labelKey: 'categories.otherProducts', labelHe: 'מוצרים נוספים', labelEn: 'Other Products', icon: 'other-products', typeMatch: 'other_products', filterMode: 'type', description: { en: 'Scarves, jackets, training wear', he: 'צעיפים, ז׳קטים, ביגוד אימון' } },
   { slug: 'mystery-box', labelKey: 'categories.mysteryBox', labelHe: 'קופסת הפתעה', labelEn: 'Mystery Box', icon: 'mystery-box', typeMatch: 'mystery-box', filterMode: 'type', description: { en: 'Surprise jersey boxes — pick your style, we pick the shirt', he: 'קופסאות הפתעה — בחר סגנון, אנחנו נבחר את החולצה' } },
+  { slug: 'stussy-edition', labelKey: 'categories.stussyEdition', labelHe: 'מהדורת סטוסי', labelEn: 'Stussy Edition', icon: 'stussy-edition', typeMatch: '', tagMatch: 'stussy', filterMode: 'tag', description: { en: 'Stussy collaboration jerseys — limited streetwear drops', he: 'חולצות שיתוף פעולה עם Stussy — שחרורים מוגבלים' } },
 ];
 
 // ─── Mystery Box Options ─────────────────────────────────────
