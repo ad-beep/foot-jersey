@@ -191,6 +191,7 @@ const CATEGORIES: CategoryDef[] = [
     en: 'Stussy Edition',
     he: 'מהדורת סטוסי',
     bg: 'rgba(30,20,60,0.7)',
+    image: 'stussy-edition',
     grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
     size: 'lg',
     special: true,
