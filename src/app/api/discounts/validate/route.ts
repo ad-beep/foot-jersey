@@ -4,10 +4,17 @@ import { google } from 'googleapis';
 const SHEET_TAB = 'DiscountCodes';
 
 function getAuth() {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const rawKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  if (!email || !rawKey) {
+    throw new Error('Missing Google credentials env vars');
+  }
+
   return new google.auth.GoogleAuth({
     credentials: {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      client_email: email,
+      private_key: rawKey.replace(/\\n/g, '\n'),
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
@@ -21,9 +28,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: 'No code provided' }, { status: 400 });
     }
 
+    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+    if (!spreadsheetId) {
+      console.error('Validate discount: missing GOOGLE_SHEETS_SPREADSHEET_ID');
+      return NextResponse.json({ valid: false, error: 'Server configuration error' }, { status: 500 });
+    }
+
     const sheets = google.sheets({ version: 'v4', auth: getAuth() });
     const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID!,
+      spreadsheetId,
       range: `${SHEET_TAB}!A:I`,
     });
 

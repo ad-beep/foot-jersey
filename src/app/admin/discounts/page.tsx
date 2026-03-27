@@ -42,10 +42,17 @@ export default function DiscountsPage() {
     try {
       const res = await fetch('/api/admin/discounts');
       const json = await res.json();
-      // Filter out cleared/empty rows
-      setDiscounts((json.data || []).filter((d: Discount) => d.code));
+
+      if (!res.ok) {
+        setToast({ message: json.error || 'Failed to load discounts', type: 'error' });
+        setDiscounts([]);
+      } else {
+        // Filter out cleared/empty rows
+        setDiscounts((json.data || []).filter((d: Discount) => d.code));
+      }
     } catch (err) {
       console.error(err);
+      setToast({ message: 'Network error — could not load discount codes', type: 'error' });
     } finally {
       setLoading(false);
     }
