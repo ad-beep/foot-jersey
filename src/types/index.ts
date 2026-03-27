@@ -1,5 +1,5 @@
 // ─── Product Types ────────────────────────────────────────────
-export type JerseyType = 'regular' | 'retro' | 'kids' | 'special' | 'drip' | 'world_cup' | 'other_products';
+export type JerseyType = 'regular' | 'retro' | 'kids' | 'special' | 'drip' | 'world_cup' | 'other_products' | 'stussy';
 
 export type League =
   | 'england'

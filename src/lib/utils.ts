@@ -71,7 +71,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     additionalImages = row.additional_images.split('|').filter(Boolean);
   }
 
-  // Backward-compat: coat/scarf → other_products, detect world_cup from tag
+  // Backward-compat: coat/scarf → other_products, detect world_cup/stussy from tag
   let type: JerseyType;
   if (rawType === 'coat' || rawType === 'scarf') {
     type = 'other_products';
@@ -79,7 +79,9 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     type = 'world_cup';
   } else if (rawType === 'regular' && tags.some((t) => t.includes('מונדיאל'))) {
     type = 'world_cup';
-  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products'].includes(rawType)) {
+  } else if (rawType === 'regular' && tags.some((t) => t.toLowerCase() === 'stussy')) {
+    type = 'stussy';
+  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products', 'stussy'].includes(rawType)) {
     type = rawType as JerseyType;
   } else {
     type = 'regular';
