@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { google } from 'googleapis';
+
+function getSheetsAuth() {
+  return new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+}
+
+async function updateSheetStatus(orderId: string, status: string) {
+  try {
+    const auth = getSheetsAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID!;
+
+    // Find all rows where column A = orderId
+    const colA = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Orders!A:A',
+    });
+
+    const rows = colA.data.values || [];
+    const ranges: { range: string; values: string[][] }[] = [];
+
+    rows.forEach((row, idx) => {
+      if (idx === 0) return; // skip header row
+      if (row[0] === orderId) {
+        // Sheets is 1-indexed; header is row 1, so data starts at row 2
+        ranges.push({ range: `Orders!S${idx + 1}`, values: [[status]] });
+      }
+    });
+
+    if (ranges.length === 0) return;
+
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        valueInputOption: 'RAW',
+        data: ranges,
+      },
+    });
+  } catch (err) {
+    // Log but don't fail — Firestore is source of truth
+    console.error('Failed to update sheet status:', err);
+  }
+}
+
+const VALID_STATUSES = [
+  'pending', 'pending_bit_approval', 'processing',
+  'shipped', 'completed', 'bit_declined',
+];
+
+export async function POST(request: NextRequest) {
+  try {
+    const { orderId, status } = await request.json();
+
+    if (!orderId || !status) {
+      return NextResponse.json({ error: 'orderId and status are required' }, { status: 400 });
+    }
+    if (!VALID_STATUSES.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
+    await updateDoc(doc(db, 'orders', orderId), { status });
+
+    // Sync sheet in background — don't await so the UI isn't blocked
+    updateSheetStatus(orderId, status);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
+  }
+}
