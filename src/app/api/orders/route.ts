@@ -68,51 +68,52 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
 
-    const itemsSummary = body.items
-      .map(
-        (item) =>
-          `${item.jersey?.teamName || item.jerseyId} (${item.size} ×${item.quantity})`
-      )
-      .join(' | ');
+    const orderDate = new Date().toISOString();
+    const paymentId = body.paypalOrderId || body.bitTransactionId || '';
+    const orderStatus = body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending';
 
-    const customizations = body.items
-      .filter((item) => item.customization?.customName || item.customization?.isPlayerVersion)
-      .map(
-        (item) =>
-          `${item.jersey?.teamName || item.jerseyId}: ${
-            item.customization?.customName
-              ? `#${item.customization.customNumber} ${item.customization.customName}`
-              : ''
-          }${item.customization?.isPlayerVersion ? ' [Player]' : ''}${
-            item.customization?.hasPatch ? ' [Patch]' : ''
-          }${item.customization?.hasPants ? ' [Pants]' : ''}`
-      )
-      .join(' | ');
+    // One row per line item, with order-level fields repeated on each row
+    const itemRows = body.items.map((item) => {
+      const unitPrice = item.totalPrice;
+      const lineTotal = item.totalPrice * item.quantity;
+      return [
+        orderId,                                  // Order ID
+        orderDate,                                // Order Date
+        customerName,                             // Customer Name
+        body.shippingInfo.email,                  // Customer Email
+        body.shippingInfo.phone,                  // Customer Phone
+        body.shippingInfo.street || '',           // Shipping Address
+        body.shippingInfo.city || '',             // City
+        body.shippingInfo.zip || '',              // Postal Code
+        body.shippingInfo.country || '',          // Country
+        item.jerseyId,                            // Jersey ID
+        item.jersey?.teamName || '',              // Jersey Name
+        item.size,                                // Size
+        item.customization?.customName || '',     // Customization Name
+        item.customization?.customNumber || '',   // Customization Number
+        item.quantity,                            // Quantity
+        unitPrice,                                // Unit Price (₪)
+        lineTotal,                                // Line Total (₪)
+        body.shipping ?? 0,                       // Shipping Cost (₪)
+        body.discountAmount || 0,                 // Discount (₪)
+        body.total,                               // Order Total (₪)
+        body.paymentMethod,                       // Payment Method
+        body.paymentStatus,                       // Payment Status
+        paymentId,                                // Payment ID
+        orderStatus,                              // Order Status
+        '',                                       // Tracking Number
+        body.shippingInfo.notes || '',            // Notes
+      ];
+    });
 
-    const row = [
-      orderId,
-      new Date().toISOString(),
-      customerName,
-      body.shippingInfo.email,
-      body.shippingInfo.phone,
-      `${body.shippingInfo.street}, ${body.shippingInfo.city}, ${body.shippingInfo.zip}, ${body.shippingInfo.country}`,
-      body.paymentMethod,
-      body.paypalOrderId || body.bitTransactionId || '',
-      body.paymentStatus,
-      itemsSummary,
-      customizations,
-      body.subtotal,
-      body.shipping ?? 0,
-      body.total,
-      body.currency,
-      'pending', // order status
-    ];
+    // Blank separator row between orders
+    const blankRow = Array(26).fill('');
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'Orders Log!A:P',
+      range: 'Orders!A:Z',
       valueInputOption: 'RAW',
-      requestBody: { values: [row] },
+      requestBody: { values: [...itemRows, blankRow] },
     });
   } catch (error) {
     // Log but don't fail the order — Firestore is the source of truth
