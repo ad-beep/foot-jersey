@@ -104,18 +104,17 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
         orderStatus,                                          // X  Order Status
         false,                                                // Y  Tracking Number
         body.shippingInfo.notes || 'false',                  // Z  Notes
-        item.customization?.hasPatch ? true : false,         // AA Patch
-        item.customization?.patchText  || 'false',           // AB Patch Text
-        item.customization?.hasPants ? true : false,         // AC Pants
+        item.customization?.patchText  || 'false',           // AA Patch
+        item.customization?.hasPants ? true : false,         // AB Pants
       ];
     });
 
-    // Blank separator row between orders (29 columns)
-    const blankRow = Array(29).fill('');
+    // Blank separator row between orders (28 columns)
+    const blankRow = Array(28).fill('');
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'Orders!A:AC',
+      range: 'Orders!A:AB',
       valueInputOption: 'RAW',
       requestBody: { values: [...itemRows, blankRow] },
     });
