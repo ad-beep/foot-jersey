@@ -2,14 +2,14 @@ import type { League, LocaleConfig } from '@/types';
 
 // ─── Pricing ─────────────────────────────────────────────────
 export const PRICES = {
-  regular: 99,
-  retro: 109,
-  kids: 99,
-  special: 99,
+  regular: 100,
+  retro: 110,
+  kids: 100,
+  special: 100,
   stussy: 125,
-  drip: 109,
-  world_cup: 99,
-  other_products: 149,
+  drip: 110,
+  world_cup: 100,
+  other_products: 150,
   customization: {
     nameAndNumber: 10,
     patch: 10,
