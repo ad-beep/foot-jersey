@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation email when admin accepts a BIT payment
     if (status === 'processing' && orderData?.email) {
-      sendBitApprovedEmail({
+      await sendBitApprovedEmail({
         to: orderData.email,
         customerName: orderData.customerName || '',
         orderId,

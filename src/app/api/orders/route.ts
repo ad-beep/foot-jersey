@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
 
     if (body.paymentMethod === 'paypal' && body.paymentStatus === 'completed') {
       // Instant confirmation for PayPal orders
-      sendOrderConfirmation({
+      await sendOrderConfirmation({
         to: body.shippingInfo.email,
         customerName: emailCustomerName,
         orderId: orderDoc.id,
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
       }).catch((e) => console.error('Email send error:', e));
     } else if (body.paymentMethod === 'bit') {
       // BIT: send "waiting for approval" email immediately
-      sendBitPendingEmail({
+      await sendBitPendingEmail({
         to: body.shippingInfo.email,
         customerName: emailCustomerName,
         orderId: orderDoc.id,
