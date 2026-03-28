@@ -228,37 +228,36 @@ export default function OrderDetailPage() {
         )}
 
         {order.status === 'bit_declined' && (
-          <>
-            <span className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-semibold">
-              ✕ Payment Declined
-            </span>
-            {!confirmDelete ? (
-              <button
-                onClick={() => setConfirmDelete(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/8 text-red-500 border border-red-500/15 text-sm font-semibold hover:bg-red-500/15 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete Order
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Are you sure?</span>
-                <button
-                  onClick={handleDelete}
-                  disabled={actionLoading}
-                  className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/30 disabled:opacity-50 transition-colors"
-                >
-                  {actionLoading ? 'Deleting…' : 'Yes, delete'}
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 text-xs font-bold hover:bg-white/10 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </>
+          <span className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-semibold">
+            ✕ Payment Declined
+          </span>
+        )}
+
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/8 text-red-500 border border-red-500/15 text-sm font-semibold hover:bg-red-500/15 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete Order
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Are you sure?</span>
+            <button
+              onClick={handleDelete}
+              disabled={actionLoading}
+              className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/30 disabled:opacity-50 transition-colors"
+            >
+              {actionLoading ? 'Deleting…' : 'Yes, delete'}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 text-xs font-bold hover:bg-white/10 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         )}
       </div>
 
