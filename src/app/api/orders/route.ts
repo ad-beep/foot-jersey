@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import {
   collection,
-  addDoc,
+  doc,
+  runTransaction,
   serverTimestamp,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
@@ -178,40 +179,54 @@ export async function POST(request: NextRequest) {
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
 
-    // 1. Write to Firestore
+    // 1. Write to Firestore with atomic order number
+    const counterRef = doc(db, 'meta', 'orderCounter');
     const ordersCollection = collection(db, 'orders');
-    const orderDoc = await addDoc(ordersCollection, {
-      items: body.items.map((item) => ({
-        jerseyId: item.jerseyId,
-        teamName: item.jersey?.teamName || '',
-        size: item.size,
-        quantity: item.quantity,
-        customization: item.customization,
-        totalPrice: item.totalPrice,
-      })),
-      shippingInfo: {
-        name: customerName,
-        phone: body.shippingInfo.phone,
-        email: body.shippingInfo.email,
-        country: body.shippingInfo.country,
-        city: body.shippingInfo.city,
-        street: body.shippingInfo.street,
-        zip: body.shippingInfo.zip,
-        notes: body.shippingInfo.notes || '',
-      },
-      paymentMethod: body.paymentMethod,
-      paymentStatus: body.paymentStatus,
-      paypalOrderId: body.paypalOrderId || null,
-      bitTransactionId: body.bitTransactionId || null,
-      bitSenderDetails: body.bitSenderDetails || null,
-      discountCode: body.discountCode || null,
-      discountAmount: body.discountAmount || 0,
-      subtotal: body.subtotal,
-      total: body.total,
-      currency: body.currency,
-      createdAt: serverTimestamp(),
-      status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+    const newOrderRef = doc(ordersCollection);
+
+    await runTransaction(db, async (transaction) => {
+      const counterSnap = await transaction.get(counterRef);
+      const orderNumber = counterSnap.exists()
+        ? (counterSnap.data().count as number) + 1
+        : 1;
+      transaction.set(counterRef, { count: orderNumber });
+      transaction.set(newOrderRef, {
+        orderNumber,
+        items: body.items.map((item) => ({
+          jerseyId: item.jerseyId,
+          teamName: item.jersey?.teamName || '',
+          imageUrl: item.jersey?.imageUrl || '',
+          size: item.size,
+          quantity: item.quantity,
+          customization: item.customization,
+          totalPrice: item.totalPrice,
+        })),
+        shippingInfo: {
+          name: customerName,
+          phone: body.shippingInfo.phone,
+          email: body.shippingInfo.email,
+          country: body.shippingInfo.country,
+          city: body.shippingInfo.city,
+          street: body.shippingInfo.street,
+          zip: body.shippingInfo.zip,
+          notes: body.shippingInfo.notes || '',
+        },
+        paymentMethod: body.paymentMethod,
+        paymentStatus: body.paymentStatus,
+        paypalOrderId: body.paypalOrderId || null,
+        bitTransactionId: body.bitTransactionId || null,
+        bitSenderDetails: body.bitSenderDetails || null,
+        discountCode: body.discountCode || null,
+        discountAmount: body.discountAmount || 0,
+        subtotal: body.subtotal,
+        total: body.total,
+        currency: body.currency,
+        createdAt: serverTimestamp(),
+        status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+      });
     });
+
+    const orderDoc = newOrderRef;
 
     // 2. Append to Google Sheets Orders Log (fire-and-forget)
     appendOrderToSheet(orderDoc.id, body);
