@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag, Trash2, Plus, Minus, Truck, ArrowLeft, ArrowRight,
-  Package, CreditCard, CheckCircle2, X, AlertCircle,
+  Package, CreditCard, X, AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -186,7 +186,6 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const [form, setForm] = useState<CheckoutForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldError>({});
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bit');
   const [paymentError, setPaymentError] = useState('');
@@ -313,17 +312,9 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const handlePaymentSuccess = useCallback(
     async (paymentIntentId?: string, paypalOrderId?: string) => {
       try {
-        await saveOrder({ paymentIntentId, paypalOrderId, method: paymentMethod });
-        setSuccess(true);
+        const result = await saveOrder({ paymentIntentId, paypalOrderId, method: paymentMethod });
         clearCart();
-        toast({
-          title: isHe ? 'ההזמנה בוצעה בהצלחה!' : 'Order placed successfully!',
-          variant: 'success',
-        });
-
-        setTimeout(() => {
-          router.push(`/${locale}`);
-        }, 3000);
+        router.push(`/${locale}/order-confirmed?orderId=${result.orderId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save order';
         setPaymentError(message);
@@ -332,20 +323,16 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         setSubmitting(false);
       }
     },
-    [saveOrder, clearCart, toast, isHe, router, locale, paymentMethod]
+    [saveOrder, clearCart, router, locale, paymentMethod, setPaymentError, toast]
   );
 
   const handleBitConfirm = useCallback(
     async (senderDetails: BitSenderDetails) => {
       setSubmitting(true);
       try {
-        await saveOrder({ method: 'bit', bitSenderDetails: senderDetails });
-        setSuccess(true);
+        const result = await saveOrder({ method: 'bit', bitSenderDetails: senderDetails });
         clearCart();
-        toast({
-          title: isHe ? 'ההזמנה התקבלה! ממתינים לאישור תשלום.' : 'Order received! Waiting for payment approval.',
-          variant: 'success',
-        });
+        router.push(`/${locale}/order-confirmed?orderId=${result.orderId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save order';
         setPaymentError(message);
@@ -354,7 +341,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         setSubmitting(false);
       }
     },
-    [saveOrder, clearCart, toast, isHe]
+    [saveOrder, clearCart, router, locale, setPaymentError, toast]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -371,49 +358,6 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, isHe]);
 
-  if (success) {
-    const isBitOrder = paymentMethod === 'bit';
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center gap-4 py-12 text-center"
-      >
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: isBitOrder ? 'rgba(255,190,50,0.12)' : 'rgba(0,195,216,0.12)' }}
-        >
-          {isBitOrder ? (
-            <Package className="w-8 h-8" style={{ color: '#FFBE32' }} />
-          ) : (
-            <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent)' }} />
-          )}
-        </div>
-        <h3 className="text-xl font-bold text-white">
-          {isBitOrder
-            ? (isHe ? 'ההזמנה התקבלה!' : 'Order Received!')
-            : (isHe ? 'ההזמנה בוצעה!' : 'Order Placed!')}
-        </h3>
-        <p className="text-sm max-w-sm" style={{ color: 'var(--text-secondary)' }}>
-          {isBitOrder
-            ? (isHe
-              ? 'אנחנו ממתינים לאישור התשלום. תקבל אימייל ברגע שנאשר את ההעברה ב-Bit.'
-              : 'We are waiting for payment confirmation. You will receive an email once we approve the Bit transfer.')
-            : (isHe ? 'תודה רבה! ניצור איתך קשר בקרוב.' : "Thank you! We'll be in touch soon.")}
-        </p>
-        {isBitOrder && (
-          <div
-            className="rounded-xl p-4 mt-2 text-xs max-w-sm"
-            style={{ backgroundColor: 'rgba(255,190,50,0.08)', border: '1px solid rgba(255,190,50,0.2)', color: '#FFBE32' }}
-          >
-            {isHe
-              ? 'שים לב: ההזמנה תטופל רק לאחר אישור התשלום. זמן אישור: עד 24 שעות.'
-              : 'Note: Your order will only be processed after payment approval. Approval time: up to 24 hours.'}
-          </div>
-        )}
-      </motion.div>
-    );
-  }
 
   const inputClass = 'w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-all duration-200 focus:ring-1';
   const inputStyle = (hasError: boolean) => ({
