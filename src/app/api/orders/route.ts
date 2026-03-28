@@ -72,46 +72,49 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
     const paymentId = body.paypalOrderId || body.bitTransactionId || '';
     const orderStatus = body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending';
 
-    // One row per line item, with order-level fields repeated on each row
+    // One row per line item, with order-level fields repeated on each row.
+    // Empty optional fields write 'false' so nothing is ever silently blank.
     const itemRows = body.items.map((item) => {
       const unitPrice = item.totalPrice;
       const lineTotal = item.totalPrice * item.quantity;
       return [
-        orderId,                                  // Order ID
-        orderDate,                                // Order Date
-        customerName,                             // Customer Name
-        body.shippingInfo.email,                  // Customer Email
-        body.shippingInfo.phone,                  // Customer Phone
-        body.shippingInfo.street || '',           // Shipping Address
-        body.shippingInfo.city || '',             // City
-        body.shippingInfo.zip || '',              // Postal Code
-        body.shippingInfo.country || '',          // Country
-        item.jerseyId,                            // Jersey ID
-        item.jersey?.teamName || '',              // Jersey Name
-        item.size,                                // Size
-        item.customization?.customName || '',     // Customization Name
-        item.customization?.customNumber || '',   // Customization Number
-        item.quantity,                            // Quantity
-        unitPrice,                                // Unit Price (₪)
-        lineTotal,                                // Line Total (₪)
-        body.shipping ?? 0,                       // Shipping Cost (₪)
-        body.discountAmount || 0,                 // Discount (₪)
-        body.total,                               // Order Total (₪)
-        body.paymentMethod,                       // Payment Method
-        body.paymentStatus,                       // Payment Status
-        paymentId,                                // Payment ID
-        orderStatus,                              // Order Status
-        '',                                       // Tracking Number
-        body.shippingInfo.notes || '',            // Notes
+        orderId,                                              // A  Order ID
+        orderDate,                                            // B  Order Date
+        customerName,                                         // C  Customer Name
+        body.shippingInfo.email,                              // D  Customer Email
+        body.shippingInfo.phone,                              // E  Customer Phone
+        body.shippingInfo.street   || 'false',               // F  Shipping Address
+        body.shippingInfo.city     || 'false',               // G  City
+        body.shippingInfo.zip      || 'false',               // H  Postal Code
+        body.shippingInfo.country  || 'false',               // I  Country
+        item.jerseyId,                                        // J  Jersey ID
+        item.jersey?.teamName      || 'false',               // K  Jersey Name
+        item.size,                                            // L  Size
+        item.customization?.customName   || 'false',         // M  Customization Name
+        item.customization?.customNumber || 'false',         // N  Customization Number
+        item.customization?.isPlayerVersion ? true : false,  // O  Player Version
+        unitPrice,                                            // P  Unit Price (₪)
+        lineTotal,                                            // Q  Line Total (₪)
+        body.shipping ?? 0,                                   // R  Shipping Cost (₪)
+        body.discountAmount || 0,                             // S  Discount (₪)
+        body.total,                                           // T  Order Total (₪)
+        body.paymentMethod,                                   // U  Payment Method
+        body.paymentStatus,                                   // V  Payment Status
+        paymentId || 'false',                                 // W  Payment ID
+        orderStatus,                                          // X  Order Status
+        false,                                                // Y  Tracking Number
+        body.shippingInfo.notes || 'false',                  // Z  Notes
+        item.customization?.hasPatch ? true : false,         // AA Patch
+        item.customization?.hasPants ? true : false,         // AB Pants
       ];
     });
 
-    // Blank separator row between orders
-    const blankRow = Array(26).fill('');
+    // Blank separator row between orders (28 columns)
+    const blankRow = Array(28).fill('');
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'Orders!A:Z',
+      range: 'Orders!A:AB',
       valueInputOption: 'RAW',
       requestBody: { values: [...itemRows, blankRow] },
     });
