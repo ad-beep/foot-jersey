@@ -83,10 +83,10 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
         customerName,                                         // C  Customer Name
         body.shippingInfo.email,                              // D  Customer Email
         body.shippingInfo.phone,                              // E  Customer Phone
-        body.shippingInfo.street   || 'false',               // F  Shipping Address
-        body.shippingInfo.city     || 'false',               // G  City
-        body.shippingInfo.zip      || 'false',               // H  Postal Code
-        body.shippingInfo.country  || 'false',               // I  Country
+        body.shippingInfo.street,                             // F  Shipping Address
+        body.shippingInfo.city,                               // G  City
+        body.shippingInfo.zip,                                // H  Postal Code
+        body.shippingInfo.country,                            // I  Country
         item.jerseyId,                                        // J  Jersey ID
         item.jersey?.teamName      || 'false',               // K  Jersey Name
         item.size,                                            // L  Size
@@ -105,16 +105,17 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
         false,                                                // Y  Tracking Number
         body.shippingInfo.notes || 'false',                  // Z  Notes
         item.customization?.hasPatch ? true : false,         // AA Patch
-        item.customization?.hasPants ? true : false,         // AB Pants
+        item.customization?.patchText  || 'false',           // AB Patch Text
+        item.customization?.hasPants ? true : false,         // AC Pants
       ];
     });
 
-    // Blank separator row between orders (28 columns)
-    const blankRow = Array(28).fill('');
+    // Blank separator row between orders (29 columns)
+    const blankRow = Array(29).fill('');
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'Orders!A:AB',
+      range: 'Orders!A:AC',
       valueInputOption: 'RAW',
       requestBody: { values: [...itemRows, blankRow] },
     });
