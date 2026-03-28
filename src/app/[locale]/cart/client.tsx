@@ -337,6 +337,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
 
   const handleBitConfirm = useCallback(
     async (senderDetails: BitSenderDetails) => {
+      setSubmitting(true);
       try {
         await saveOrder({ method: 'bit', bitSenderDetails: senderDetails });
         setSuccess(true);
@@ -365,7 +366,6 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
       return;
     }
 
-    setSubmitting(true);
     setPaymentError('');
     setShowPaymentForm(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
