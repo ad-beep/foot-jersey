@@ -33,7 +33,7 @@ async function updateSheetStatus(orderId: string, status: string) {
       if (idx === 0) return; // skip header row
       if (row[0] === orderId) {
         // Sheets is 1-indexed; header is row 1, so data starts at row 2
-        ranges.push({ range: `Orders!S${idx + 1}`, values: [[status]] });
+        ranges.push({ range: `Orders!X${idx + 1}`, values: [[status]] });
       }
     });
 
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
 
     await updateDoc(doc(db, 'orders', orderId), { status });
 
-    // Sync sheet in background
-    updateSheetStatus(orderId, status);
+    // Sync sheet — awaited so lambda stays alive until write completes
+    await updateSheetStatus(orderId, status);
 
     // Send confirmation email when admin accepts a BIT payment
     if (status === 'processing' && orderData?.email) {
