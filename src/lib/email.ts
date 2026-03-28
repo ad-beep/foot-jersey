@@ -5,7 +5,9 @@ function getTransporter() {
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) return null;
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: { user, pass },
   });
 }
@@ -140,7 +142,9 @@ async function sendMail(opts: { to: string; subject: string; html: string }): Pr
     return;
   }
   const from = `FootJersey <${process.env.GMAIL_USER}>`;
+  console.log(`[Email] Sending to ${opts.to} — "${opts.subject}"`);
   await transporter.sendMail({ from, to: opts.to, subject: opts.subject, html: opts.html });
+  console.log(`[Email] Sent OK to ${opts.to}`);
 }
 
 // ─── Order Confirmation Email (PayPal/Credit Card) ────────────────────────────
