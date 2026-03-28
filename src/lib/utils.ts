@@ -104,6 +104,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
   return {
     id: row.id,
     teamName: row.team_name?.trim() || englishName || '',
+    nameEn: englishName || undefined,
     league: normalizeLeague(row.league?.trim() || ''),
     season,
     type,
@@ -191,7 +192,7 @@ import translationsJson from '@/data/jersey-translations.json';
 const translations = translationsJson as Record<string, string>;
 
 export function getJerseyName(jersey: Jersey, locale: 'en' | 'he'): string {
-  if (locale === 'en') return translations[jersey.id] ?? jersey.teamName;
+  if (locale === 'en') return jersey.nameEn ?? translations[jersey.id] ?? jersey.teamName;
   return jersey.teamName;
 }
 

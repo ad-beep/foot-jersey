@@ -15,7 +15,8 @@ export type KidsSize = '16' | '18' | '20' | '22' | '24' | '26' | '28';
 
 export interface Jersey {
   id: string;
-  teamName: string;
+  teamName: string;   // Hebrew name (primary)
+  nameEn?: string;    // English name from en: tag
   league: League;
   season: string;
   type: JerseyType;
