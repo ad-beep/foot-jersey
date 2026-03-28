@@ -7,7 +7,7 @@ service cloud.firestore {
     // If you have multiple admin emails, add them with || operators.
     function isAdmin() {
       return request.auth != null &&
-             request.auth.token.email == 'YOUR_ADMIN_EMAIL_HERE';
+             request.auth.token.email == 'adibhazz@gmail.com';
     }
 
     // ── Orders ────────────────────────────────────────────────────────────
