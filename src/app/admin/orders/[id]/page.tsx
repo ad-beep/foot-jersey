@@ -107,7 +107,7 @@ export default function OrderDetailPage() {
   const handleStatus = useCallback(async (status: string) => {
     if (!order || actionLoading) return;
     setActionLoading(true);
-    await callUpdateStatus(order.id, status);
+    await callUpdateStatus(order.id, status, order);
     setActionLoading(false);
   }, [order, actionLoading]);
 

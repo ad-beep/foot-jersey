@@ -191,7 +191,7 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
       </div>
 
       <div class="info-box success">
-        🚀 We typically ship within 7–14 business days. You'll receive a shipping notification once your order is on its way.
+        🚀 We typically ship within 2–4 weeks. You'll receive a shipping notification once your order is on its way.
       </div>
 
       <a href="${SITE_URL}" class="cta-button">Continue Shopping</a>
@@ -224,7 +224,7 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
         <strong>What happens next?</strong><br><br>
         1. We verify your BIT transfer manually (usually within a few hours).<br>
         2. Once confirmed, you'll receive a <strong>second email</strong> confirming your order is being prepared.<br>
-        3. Your jerseys will be shipped within 7–14 business days after confirmation.
+        3. Your jerseys will be shipped within 2–4 weeks after confirmation.
       </div>
 
       <div class="totals">
@@ -306,7 +306,7 @@ export async function sendBitApprovedEmail(opts: {
       ${addressHtml}
 
       <div class="info-box success">
-        🚀 Your jerseys are being prepared and will be shipped within 7–14 business days. You'll receive another email with tracking info once shipped!
+        🚀 Your jerseys are being prepared and will be shipped within 2–4 weeks. You'll receive another email with tracking info once shipped!
       </div>
 
       <a href="${SITE_URL}" class="cta-button">Continue Shopping</a>
