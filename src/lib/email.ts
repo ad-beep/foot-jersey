@@ -1,13 +1,15 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-let _resend: Resend | null = null;
-function getResend(): Resend | null {
-  if (!process.env.RESEND_API_KEY) return null;
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
-  return _resend;
+function getTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+  });
 }
 
-const FROM_EMAIL = 'FootJersey <orders@shopfootjersey.com>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shopfootjersey.com';
 
 interface OrderItem {
@@ -131,14 +133,18 @@ function renderItems(items: OrderItem[]): string {
   }).join('');
 }
 
-// ─── Order Confirmation Email (PayPal/Credit Card) ────────────────────────────
-export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not set — skipping order confirmation email');
+async function sendMail(opts: { to: string; subject: string; html: string }): Promise<void> {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('[Email] GMAIL_USER or GMAIL_APP_PASSWORD not set — skipping email');
     return;
   }
+  const from = `FootJersey <${process.env.GMAIL_USER}>`;
+  await transporter.sendMail({ from, to: opts.to, subject: opts.subject, html: opts.html });
+}
 
+// ─── Order Confirmation Email (PayPal/Credit Card) ────────────────────────────
+export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions): Promise<void> {
   const itemsHtml = renderItems(opts.items);
   const discountRow = opts.discountAmount && opts.discountAmount > 0
     ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
@@ -188,8 +194,7 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
     </div>`;
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await sendMail({
       to: opts.to,
       subject: `Order Confirmed — FootJersey #${opts.orderId.slice(0, 8).toUpperCase()}`,
       html: wrapEmail(content, 'Order Confirmed — FootJersey'),
@@ -201,12 +206,6 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
 
 // ─── BIT Pending Email (sent immediately on BIT order) ────────────────────────
 export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not set — skipping BIT pending email');
-    return;
-  }
-
   const content = `
     <div class="body">
       <div style="margin-bottom:16px;">
@@ -236,8 +235,7 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
     </div>`;
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await sendMail({
       to: opts.to,
       subject: `Order Received — Awaiting BIT Payment — FootJersey #${opts.orderId.slice(0, 8).toUpperCase()}`,
       html: wrapEmail(content, 'Order Received — FootJersey'),
@@ -260,12 +258,6 @@ export async function sendBitApprovedEmail(opts: {
   items?: OrderItem[];
   shippingAddress?: { street: string; city: string; zip: string; country: string };
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not set — skipping BIT approved email');
-    return;
-  }
-
   const itemsHtml = opts.items?.length ? `
       <table class="items-table">
         <thead><tr><th>Item</th><th style="text-align:right">Price</th></tr></thead>
@@ -317,8 +309,7 @@ export async function sendBitApprovedEmail(opts: {
     </div>`;
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await sendMail({
       to: opts.to,
       subject: `Payment Confirmed — Your Order is Being Prepared! — FootJersey`,
       html: wrapEmail(content, 'Order Being Prepared — FootJersey'),
@@ -330,12 +321,6 @@ export async function sendBitApprovedEmail(opts: {
 
 // ─── Password Reset Email ─────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(opts: { to: string; resetLink: string }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not set — skipping password reset email');
-    return;
-  }
-
   const content = `
     <div class="body">
       <h1 class="title">Reset Your Password</h1>
@@ -353,8 +338,7 @@ export async function sendPasswordResetEmail(opts: { to: string; resetLink: stri
     </div>`;
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await sendMail({
       to: opts.to,
       subject: 'Reset Your FootJersey Password',
       html: wrapEmail(content, 'Password Reset — FootJersey'),
