@@ -313,8 +313,10 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     async (paymentIntentId?: string, paypalOrderId?: string) => {
       try {
         const result = await saveOrder({ paymentIntentId, paypalOrderId, method: paymentMethod });
+        const orderId = result?.orderId;
+        if (!orderId) throw new Error('Order saved but no ID returned');
         clearCart();
-        router.push(`/${locale}/order-confirmed?orderId=${result.orderId}`);
+        router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save order';
         setPaymentError(message);
@@ -331,8 +333,10 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
       setSubmitting(true);
       try {
         const result = await saveOrder({ method: 'bit', bitSenderDetails: senderDetails });
+        const orderId = result?.orderId;
+        if (!orderId) throw new Error('Order saved but no ID returned');
         clearCart();
-        router.push(`/${locale}/order-confirmed?orderId=${result.orderId}`);
+        router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save order';
         setPaymentError(message);
