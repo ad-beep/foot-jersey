@@ -59,7 +59,7 @@ Status-driven — only one button shown at a time:
 | Declined BIT | Red "Declined" text label (no buttons) |
 
 Accepting a BIT payment sets status to `processing` and moves order to the All Orders + Processing tabs.
-Declining keeps the order in the Pending BIT tab with a red "Declined" badge instead of buttons. Status in Firestore becomes `bit_declined`.
+Declining keeps the order in the Pending BIT tab with a red "Declined" badge instead of buttons. Status in Firestore becomes `bit_declined`. Inside the detail panel of a declined order, a **Delete Order** button (red, destructive) permanently removes the document from Firestore and navigates back to the list.
 
 ### Product cards (left side)
 One card per `item` in the order. Each card shows:
