@@ -58,11 +58,32 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   completed:            { label: 'Completed',      color: 'bg-green-500/10 text-green-400 border-green-500/20' },
 };
 
-async function callUpdateStatus(orderId: string, status: string) {
+async function callUpdateStatus(orderId: string, status: string, order?: Order) {
+  const orderData = (status === 'processing' && order) ? {
+    email: order.shippingInfo.email,
+    customerName: order.shippingInfo.name,
+    total: order.total,
+    subtotal: order.subtotal,
+    shipping: order.shipping ?? 0,
+    items: order.items.map((item) => ({
+      teamName: item.teamName,
+      size: item.size,
+      quantity: item.quantity || 1,
+      totalPrice: item.totalPrice,
+      customization: item.customization,
+    })),
+    shippingAddress: {
+      street: order.shippingInfo.street,
+      city: order.shippingInfo.city,
+      zip: order.shippingInfo.zip,
+      country: order.shippingInfo.country,
+    },
+  } : undefined;
+
   await fetch('/api/admin/orders/update-status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderId, status }),
+    body: JSON.stringify({ orderId, status, orderData }),
   });
 }
 

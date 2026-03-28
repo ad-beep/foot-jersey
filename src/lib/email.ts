@@ -248,12 +248,52 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
 }
 
 // ─── BIT Approved Email (sent by admin after approval) ────────────────────────
-export async function sendBitApprovedEmail(opts: { to: string; customerName: string; orderId: string; total: number }): Promise<void> {
+export async function sendBitApprovedEmail(opts: {
+  to: string;
+  customerName: string;
+  orderId: string;
+  total: number;
+  subtotal?: number;
+  shipping?: number;
+  discountAmount?: number;
+  discountCode?: string;
+  items?: OrderItem[];
+  shippingAddress?: { street: string; city: string; zip: string; country: string };
+}): Promise<void> {
   const resend = getResend();
   if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set — skipping BIT approved email');
     return;
   }
+
+  const itemsHtml = opts.items?.length ? `
+      <table class="items-table">
+        <thead><tr><th>Item</th><th style="text-align:right">Price</th></tr></thead>
+        <tbody>${renderItems(opts.items)}</tbody>
+      </table>` : '';
+
+  const discountRow = opts.discountAmount && opts.discountAmount > 0
+    ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
+    : '';
+
+  const totalsHtml = opts.subtotal !== undefined ? `
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span>₪${opts.subtotal}</span></div>
+        <div class="total-row"><span>Shipping</span><span>${opts.shipping === 0 ? 'FREE 🎉' : '₪' + (opts.shipping ?? 0)}</span></div>
+        ${discountRow}
+        <div class="total-row final"><span>Total</span><span>₪${opts.total}</span></div>
+      </div>` : `
+      <div class="totals">
+        <div class="total-row final"><span>Order Total</span><span>₪${opts.total}</span></div>
+      </div>`;
+
+  const addressHtml = opts.shippingAddress ? `
+      <div class="address-box">
+        <h4>Shipping To</h4>
+        <p>${opts.customerName}<br>
+        ${opts.shippingAddress.street}, ${opts.shippingAddress.city}<br>
+        ${opts.shippingAddress.zip}, ${opts.shippingAddress.country}</p>
+      </div>` : '';
 
   const content = `
     <div class="body">
@@ -265,9 +305,9 @@ export async function sendBitApprovedEmail(opts: { to: string; customerName: str
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
 
-      <div class="totals">
-        <div class="total-row final"><span>Order Total</span><span>₪${opts.total}</span></div>
-      </div>
+      ${itemsHtml}
+      ${totalsHtml}
+      ${addressHtml}
 
       <div class="info-box success">
         🚀 Your jerseys are being prepared and will be shipped within 7–14 business days. You'll receive another email with tracking info once shipped!

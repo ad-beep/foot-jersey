@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { google } from 'googleapis';
+import { sendBitApprovedEmail } from '@/lib/email';
 
 function getSheetsAuth() {
   return new google.auth.GoogleAuth({
@@ -58,7 +59,7 @@ const VALID_STATUSES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderId, status } = await request.json();
+    const { orderId, status, orderData } = await request.json();
 
     if (!orderId || !status) {
       return NextResponse.json({ error: 'orderId and status are required' }, { status: 400 });
@@ -69,8 +70,24 @@ export async function POST(request: NextRequest) {
 
     await updateDoc(doc(db, 'orders', orderId), { status });
 
-    // Sync sheet in background — don't await so the UI isn't blocked
+    // Sync sheet in background
     updateSheetStatus(orderId, status);
+
+    // Send confirmation email when admin accepts a BIT payment
+    if (status === 'processing' && orderData?.email) {
+      sendBitApprovedEmail({
+        to: orderData.email,
+        customerName: orderData.customerName || '',
+        orderId,
+        total: orderData.total,
+        subtotal: orderData.subtotal,
+        shipping: orderData.shipping,
+        discountAmount: orderData.discountAmount,
+        discountCode: orderData.discountCode,
+        items: orderData.items,
+        shippingAddress: orderData.shippingAddress,
+      }).catch((e) => console.error('BIT approval email error:', e));
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
