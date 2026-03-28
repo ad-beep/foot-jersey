@@ -72,7 +72,7 @@ export function OrderConfirmedClient() {
         router.replace(`/${locale}`);
       }
       setLoading(false);
-    });
+    }).catch(() => router.replace(`/${locale}`));
   }, [orderId, locale, router]);
 
   if (loading) {

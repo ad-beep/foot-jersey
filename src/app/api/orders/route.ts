@@ -219,6 +219,7 @@ export async function POST(request: NextRequest) {
         discountCode: body.discountCode || null,
         discountAmount: body.discountAmount || 0,
         subtotal: body.subtotal,
+        shipping: body.shipping ?? 0,
         total: body.total,
         currency: body.currency,
         createdAt: serverTimestamp(),
