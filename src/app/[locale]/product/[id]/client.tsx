@@ -138,6 +138,10 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   const [customization, setCustomization] = useState<CartCustomization>(DEFAULT_CUSTOMIZATION);
   const [shakeSize, setShakeSize] = useState(false);
   const [heartPulse, setHeartPulse] = useState(false);
+  const [nameNumberOpen, setNameNumberOpen] = useState(false);
+  const [patchOpen, setPatchOpen] = useState(false);
+  const [patchError, setPatchError] = useState(false);
+  const [nameNumberError, setNameNumberError] = useState(false);
 
   // ── Fetch ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -310,6 +314,12 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
                 customization={customization}
                 onChange={setCustomization}
                 jerseyType={jersey.type}
+                nameNumberOpen={nameNumberOpen}
+                setNameNumberOpen={setNameNumberOpen}
+                patchOpen={patchOpen}
+                setPatchOpen={setPatchOpen}
+                patchError={patchError}
+                nameNumberError={nameNumberError}
               />
             </div>
 

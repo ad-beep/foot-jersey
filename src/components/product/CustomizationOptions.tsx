@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useLocale } from '@/hooks/useLocale';
 import { PRICES, CURRENCY } from '@/lib/constants';
 import type { CartCustomization, JerseyType } from '@/types';
@@ -9,15 +8,27 @@ interface CustomizationOptionsProps {
   customization: CartCustomization;
   onChange: (c: CartCustomization) => void;
   jerseyType: JerseyType;
+  nameNumberOpen: boolean;
+  setNameNumberOpen: (v: boolean) => void;
+  patchOpen: boolean;
+  setPatchOpen: (v: boolean) => void;
+  patchError?: boolean;
+  nameNumberError?: boolean;
 }
 
-export function CustomizationOptions({ customization, onChange, jerseyType }: CustomizationOptionsProps) {
+export function CustomizationOptions({
+  customization,
+  onChange,
+  jerseyType,
+  nameNumberOpen,
+  setNameNumberOpen,
+  patchOpen,
+  setPatchOpen,
+  patchError = false,
+  nameNumberError = false,
+}: CustomizationOptionsProps) {
   const { locale, isRtl } = useLocale();
   const isHe = locale === 'he';
-
-  const [nameNumberOpen, setNameNumberOpen] = useState(false);
-  const [patchOpen, setPatchOpen] = useState(false);
-
   const isRetro = jerseyType === 'retro';
 
   // Build visible options based on jersey type
@@ -131,7 +142,7 @@ export function CustomizationOptions({ customization, onChange, jerseyType }: Cu
               </button>
 
               {/* Name & Number inputs */}
-              {opt.key === 'nameNumber' && active && (
+              {opt.key === 'nameNumber' && nameNumberOpen && (
                 <div className="px-4 pb-3 flex gap-2">
                   <input
                     type="text"
@@ -140,7 +151,11 @@ export function CustomizationOptions({ customization, onChange, jerseyType }: Cu
                     placeholder={isHe ? 'שם' : 'Name'}
                     maxLength={12}
                     className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
-                    style={{ ...inputStyle, direction: isRtl ? 'rtl' : 'ltr' }}
+                    style={{
+                      ...inputStyle,
+                      direction: isRtl ? 'rtl' : 'ltr',
+                      borderColor: nameNumberError ? '#f87171' : undefined,
+                    }}
                   />
                   <input
                     type="text"
@@ -153,13 +168,16 @@ export function CustomizationOptions({ customization, onChange, jerseyType }: Cu
                     placeholder="#"
                     maxLength={2}
                     className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
-                    style={inputStyle}
+                    style={{
+                      ...inputStyle,
+                      borderColor: nameNumberError ? '#f87171' : undefined,
+                    }}
                   />
                 </div>
               )}
 
               {/* Patch text input */}
-              {opt.key === 'patch' && active && (
+              {opt.key === 'patch' && patchOpen && (
                 <div className="px-4 pb-3">
                   <input
                     type="text"
@@ -168,7 +186,11 @@ export function CustomizationOptions({ customization, onChange, jerseyType }: Cu
                     placeholder={isHe ? "איזה פאצ' תרצה?" : 'Which patch would you like?'}
                     maxLength={30}
                     className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
-                    style={{ ...inputStyle, direction: isRtl ? 'rtl' : 'ltr' }}
+                    style={{
+                      ...inputStyle,
+                      direction: isRtl ? 'rtl' : 'ltr',
+                      borderColor: patchError ? '#f87171' : undefined,
+                    }}
                   />
                 </div>
               )}
