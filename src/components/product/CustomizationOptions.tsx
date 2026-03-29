@@ -1,5 +1,6 @@
 'use client';
 
+import { type Dispatch, type SetStateAction } from 'react';
 import { useLocale } from '@/hooks/useLocale';
 import { PRICES, CURRENCY } from '@/lib/constants';
 import type { CartCustomization, JerseyType } from '@/types';
@@ -9,9 +10,9 @@ interface CustomizationOptionsProps {
   onChange: (c: CartCustomization) => void;
   jerseyType: JerseyType;
   nameNumberOpen: boolean;
-  setNameNumberOpen: (v: boolean) => void;
+  setNameNumberOpen: Dispatch<SetStateAction<boolean>>;
   patchOpen: boolean;
-  setPatchOpen: (v: boolean) => void;
+  setPatchOpen: Dispatch<SetStateAction<boolean>>;
   patchError?: boolean;
   nameNumberError?: boolean;
 }
