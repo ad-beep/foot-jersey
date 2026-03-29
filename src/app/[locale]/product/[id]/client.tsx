@@ -184,12 +184,30 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
       toast({ title: isHe ? 'בחר מידה' : 'Please select a size', variant: 'error' });
       return;
     }
+    if (nameNumberOpen && !customization.customName.trim() && !customization.customNumber.trim()) {
+      setNameNumberError(true);
+      setTimeout(() => setNameNumberError(false), 800);
+      toast({
+        title: isHe ? 'אנא הזן שם או מספר' : 'Please enter a name or number',
+        variant: 'error',
+      });
+      return;
+    }
+    if (patchOpen && !customization.patchText.trim()) {
+      setPatchError(true);
+      setTimeout(() => setPatchError(false), 800);
+      toast({
+        title: isHe ? "אנא הזן טקסט לפאצ'" : 'Please enter patch text',
+        variant: 'error',
+      });
+      return;
+    }
     addItem(jersey, selectedSize, customization);
     recordCartAdd(jersey.id);
     recordInteraction(jersey.id, 'cart');
     const displayName = getJerseyName(jersey, locale);
     toast({ title: isHe ? 'נוסף לסל!' : 'Added to cart!', description: displayName, variant: 'success' });
-  }, [jersey, selectedSize, customization, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
+  }, [jersey, selectedSize, customization, nameNumberOpen, patchOpen, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
 
   const handleToggleFavorite = useCallback(() => {
     toggleFavorite(productId);
