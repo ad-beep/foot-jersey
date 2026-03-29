@@ -293,6 +293,10 @@ export default function OrderDetailPage() {
                   <div className="p-3 flex flex-col gap-1.5">
                     <p className="text-sm font-bold text-white leading-tight">{item.teamName}</p>
                     <p className="text-xs text-gray-400">Size: <span className="text-white font-medium">{item.size}</span></p>
+                    {item.quantity > 1 && (
+                      <p className="text-xs text-gray-400">Qty: <span className="text-white font-medium">×{item.quantity}</span></p>
+                    )}
+                    <p className="text-xs text-gray-400">Price: <span className="text-white font-medium">₪{item.totalPrice}</span></p>
                     {hasName   && <p className="text-xs text-gray-400">Name: <span className="text-white font-medium">{c.customName}</span></p>}
                     {hasNumber && <p className="text-xs text-gray-400">Number: <span className="text-white font-medium">#{c.customNumber}</span></p>}
                     {hasPatch  && (
