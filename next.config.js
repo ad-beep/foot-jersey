@@ -3,13 +3,10 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
     ],
-    formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 2592000, // 30 days for optimized images
-    deviceSizes: [640, 750, 828, 1080, 1200],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256],
     dangerouslyAllowSVG: false,
   },
   experimental: {
