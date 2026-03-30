@@ -12,10 +12,7 @@ import crypto from 'crypto';
 // E = type
 // F = tags
 // G = image_url
-// H = available_sizes
-// I = price
-// J = date_added
-const HEADER_LENGTH = 10; // A through J
+const HEADER_LENGTH = 7; // A through G
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -42,10 +39,6 @@ function slugifyUrl(url: string): string {
   }
 }
 
-/** Format today as YYYY-MM-DD */
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function getAuth() {
   return new google.auth.GoogleAuth({
@@ -68,9 +61,7 @@ export async function POST(request: NextRequest) {
       season,
       type,
       image_url,
-      available_sizes,
       tags,
-      price,
     } = body;
 
     if (!team_name || !image_url) {
@@ -83,7 +74,7 @@ export async function POST(request: NextRequest) {
     const id = generateId();
     const safeImageUrl = slugifyUrl(image_url);
 
-    // Build a single, clean row matching HEADER_LENGTH exactly (A–J)
+    // Build a single, clean row matching HEADER_LENGTH exactly (A–G)
     const row: string[] = [
       id,                                    // A: id
       (team_name as string).trim(),          // B: team_name
@@ -92,9 +83,6 @@ export async function POST(request: NextRequest) {
       (type as string) || 'regular',         // E: type
       (tags as string) || '',                // F: tags
       safeImageUrl,                          // G: image_url
-      (available_sizes as string) || 'S,M,L,XL,XXL', // H: available_sizes
-      String(price ?? ''),                   // I: price
-      todayISO(),                            // J: date_added
     ];
 
     // Safety: ensure row length matches header exactly
