@@ -370,12 +370,14 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
 
   // ─── Fetch jerseys ─────────────────────────────────────────────────────
   useEffect(() => {
-    fetch('/api/products')
+    // For league pages, request only that league from the API to reduce payload
+    const endpoint = isLeagueSlug(slug) ? `/api/products?league=${slug}` : '/api/products';
+    fetch(endpoint)
       .then((r) => r.json())
       .then((json) => setAllJerseys(json.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [slug]);
 
   // ─── Filter pipeline ───────────────────────────────────────────────────
   const categoryJerseys = useMemo(

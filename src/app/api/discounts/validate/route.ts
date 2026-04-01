@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -59,7 +61,18 @@ export async function POST(request: NextRequest) {
     const value = parseFloat(row[2]) || 0;
     const minOrder = parseFloat(row[3]) || 0;
     const maxUses = parseInt(row[4]) || 0;
-    const currentUses = parseInt(row[5]) || 0;
+    const sheetsUses = parseInt(row[5]) || 0;
+
+    // Use Firestore atomic count as authoritative (race-condition safe), fall back to Sheets
+    let firestoreUses = 0;
+    try {
+      const usageSnap = await getDoc(doc(db, 'discountUsage', code.toUpperCase().trim()));
+      if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
+    } catch {
+      // Firestore unavailable — fall back to Sheets count
+    }
+    const currentUses = Math.max(sheetsUses, firestoreUses);
+
     const expiryDate = row[6];
     const isActive = row[7]?.toLowerCase() !== 'false';
 

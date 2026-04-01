@@ -25,6 +25,11 @@ export async function POST(request: NextRequest) {
 
     const order = orderSnap.data();
 
+    // Idempotency: already approved — return success without re-sending email
+    if (order?.status === 'processing') {
+      return NextResponse.json({ success: true, message: 'Order already approved' });
+    }
+
     // Mark as processing + payment completed
     await updateDoc(orderRef, {
       status: 'processing',

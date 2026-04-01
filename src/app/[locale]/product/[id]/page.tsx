@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { isValidLocale } from '@/i18n/config';
 import { fetchJerseyById } from '@/lib/google-sheets';
 import { DEFAULT_LOCALE, SITE_NAME, SITE_URL } from '@/lib/constants';
@@ -73,6 +74,7 @@ export default async function ProductPage({
   params: { locale: string; id: string };
 }) {
   const jersey = await fetchJerseyById(params.id);
+  if (!jersey) notFound();
 
   // Structured data for SEO
   const leagueNamesLd: Record<string, string> = {

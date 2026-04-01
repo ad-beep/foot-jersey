@@ -1,9 +1,26 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { CartItem, CartCustomization, Jersey, Size } from '@/types';
 import { calculateCustomizationPrice } from '@/lib/utils';
+
+// Safe localStorage wrapper — silently handles quota exceeded and private browsing
+const safeLocalStorage = {
+  getItem: (name: string): string | null => {
+    try { return localStorage.getItem(name); } catch { return null; }
+  },
+  setItem: (name: string, value: string): void => {
+    try {
+      localStorage.setItem(name, value);
+    } catch {
+      console.warn('[CartStore] localStorage unavailable — cart will not persist this session');
+    }
+  },
+  removeItem: (name: string): void => {
+    try { localStorage.removeItem(name); } catch { /* silent */ }
+  },
+};
 
 interface CartState {
   items: CartItem[];
@@ -154,6 +171,7 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'foot-jersey-cart',
+      storage: createJSONStorage(() => safeLocalStorage),
       partialize: (state) => ({ items: state.items }),
     }
   )

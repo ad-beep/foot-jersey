@@ -6,10 +6,24 @@ import {
   runTransaction,
   serverTimestamp,
   updateDoc,
+  increment,
+  setDoc,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
+
+// Retry helper with exponential backoff
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try { return await fn(); } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts) await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
+  }
+  throw lastErr;
+}
 
 interface ShippingInfo {
   firstName?: string;
@@ -114,43 +128,28 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
     // Blank separator row between orders (28 columns)
     const blankRow = Array(28).fill('');
 
-    await sheets.spreadsheets.values.append({
+    await withRetry(() => sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
       range: 'Orders!A:AB',
       valueInputOption: 'RAW',
       requestBody: { values: [...itemRows, blankRow] },
-    });
+    }));
   } catch (error) {
-    // Log but don't fail the order — Firestore is the source of truth
-    console.error('Failed to append order to Google Sheets:', error);
+    console.error('Failed to append order to Google Sheets after retries:', error);
+    // Flag the order in Firestore so it can be manually synced later
+    try {
+      await updateDoc(doc(db, 'orders', orderId), { sheetsWriteFailed: true });
+    } catch {
+      // Best-effort flag — don't block
+    }
   }
 }
 
 async function incrementDiscountUsage(code: string) {
   try {
-    const auth = getSheetsAuth();
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'DiscountCodes!A:I',
-    });
-
-    const rows = res.data.values;
-    if (!rows || rows.length < 2) return;
-
-    const rowIndex = rows.findIndex(
-      (r, i) => i > 0 && r[0]?.toUpperCase().trim() === code.toUpperCase().trim()
-    );
-    if (rowIndex === -1) return;
-
-    const currentUses = parseInt(rows[rowIndex][5]) || 0;
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: `DiscountCodes!F${rowIndex + 1}`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [[String(currentUses + 1)]] },
-    });
+    const normalizedCode = code.toUpperCase().trim();
+    const usageRef = doc(db, 'discountUsage', normalizedCode);
+    await setDoc(usageRef, { count: increment(1) }, { merge: true });
   } catch (error) {
     console.error('Failed to increment discount usage:', error);
   }
