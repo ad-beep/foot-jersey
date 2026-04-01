@@ -193,7 +193,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
       });
       return;
     }
-    if (patchOpen && !customization.patchText.trim()) {
+    if (customization.hasPatch && !customization.patchText.trim()) {
       setPatchError(true);
       setTimeout(() => setPatchError(false), 800);
       toast({
@@ -207,7 +207,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
     recordInteraction(jersey.id, 'cart');
     const displayName = getJerseyName(jersey, locale);
     toast({ title: isHe ? 'נוסף לסל!' : 'Added to cart!', description: displayName, variant: 'success' });
-  }, [jersey, selectedSize, customization, nameNumberOpen, patchOpen, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
+  }, [jersey, selectedSize, customization, nameNumberOpen, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
 
   const handleToggleFavorite = useCallback(() => {
     toggleFavorite(productId);

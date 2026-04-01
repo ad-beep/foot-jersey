@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
 import { storage } from '@/lib/firebase';
 import { PRICES, CURRENT_SEASON } from '@/lib/constants';
 import { Upload, Loader2, CheckCircle, AlertCircle, X, ImagePlus } from 'lucide-react';
@@ -230,9 +231,14 @@ export default function AddProductPage() {
       if (nameEn.trim()) autoTags.push(`en:${nameEn.trim()}`);
 
       setStatus('saving');
+      const currentUser = getAuth().currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
       const res = await fetch('/api/admin/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body: JSON.stringify({
           team_name: nameHe.trim(),
           league: effectiveLeague,

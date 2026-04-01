@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { getAuth } from 'firebase/auth';
 import {
   Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Ticket, CheckCircle2, AlertCircle,
 } from 'lucide-react';
@@ -40,7 +41,13 @@ export default function DiscountsPage() {
 
   const fetchDiscounts = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/discounts');
+      const currentUser = getAuth().currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
+      const res = await fetch('/api/admin/discounts', {
+        headers: {
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
+      });
       const json = await res.json();
 
       if (!res.ok) {
@@ -68,9 +75,14 @@ export default function DiscountsPage() {
     setSaving(true);
 
     try {
+      const currentUser = getAuth().currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
       const res = await fetch('/api/admin/discounts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body: JSON.stringify({
           code: code.toUpperCase().trim(),
           type,

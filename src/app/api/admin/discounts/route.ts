@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -59,7 +60,10 @@ export interface DiscountRow {
 }
 
 // ─── GET: List all discount codes ────────────────────────
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const spreadsheetId = getSpreadsheetId();
     const sheets = getSheets();
@@ -101,6 +105,9 @@ export async function GET() {
 
 // ─── POST: Create a new discount code ────────────────────
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     console.log('POST /admin/discounts — RECEIVED_PAYLOAD:', JSON.stringify(body));
@@ -157,6 +164,9 @@ export async function POST(request: NextRequest) {
 
 // ─── PUT: Update a discount code ─────────────────────────
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     console.log('PUT /admin/discounts — RECEIVED_PAYLOAD:', JSON.stringify(body));
@@ -215,6 +225,9 @@ export async function PUT(request: NextRequest) {
 
 // ─── DELETE: Remove a discount code ──────────────────────
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');

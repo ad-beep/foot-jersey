@@ -95,7 +95,7 @@ function CartItemRow({ item }: { item: CartItem }) {
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => updateQuantity(item.jerseyId, item.size, item.quantity - 1)}
+              onClick={() => updateQuantity(item.jerseyId, item.size, item.customization, item.quantity - 1)}
               className="w-9 h-9 rounded-md flex items-center justify-center transition-colors"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
               aria-label={isHe ? 'הפחת' : 'Decrease'}
@@ -104,7 +104,7 @@ function CartItemRow({ item }: { item: CartItem }) {
             </button>
             <span className="text-sm font-semibold text-white w-6 text-center">{item.quantity}</span>
             <button
-              onClick={() => updateQuantity(item.jerseyId, item.size, item.quantity + 1)}
+              onClick={() => updateQuantity(item.jerseyId, item.size, item.customization, item.quantity + 1)}
               className="w-9 h-9 rounded-md flex items-center justify-center transition-colors"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
               aria-label={isHe ? 'הוסף' : 'Increase'}

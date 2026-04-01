@@ -3,6 +3,7 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { sendBitApprovedEmail } from '@/lib/email';
+import { requireAdmin } from '@/lib/admin-auth';
 
 function getSheetsAuth() {
   return new google.auth.GoogleAuth({
@@ -58,6 +59,9 @@ const VALID_STATUSES = [
 ];
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { orderId, status, orderData } = await request.json();
 

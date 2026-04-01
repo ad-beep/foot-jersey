@@ -5,6 +5,7 @@ import {
   doc,
   runTransaction,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
@@ -174,6 +175,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── Server-side price validation ─────────────────────────────────────────
+    try {
+      const { fetchJerseys } = await import('@/lib/google-sheets');
+      const { calculateCustomizationPrice } = await import('@/lib/utils');
+      const { PRICES, SHIPPING_POLICY } = await import('@/lib/constants');
+
+      const catalogJerseys = await fetchJerseys();
+
+      for (const item of body.items) {
+        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
+        if (!jersey) {
+          return NextResponse.json(
+            { error: `Product not found: ${item.jerseyId}` },
+            { status: 400 }
+          );
+        }
+
+        const extras = calculateCustomizationPrice({
+          hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
+          hasPatch: !!item.customization?.hasPatch,
+          hasPants: !!item.customization?.hasPants,
+          isPlayerVersion: !!item.customization?.isPlayerVersion,
+        });
+
+        const expectedItemPrice = jersey.price + extras;
+
+        if (item.totalPrice !== expectedItemPrice) {
+          console.warn(
+            `Price mismatch for ${item.jerseyId}: client sent ${item.totalPrice}, expected ${expectedItemPrice}`
+          );
+          return NextResponse.json(
+            { error: 'Price mismatch. Please refresh and try again.' },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Recompute order total
+      const computedSubtotal = body.items.reduce(
+        (sum, item) => sum + item.totalPrice * item.quantity,
+        0
+      );
+      const totalItemCount = body.items.reduce((sum, item) => sum + item.quantity, 0);
+      const freeShipping = totalItemCount >= SHIPPING_POLICY.freeShippingMinItems;
+      const computedShipping = freeShipping ? 0 : PRICES.shippingFlat;
+      const computedTotal =
+        computedSubtotal + computedShipping - (body.discountAmount || 0);
+
+      if (Math.abs(computedTotal - body.total) > 1) {
+        console.warn(
+          `Total mismatch: client sent ${body.total}, server computed ${computedTotal}`
+        );
+        return NextResponse.json(
+          { error: 'Order total mismatch. Please refresh and try again.' },
+          { status: 400 }
+        );
+      }
+    } catch (priceCheckErr) {
+      // If price check itself fails (e.g. Sheets down), log and allow the order through
+      // to avoid blocking legitimate customers during an outage
+      console.error('Price validation failed, allowing order through:', priceCheckErr);
+    }
+
     // Normalize name field
     const customerName =
       body.shippingInfo.name ||
@@ -228,6 +292,16 @@ export async function POST(request: NextRequest) {
     });
 
     const orderDoc = newOrderRef;
+
+    // Mark the captured payment record as fulfilled (best-effort)
+    if (body.paypalOrderId) {
+      try {
+        const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
+        await updateDoc(capturedRef, { orderCreated: true, orderId: newOrderRef.id });
+      } catch {
+        // Non-blocking
+      }
+    }
 
     // 2. Append to Google Sheets Orders Log (fire-and-forget)
     appendOrderToSheet(orderDoc.id, body);

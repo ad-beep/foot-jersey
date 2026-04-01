@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import { invalidateJerseysCache } from '@/lib/google-sheets';
 import { SHEET_NAME } from '@/lib/constants';
 import crypto from 'crypto';
+import { requireAdmin } from '@/lib/admin-auth';
 
 // ─── Strict Header Map ──────────────────────────────────────
 // A = id
@@ -53,6 +54,9 @@ function getAuth() {
 // ─── POST Handler ───────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const {

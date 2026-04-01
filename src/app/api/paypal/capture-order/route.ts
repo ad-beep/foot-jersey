@@ -90,6 +90,24 @@ export async function POST(request: NextRequest) {
 
     const order = await response.json();
 
+    // Write a recovery record so we can trace the payment if order creation fails
+    if (order.status === 'COMPLETED') {
+      try {
+        const { db } = await import('@/lib/firebase');
+        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+        await setDoc(doc(db, 'capturedPayments', order.id), {
+          paypalOrderId: order.id,
+          payerId: order.payer?.email_address || '',
+          capturedAt: serverTimestamp(),
+          status: 'captured',
+          orderCreated: false,
+        });
+      } catch (e) {
+        // Non-blocking — best effort
+        console.error('[capture-order] Failed to write recovery record:', e);
+      }
+    }
+
     return NextResponse.json({
       orderId: order.id,
       status: order.status,

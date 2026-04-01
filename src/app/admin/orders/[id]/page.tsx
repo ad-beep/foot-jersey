@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, onSnapshot, deleteDoc, Timestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2 } from 'lucide-react';
 
@@ -80,9 +81,14 @@ async function callUpdateStatus(orderId: string, status: string, order?: Order) 
     },
   } : undefined;
 
+  const currentUser = getAuth().currentUser;
+  const idToken = currentUser ? await currentUser.getIdToken() : null;
   await fetch('/api/admin/orders/update-status', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+    },
     body: JSON.stringify({ orderId, status, orderData }),
   });
 }

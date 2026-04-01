@@ -11,9 +11,9 @@ interface CartState {
 
   // Actions
   addItem: (jersey: Jersey, size: Size, customization?: Partial<CartCustomization>) => void;
-  removeItem: (jerseyId: string, size: Size) => void;
-  updateQuantity: (jerseyId: string, size: Size, quantity: number) => void;
-  updateCustomization: (jerseyId: string, size: Size, customization: Partial<CartCustomization>) => void;
+  removeItem: (jerseyId: string, size: Size, customization: CartCustomization) => void;
+  updateQuantity: (jerseyId: string, size: Size, customization: CartCustomization, quantity: number) => void;
+  updateCustomization: (jerseyId: string, size: Size, oldCustomization: CartCustomization, customization: Partial<CartCustomization>) => void;
   clearCart: () => void;
   toggleCart: () => void;
   setCartOpen: (open: boolean) => void;
@@ -44,6 +44,17 @@ function computeItemPrice(jersey: Jersey, customization: CartCustomization): num
   return base + extras;
 }
 
+function customizationsMatch(a: CartCustomization, b: CartCustomization): boolean {
+  return (
+    a.customName === b.customName &&
+    a.customNumber === b.customNumber &&
+    a.hasPatch === b.hasPatch &&
+    a.patchText === b.patchText &&
+    a.hasPants === b.hasPants &&
+    a.isPlayerVersion === b.isPlayerVersion
+  );
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -53,16 +64,19 @@ export const useCartStore = create<CartState>()(
       addItem: (jersey, size, customization = {}) => {
         const merged = { ...defaultCustomization, ...customization };
         const existingIndex = get().items.findIndex(
-          (item) => item.jerseyId === jersey.id && item.size === size
+          (item) =>
+            item.jerseyId === jersey.id &&
+            item.size === size &&
+            customizationsMatch(item.customization, merged)
         );
 
         if (existingIndex >= 0) {
+          // Identical customization — just increment quantity
           const items = [...get().items];
           items[existingIndex].quantity += 1;
-          items[existingIndex].customization = merged;
-          items[existingIndex].totalPrice = computeItemPrice(jersey, merged);
           set({ items, isOpen: true });
         } else {
+          // Different customization or new item — add as separate line item
           set({
             items: [
               ...get().items,
@@ -80,32 +94,43 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      removeItem: (jerseyId, size) => {
+      removeItem: (jerseyId, size, customization) => {
         set({
           items: get().items.filter(
-            (item) => !(item.jerseyId === jerseyId && item.size === size)
+            (item) =>
+              !(
+                item.jerseyId === jerseyId &&
+                item.size === size &&
+                customizationsMatch(item.customization, customization)
+              )
           ),
         });
       },
 
-      updateQuantity: (jerseyId, size, quantity) => {
+      updateQuantity: (jerseyId, size, customization, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(jerseyId, size);
+          get().removeItem(jerseyId, size, customization);
           return;
         }
         set({
           items: get().items.map((item) =>
-            item.jerseyId === jerseyId && item.size === size
+            item.jerseyId === jerseyId &&
+            item.size === size &&
+            customizationsMatch(item.customization, customization)
               ? { ...item, quantity }
               : item
           ),
         });
       },
 
-      updateCustomization: (jerseyId, size, customization) => {
+      updateCustomization: (jerseyId, size, oldCustomization, customization) => {
         set({
           items: get().items.map((item) => {
-            if (item.jerseyId === jerseyId && item.size === size) {
+            if (
+              item.jerseyId === jerseyId &&
+              item.size === size &&
+              customizationsMatch(item.customization, oldCustomization)
+            ) {
               const merged = { ...item.customization, ...customization };
               return {
                 ...item,

@@ -65,14 +65,35 @@ export function OrderConfirmedClient() {
       router.replace(`/${locale}`);
       return;
     }
-    getDoc(doc(db, 'orders', orderId)).then((snap) => {
-      if (snap.exists()) {
-        setOrder({ id: snap.id, ...snap.data() } as Order);
-      } else {
-        router.replace(`/${locale}`);
-      }
-      setLoading(false);
-    }).catch(() => router.replace(`/${locale}`));
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+    const RETRY_DELAY_MS = 1500;
+
+    function tryFetch() {
+      attempts += 1;
+      getDoc(doc(db, 'orders', orderId!))
+        .then((snap) => {
+          if (snap.exists()) {
+            setOrder({ id: snap.id, ...snap.data() } as Order);
+            setLoading(false);
+          } else if (attempts < MAX_ATTEMPTS) {
+            setTimeout(tryFetch, RETRY_DELAY_MS);
+          } else {
+            // Genuinely not found after all retries
+            router.replace(`/${locale}`);
+          }
+        })
+        .catch(() => {
+          if (attempts < MAX_ATTEMPTS) {
+            setTimeout(tryFetch, RETRY_DELAY_MS);
+          } else {
+            router.replace(`/${locale}`);
+          }
+        });
+    }
+
+    tryFetch();
   }, [orderId, locale, router]);
 
   if (loading) {
