@@ -59,8 +59,12 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="preconnect" href="https://photo.yupoo.com" />
-        <link rel="dns-prefetch" href="https://photo.yupoo.com" />
+        {/* Primary image CDN — start TCP+TLS handshake before any image request */}
+        <link rel="preconnect" href="https://cdn.shopify.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cdn.shopify.com" />
+        {/* Firebase Storage — admin-uploaded product images */}
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script

@@ -59,7 +59,9 @@ export const ProductCard = React.memo(function ProductCard({
   const recordCartAdd  = useAnalyticsStore((s) => s.recordCartAdd);
   const { toast }      = useToast();
 
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [heartPulse, setHeartPulse] = useState(false);
   const [sizePickerOpen, setSizePickerOpen] = useState(false);
   const sizePickerRef = useRef<HTMLDivElement>(null);
@@ -154,16 +156,32 @@ export const ProductCard = React.memo(function ProductCard({
             <Shirt className="w-12 h-12" style={{ color: 'var(--text-muted)' }} />
           </div>
         ) : (
-          <Image
-            src={jersey.imageUrl}
-            alt={displayName}
-            fill
-            sizes={imageSizes ?? '(max-width: 768px) 50vw, 25vw'}
-            quality={imageQuality}
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            priority={priority}
-            onError={() => setImgError(true)}
-          />
+          <>
+            {/* Shimmer skeleton — visible until image loads */}
+            {!imgLoaded && (
+              <div
+                className="absolute inset-0 animate-pulse"
+                style={{ backgroundColor: 'var(--bg-elevated)' }}
+              />
+            )}
+            <Image
+              src={retryCount > 0 ? `${jersey.imageUrl}?retry=${retryCount}` : jersey.imageUrl}
+              alt={displayName}
+              fill
+              sizes={imageSizes ?? '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'}
+              quality={imageQuality}
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              priority={priority}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => {
+                if (retryCount < 2) {
+                  setRetryCount((c) => c + 1);
+                } else {
+                  setImgError(true);
+                }
+              }}
+            />
+          </>
         )}
 
         {/* Like button — top left */}

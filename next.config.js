@@ -8,8 +8,10 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
     ],
-    deviceSizes: [640, 750, 828, 1080, 1200],
+    // Smaller sizes let mobile cards (50vw ≈ 187px) pick 384w instead of 640w
+    deviceSizes: [320, 384, 480, 640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 2592000, // 30 days — Shopify CDN URLs are versioned, safe to cache long
     dangerouslyAllowSVG: false,
   },
   experimental: {

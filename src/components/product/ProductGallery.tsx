@@ -13,6 +13,8 @@ interface ProductGalleryProps {
 export function ProductGallery({ images, alt }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [errors, setErrors] = useState<Set<number>>(new Set());
+  const [retryCounts, setRetryCounts] = useState<Record<number, number>>({});
+  const [loadedSet, setLoadedSet] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const imgs = images.length > 0 ? images : [''];
@@ -33,7 +35,14 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
   }, [handleScroll]);
 
   const handleImageError = useCallback((idx: number) => {
-    setErrors((prev) => new Set(prev).add(idx));
+    setRetryCounts((prev) => {
+      const current = prev[idx] ?? 0;
+      if (current < 2) {
+        return { ...prev, [idx]: current + 1 };
+      }
+      setErrors((e) => new Set(e).add(idx));
+      return prev;
+    });
   }, []);
 
   const goTo = useCallback((idx: number) => {
@@ -49,16 +58,25 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
         </div>
       );
     }
+    const retry = retryCounts[idx] ?? 0;
+    const imgSrc = retry > 0 ? `${src}?retry=${retry}` : src;
+    const isLoaded = loadedSet.has(idx);
     return (
-      <Image
-        src={src}
-        alt={`${alt} ${idx + 1}`}
-        fill={fill}
-        sizes={fill ? '(max-width: 1024px) 100vw, 55vw' : undefined}
-        className="object-cover"
-        priority={priority}
-        onError={() => handleImageError(idx)}
-      />
+      <>
+        {!isLoaded && (
+          <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+        )}
+        <Image
+          src={imgSrc}
+          alt={`${alt} ${idx + 1}`}
+          fill={fill}
+          sizes={fill ? '(max-width: 1024px) 100vw, 55vw' : undefined}
+          className="object-cover"
+          priority={priority}
+          onLoad={() => setLoadedSet((prev) => new Set(prev).add(idx))}
+          onError={() => handleImageError(idx)}
+        />
+      </>
     );
   };
 
