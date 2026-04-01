@@ -13,7 +13,10 @@ import { requireAdmin } from '@/lib/admin-auth';
 // E = type
 // F = tags
 // G = image_url
-const HEADER_LENGTH = 7; // A through G
+// H = available_sizes
+// I = price
+// J = date_added
+const HEADER_LENGTH = 10; // A through J
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -66,6 +69,8 @@ export async function POST(request: NextRequest) {
       type,
       image_url,
       tags,
+      available_sizes,
+      price,
     } = body;
 
     if (!team_name || !image_url) {
@@ -78,15 +83,18 @@ export async function POST(request: NextRequest) {
     const id = generateId();
     const safeImageUrl = slugifyUrl(image_url);
 
-    // Build a single, clean row matching HEADER_LENGTH exactly (A–G)
+    // Build a single, clean row matching HEADER_LENGTH exactly (A–J)
     const row: string[] = [
-      id,                                    // A: id
-      (team_name as string).trim(),          // B: team_name
-      (league as string) || '',              // C: league
-      (season as string) || '',              // D: season
-      (type as string) || 'regular',         // E: type
-      (tags as string) || '',                // F: tags
-      safeImageUrl,                          // G: image_url
+      id,                                           // A: id
+      (team_name as string).trim(),                 // B: team_name
+      (league as string) || '',                     // C: league
+      (season as string) || '',                     // D: season
+      (type as string) || 'regular',                // E: type
+      (tags as string) || '',                       // F: tags
+      safeImageUrl,                                 // G: image_url
+      (available_sizes as string) || 'S,M,L,XL,XXL', // H: available_sizes
+      price != null ? String(price) : '',           // I: price
+      new Date().toISOString().slice(0, 10),        // J: date_added
     ];
 
     // Safety: ensure row length matches header exactly
