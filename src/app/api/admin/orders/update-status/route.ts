@@ -4,6 +4,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { sendBitApprovedEmail } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
+import { writeAuditLog } from '@/lib/audit-log';
 
 function getSheetsAuth() {
   return new google.auth.GoogleAuth({
@@ -73,6 +74,8 @@ export async function POST(request: NextRequest) {
     }
 
     await updateDoc(doc(db, 'orders', orderId), { status });
+
+    writeAuditLog({ action: 'order.status_changed', adminEmail: auth.email, details: { orderId, status } });
 
     // Sync sheet — awaited so lambda stays alive until write completes
     await updateSheetStatus(orderId, status);

@@ -101,6 +101,7 @@ export default function OrderDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDecline, setConfirmDecline] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'orders', id), (snap) => {
@@ -212,13 +213,32 @@ export default function OrderDetailPage() {
               {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
               Accept Payment
             </button>
-            <button
-              onClick={() => handleStatus('bit_declined')}
-              disabled={actionLoading}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-semibold hover:bg-red-500/20 disabled:opacity-50 transition-colors"
-            >
-              Decline
-            </button>
+            {!confirmDecline ? (
+              <button
+                onClick={() => setConfirmDecline(true)}
+                disabled={actionLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-semibold hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+              >
+                Decline
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Decline this BIT order?</span>
+                <button
+                  onClick={async () => { setConfirmDecline(false); await handleStatus('bit_declined'); }}
+                  disabled={actionLoading}
+                  className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/30 disabled:opacity-50 transition-colors"
+                >
+                  {actionLoading ? 'Declining…' : 'Yes, decline'}
+                </button>
+                <button
+                  onClick={() => setConfirmDecline(false)}
+                  className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 text-xs font-bold hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </>
         )}
 
@@ -384,13 +404,36 @@ export default function OrderDetailPage() {
                 <span className="text-gray-500 text-xs truncate max-w-[160px]">{order.paypalOrderId}</span>
               </div>
             )}
-            {order.bitSenderDetails && (
-              <div className="mt-3 pt-3 border-t border-white/5 text-xs text-gray-500 space-y-1">
-                <p>Sender: <span className="text-gray-300">{order.bitSenderDetails.senderName}</span></p>
-                <p>Phone: <span className="text-gray-300">{order.bitSenderDetails.senderPhone}</span></p>
-                <p>Claimed: <span className="text-gray-300">₪{order.bitSenderDetails.amountPaid}</span></p>
-              </div>
-            )}
+            {order.bitSenderDetails && (() => {
+              const claimed = parseFloat(order.bitSenderDetails.amountPaid);
+              const mismatch = !isNaN(claimed) && Math.abs(claimed - order.total) > 1;
+              return (
+                <div className="mt-3 pt-3 border-t border-white/5">
+                  <p className="text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-2">BIT Sender Details</p>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Sender Name</span>
+                      <span className="text-gray-200 font-medium">{order.bitSenderDetails.senderName}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Sender Phone</span>
+                      <span className="text-gray-200 font-medium">{order.bitSenderDetails.senderPhone}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Amount Claimed</span>
+                      <span className={`font-bold ${mismatch ? 'text-red-400' : 'text-green-400'}`}>
+                        ₪{order.bitSenderDetails.amountPaid}
+                      </span>
+                    </div>
+                  </div>
+                  {mismatch && (
+                    <div className="mt-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 font-semibold">
+                      ⚠ Amount mismatch — claimed ₪{order.bitSenderDetails.amountPaid} vs order total ₪{order.total}. Verify before approving.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <div className="flex justify-between text-base font-bold mt-3 pt-3 border-t border-white/5">
               <span className="text-white">Total</span>
               <span className="text-cyan-400">₪{order.total}</span>

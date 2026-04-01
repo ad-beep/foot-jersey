@@ -4,6 +4,7 @@ import { invalidateJerseysCache } from '@/lib/google-sheets';
 import { SHEET_NAME } from '@/lib/constants';
 import crypto from 'crypto';
 import { requireAdmin } from '@/lib/admin-auth';
+import { writeAuditLog } from '@/lib/audit-log';
 
 // ─── Strict Header Map ──────────────────────────────────────
 // A = id
@@ -101,8 +102,8 @@ export async function POST(request: NextRequest) {
     while (row.length < HEADER_LENGTH) row.push('');
     if (row.length > HEADER_LENGTH) row.length = HEADER_LENGTH;
 
-    const auth = getAuth();
-    const sheets = google.sheets({ version: 'v4', auth });
+    const sheetsAuth = getAuth();
+    const sheets = google.sheets({ version: 'v4', auth: sheetsAuth });
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
@@ -113,6 +114,8 @@ export async function POST(request: NextRequest) {
 
     // Bust the cache so the new product shows up
     invalidateJerseysCache();
+
+    writeAuditLog({ action: 'product.added', adminEmail: auth.email, details: { id, team_name, league, season } });
 
     return NextResponse.json({ success: true, id });
   } catch (error) {

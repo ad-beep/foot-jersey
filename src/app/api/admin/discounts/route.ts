@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { requireAdmin } from '@/lib/admin-auth';
+import { writeAuditLog } from '@/lib/audit-log';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -110,7 +111,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('POST /admin/discounts — RECEIVED_PAYLOAD:', JSON.stringify(body));
 
     const { code, type, value, min_order, max_uses, expiry_date, is_active } = body;
 
@@ -135,8 +135,6 @@ export async function POST(request: NextRequest) {
       new Date().toISOString(),
     ];
 
-    console.log('POST /admin/discounts — APPENDING_ROW:', JSON.stringify(row), `to ${SHEET_TAB}!A:I in spreadsheet ${spreadsheetId}`);
-
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${SHEET_TAB}!A:I`,
@@ -144,7 +142,8 @@ export async function POST(request: NextRequest) {
       requestBody: { values: [row] },
     });
 
-    console.log('POST /admin/discounts — SUCCESS:', row[0]);
+    writeAuditLog({ action: 'discount.created', adminEmail: auth.email, details: { code: row[0], type, value } });
+
     return NextResponse.json({ success: true, code: row[0] });
   } catch (error) {
     const detail = sheetsErrorDetail(error);
@@ -169,7 +168,6 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('PUT /admin/discounts — RECEIVED_PAYLOAD:', JSON.stringify(body));
 
     const { code, type, value, min_order, max_uses, expiry_date, is_active } = body;
 
@@ -214,7 +212,8 @@ export async function PUT(request: NextRequest) {
       requestBody: { values: [updated] },
     });
 
-    console.log('PUT /admin/discounts — SUCCESS:', code);
+    writeAuditLog({ action: 'discount.updated', adminEmail: auth.email, details: { code } });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     const detail = sheetsErrorDetail(error);
@@ -231,7 +230,6 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
-    console.log('DELETE /admin/discounts — code:', code);
 
     if (!code) {
       return NextResponse.json({ error: 'code is required' }, { status: 400 });
@@ -263,7 +261,8 @@ export async function DELETE(request: NextRequest) {
       requestBody: { values: [empty] },
     });
 
-    console.log('DELETE /admin/discounts — SUCCESS:', code);
+    writeAuditLog({ action: 'discount.deleted', adminEmail: auth.email, details: { code } });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     const detail = sheetsErrorDetail(error);

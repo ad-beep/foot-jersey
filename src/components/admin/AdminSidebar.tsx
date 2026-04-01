@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PackagePlus, Ticket, ClipboardList, LogOut, Menu } from 'lucide-react';
+import { LayoutDashboard, PackagePlus, Ticket, ClipboardList, ShieldCheck, LogOut, Menu } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin/products',  label: 'Add Product', icon: PackagePlus },
   { href: '/admin/discounts', label: 'Discounts',   icon: Ticket },
   { href: '/admin/orders',    label: 'Orders',      icon: ClipboardList },
+  { href: '/admin/audit',     label: 'Audit Log',   icon: ShieldCheck },
 ];
 
 export function AdminSidebar() {

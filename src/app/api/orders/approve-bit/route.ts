@@ -3,6 +3,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { sendBitApprovedEmail } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
+import { writeAuditLog } from '@/lib/audit-log';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Send approval email to customer
     const email = customerEmail || order?.shippingInfo?.email;
+    writeAuditLog({ action: 'order.bit_approved', adminEmail: auth.email, details: { orderId, customerEmail: email } });
     if (email) {
       const customerName = order?.shippingInfo?.name || 'Customer';
       await sendBitApprovedEmail({
