@@ -23,6 +23,12 @@ interface CategoryDef {
   imagePosition?: string;
   special?: boolean;
   priceLabel?: { en: string; he: string };
+  /**
+   * Accurate sizes hint per card so the browser downloads exactly the right
+   * resolution. Mobile = 2-col grid; desktop = 6-col grid max-w-[1200px].
+   * Formula: mobile(col-span-2 → 100vw, else 50vw), desktop(n cols × 200px).
+   */
+  sizes: string;
 }
 
 const CATEGORIES: CategoryDef[] = [
@@ -36,6 +42,7 @@ const CATEGORIES: CategoryDef[] = [
     imagePosition: 'bottom',
     grid: 'col-span-2 min-h-[140px] lg:col-start-3 lg:col-end-6 lg:row-start-3 lg:row-end-4 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 100vw, 600px', // mobile full-width; desktop 3-of-6 cols
   },
   {
     slug: 'spain',
@@ -46,6 +53,7 @@ const CATEGORIES: CategoryDef[] = [
     imagePosition: 'bottom',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-6 lg:row-start-1 lg:row-end-2 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 400px', // mobile half; desktop 2-of-6 cols
   },
   {
     slug: 'italy',
@@ -55,6 +63,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'serie-a',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-2 lg:row-end-3 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 200px', // mobile half; desktop 1-of-6 cols
   },
   {
     slug: 'retro',
@@ -64,6 +73,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'retro',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-7 lg:row-start-4 lg:row-end-5 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'germany',
@@ -73,6 +83,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'bundesliga',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-6 lg:row-start-2 lg:row-end-3 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 200px',
   },
   {
     slug: 'france',
@@ -82,6 +93,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'ligue-1',
     grid: 'min-h-[140px] lg:col-start-6 lg:col-end-7 lg:row-start-3 lg:row-end-4 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 200px',
   },
 
   // ── Row 3-4 (desktop) ──────────────────────────────────────────
@@ -93,6 +105,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'season-2526',
     grid: 'col-span-2 min-h-[180px] lg:col-start-1 lg:col-end-3 lg:row-start-3 lg:row-end-5 lg:min-h-0',
     size: 'lg',
+    sizes: '(max-width: 1024px) 100vw, 400px',
   },
   {
     slug: 'world-cup-2026',
@@ -102,6 +115,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'world-cup-2026',
     grid: 'col-span-2 min-h-[200px] lg:col-start-1 lg:col-end-4 lg:row-start-1 lg:row-end-3 lg:min-h-0',
     size: 'lg',
+    sizes: '(max-width: 1024px) 100vw, 600px', // largest featured card
   },
   {
     slug: 'rest_of_world',
@@ -111,6 +125,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'rest-of-world',
     grid: 'col-span-2 min-h-[180px] lg:col-start-6 lg:col-end-7 lg:row-start-1 lg:row-end-3 lg:min-h-0',
     size: 'lg',
+    sizes: '(max-width: 1024px) 100vw, 200px', // mobile full; desktop 1-of-6
   },
   {
     slug: 'national_teams',
@@ -120,6 +135,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'international',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-7 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'special',
@@ -130,6 +146,7 @@ const CATEGORIES: CategoryDef[] = [
     imagePosition: 'bottom',
     grid: 'min-h-[140px] lg:col-start-3 lg:col-end-5 lg:row-start-4 lg:row-end-5 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'kids',
@@ -139,6 +156,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'kids',
     grid: 'min-h-[140px] lg:col-start-2 lg:col-end-4 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 400px',
   },
 
   // ── Row 5 (desktop) ────────────────────────────────────────────
@@ -151,6 +169,7 @@ const CATEGORIES: CategoryDef[] = [
     imagePosition: 'bottom',
     grid: 'col-span-2 min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-6 lg:row-end-7 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 100vw, 600px',
   },
   {
     slug: 'long-sleeve',
@@ -160,6 +179,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'long-sleeve',
     grid: 'min-h-[140px] lg:col-start-1 lg:col-end-2 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 200px',
   },
 
   // ── Row 6 (desktop) ────────────────────────────────────────────
@@ -174,6 +194,7 @@ const CATEGORIES: CategoryDef[] = [
     size: 'sm',
     special: true,
     priceLabel: { en: 'From ₪89', he: 'החל מ-₪89' },
+    sizes: '(max-width: 1024px) 100vw, 600px',
   },
   {
     slug: 'other-products',
@@ -183,6 +204,7 @@ const CATEGORIES: CategoryDef[] = [
     image: 'other-products',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 200px',
   },
 
   // ── Row 7 (desktop) ────────────────────────────────────────────
@@ -195,6 +217,7 @@ const CATEGORIES: CategoryDef[] = [
     grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
     size: 'lg',
     special: true,
+    sizes: '(max-width: 1024px) 100vw, 1200px', // full-width banner on desktop
   },
 ];
 
@@ -268,7 +291,8 @@ export function CategoryGrid() {
                     src={`/images/categories/${locale}/${cat.image}.webp`}
                     alt={isHe ? cat.he : cat.en}
                     fill
-                    sizes="(max-width: 1024px) 50vw, 33vw"
+                    sizes={cat.sizes}
+                    quality={60}
                     className="object-cover"
                     style={cat.imagePosition ? { objectPosition: cat.imagePosition } : undefined}
                     priority={i < 4}
