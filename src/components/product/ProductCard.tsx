@@ -152,7 +152,12 @@ export const ProductCard = React.memo(function ProductCard({
           </div>
         ) : imgError ? (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-elevated)]">
-            <Shirt className="w-12 h-12" style={{ color: 'var(--text-muted)' }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/placeholder-jersey.svg"
+              alt={displayName}
+              className="w-full h-full object-contain p-4 opacity-60"
+            />
           </div>
         ) : (
           <>
@@ -168,7 +173,14 @@ export const ProductCard = React.memo(function ProductCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               onLoad={() => setImgLoaded(true)}
-              onError={() => setImgError(true)}
+              onLoad={() => {
+                console.log('[img ok]', jersey.imageUrl);
+                setImgLoaded(true);
+              }}
+              onError={() => {
+                console.warn('[img FAIL]', jersey.imageUrl);
+                setImgError(true);
+              }}
             />
           </>
         )}
