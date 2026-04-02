@@ -3,9 +3,10 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    // Use Next.js built-in optimizer (Vercel CDN edge) instead of a serverless proxy.
-    // Benefits: no cold starts, no connection pool saturation, automatic AVIF/WebP,
-    // CDN-level caching, proper responsive sizing for every image on the site.
+    // Custom loader: Yupoo images load directly in the browser (hotlink protection
+    // blocks server-side fetching). All other images use the built-in optimizer.
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       // Sporthub / any Shopify-hosted store
