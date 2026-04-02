@@ -3,7 +3,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    unoptimized: true,
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
+    dangerouslyAllowSVG: false,
   },
   experimental: {
     optimizePackageImports: [

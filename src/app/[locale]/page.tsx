@@ -46,20 +46,5 @@ export default async function HomePage({
     .sort(() => Math.random() - 0.5)
     .slice(0, 15);
 
-  // Preload the first 2 marquee images so the browser starts the download
-  // before client JS finishes parsing (LandingHero is ssr: false).
-  // Preload directly from Shopify CDN — bypasses /_next/image quota.
-  const preloadImages = jerseys
-    .filter((j) => j.imageUrl && j.type === 'special')
-    .slice(0, 2)
-    .map((j) => j.imageUrl);
-
-  return (
-    <>
-      {preloadImages.map((href) => (
-        <link key={href} rel="preload" as="image" href={href} />
-      ))}
-      <HomeClient locale={locale} jerseys={jerseys} hotJerseys={hotJerseys} />
-    </>
-  );
+  return <HomeClient locale={locale} jerseys={jerseys} hotJerseys={hotJerseys} />;
 }
