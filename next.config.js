@@ -3,10 +3,6 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    // Custom loader: Yupoo images load directly in the browser (hotlink protection
-    // blocks server-side fetching). All other images use the built-in optimizer.
-    loader: 'custom',
-    loaderFile: './src/lib/image-loader.ts',
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       // Sporthub / any Shopify-hosted store
