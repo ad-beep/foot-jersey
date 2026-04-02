@@ -117,11 +117,21 @@ export default function DiscountsPage() {
   async function toggleActive(d: Discount) {
     const newActive = d.is_active === 'false' ? 'true' : 'false';
     try {
-      await fetch('/api/admin/discounts', {
+      const currentUser = getAuth().currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
+      const res = await fetch('/api/admin/discounts', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body: JSON.stringify({ code: d.code, is_active: newActive }),
       });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setToast({ message: json.error || 'Failed to update code', type: 'error' });
+        return;
+      }
       await fetchDiscounts();
       setToast({ message: `"${d.code}" ${newActive === 'true' ? 'activated' : 'deactivated'}`, type: 'success' });
     } catch {
@@ -132,9 +142,19 @@ export default function DiscountsPage() {
   async function handleDelete(d: Discount) {
     if (!window.confirm(`Delete code "${d.code}"?`)) return;
     try {
-      await fetch(`/api/admin/discounts?code=${encodeURIComponent(d.code)}`, {
+      const currentUser = getAuth().currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
+      const res = await fetch(`/api/admin/discounts?code=${encodeURIComponent(d.code)}`, {
         method: 'DELETE',
+        headers: {
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
       });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setToast({ message: json.error || 'Failed to delete code', type: 'error' });
+        return;
+      }
       await fetchDiscounts();
       setToast({ message: `"${d.code}" deleted`, type: 'success' });
     } catch {

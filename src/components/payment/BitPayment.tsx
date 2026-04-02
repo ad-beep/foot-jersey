@@ -29,8 +29,7 @@ export function BitPayment({
   const [confirmed, setConfirmed] = useState(false);
   const [senderName, setSenderName] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
-  const [amountPaid, setAmountPaid] = useState(String(amount));
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; amount?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
   // Owner details
   const ownerPhone = '058-414-0508';
@@ -56,7 +55,6 @@ export function BitPayment({
     if (!senderName.trim()) e.name = isHe ? 'שם השולח נדרש' : 'Sender name is required';
     if (!senderPhone.trim()) e.phone = isHe ? 'טלפון השולח נדרש' : 'Sender phone is required';
     else if (!/^[\d\-+() ]{7,15}$/.test(senderPhone.trim())) e.phone = isHe ? 'מספר טלפון לא תקין' : 'Invalid phone number';
-    if (!amountPaid.trim() || isNaN(Number(amountPaid)) || Number(amountPaid) <= 0) e.amount = isHe ? 'סכום לא תקין' : 'Invalid amount';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -67,7 +65,7 @@ export function BitPayment({
     onConfirm({
       senderName: senderName.trim(),
       senderPhone: senderPhone.trim(),
-      amountPaid: amountPaid.trim(),
+      amountPaid: String(amount),
     });
   };
 
@@ -234,25 +232,22 @@ export function BitPayment({
           {errors.phone && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.phone}</p>}
         </div>
 
-        {/* Amount Paid */}
+        {/* Amount Paid — fixed, matches order total */}
         <div>
           <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
             <Banknote className="w-3 h-3" />
-            {isHe ? 'סכום ששולם (₪) *' : 'Amount Paid (₪) *'}
+            {isHe ? 'סכום להעברה (₪)' : 'Amount to Transfer (₪)'}
           </label>
-          <input
-            type="number"
-            value={amountPaid}
-            onChange={(e) => { setAmountPaid(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
-            placeholder={String(amount)}
-            className={inputClass}
+          <div
+            className="w-full rounded-lg px-3 py-2.5 text-sm font-bold text-white"
             style={{
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: `1px solid ${errors.amount ? '#FF4D6D' : 'var(--border)'}`,
+              backgroundColor: 'rgba(0,195,216,0.08)',
+              border: '1px solid rgba(0,195,216,0.3)',
               direction: 'ltr',
             }}
-          />
-          {errors.amount && <p className="text-xs mt-1" style={{ color: '#FF4D6D' }}>{errors.amount}</p>}
+          >
+            ₪{amount}
+          </div>
         </div>
       </div>
 

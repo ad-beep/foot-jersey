@@ -95,11 +95,15 @@ export async function POST(request: NextRequest) {
       try {
         const { db } = await import('@/lib/firebase');
         const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+        const capturedAmount = parseFloat(
+          order.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
+        );
         await setDoc(doc(db, 'capturedPayments', order.id), {
           paypalOrderId: order.id,
           payerId: order.payer?.email_address || '',
           capturedAt: serverTimestamp(),
           status: 'captured',
+          capturedAmount,
           orderCreated: false,
         });
       } catch (e) {

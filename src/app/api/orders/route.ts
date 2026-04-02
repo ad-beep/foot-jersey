@@ -3,6 +3,7 @@ import { db } from '@/lib/firebase';
 import {
   collection,
   doc,
+  getDoc,
   runTransaction,
   serverTimestamp,
   updateDoc,
@@ -232,9 +233,100 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (priceCheckErr) {
-      // If price check itself fails (e.g. Sheets down), log and allow the order through
-      // to avoid blocking legitimate customers during an outage
-      console.error('Price validation failed, allowing order through:', priceCheckErr);
+      console.error('Price validation unavailable:', priceCheckErr);
+      return NextResponse.json(
+        { error: 'Could not validate order prices. Please try again in a moment.' },
+        { status: 503 }
+      );
+    }
+
+    // ── Re-validate discount code at order time ──────────────────────────────
+    if (body.discountCode) {
+      try {
+        const auth = getSheetsAuth();
+        const sheets = google.sheets({ version: 'v4', auth });
+        const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+        if (spreadsheetId) {
+          const discountRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'DiscountCodes!A:I',
+          });
+          const rows = discountRes.data.values;
+          const normalizedCode = body.discountCode.toUpperCase().trim();
+          const rowIndex = rows
+            ? rows.findIndex((r, i) => i > 0 && r[0]?.toUpperCase().trim() === normalizedCode)
+            : -1;
+
+          if (rowIndex === -1) {
+            return NextResponse.json(
+              { error: 'Discount code is no longer valid. Please remove it and try again.' },
+              { status: 400 }
+            );
+          }
+
+          const row = rows![rowIndex];
+          const maxUses = parseInt(row[4]) || 0;
+          const sheetsUses = parseInt(row[5]) || 0;
+          const expiryDate = row[6];
+          const isActive = row[7]?.toLowerCase() !== 'false';
+
+          let firestoreUses = 0;
+          try {
+            const usageSnap = await getDoc(doc(db, 'discountUsage', normalizedCode));
+            if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
+          } catch { /* fall back to Sheets count */ }
+          const currentUses = Math.max(sheetsUses, firestoreUses);
+
+          const codeInvalid =
+            !isActive ||
+            (expiryDate && new Date(expiryDate) < new Date()) ||
+            (maxUses > 0 && currentUses >= maxUses);
+
+          if (codeInvalid) {
+            return NextResponse.json(
+              { error: 'Discount code is no longer valid. Please remove it and try again.' },
+              { status: 400 }
+            );
+          }
+        }
+      } catch (discountCheckErr) {
+        console.error('Discount re-validation unavailable:', discountCheckErr);
+        return NextResponse.json(
+          { error: 'Could not validate discount code. Please try again in a moment.' },
+          { status: 503 }
+        );
+      }
+    }
+
+    // ── Verify PayPal payment was actually captured server-side ─────────────
+    if (body.paymentMethod === 'paypal') {
+      if (!body.paypalOrderId) {
+        return NextResponse.json({ error: 'PayPal order ID required' }, { status: 400 });
+      }
+      try {
+        const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
+        const capturedSnap = await getDoc(capturedRef);
+        if (!capturedSnap.exists() || capturedSnap.data().status !== 'captured') {
+          return NextResponse.json(
+            { error: 'Payment not verified. Please contact support if funds were deducted.' },
+            { status: 400 }
+          );
+        }
+        // Idempotency: if order already created for this capture, return existing ID
+        if (capturedSnap.data().orderCreated === true) {
+          const existingOrderId = capturedSnap.data().orderId as string;
+          return NextResponse.json(
+            { orderId: existingOrderId, message: 'Order already created' },
+            { status: 201 }
+          );
+        }
+      } catch (paypalVerifyErr) {
+        console.error('PayPal verification check failed:', paypalVerifyErr);
+        return NextResponse.json(
+          { error: 'Could not verify payment status. Please contact support.' },
+          { status: 503 }
+        );
+      }
     }
 
     // Normalize name field
@@ -275,7 +367,7 @@ export async function POST(request: NextRequest) {
           notes: body.shippingInfo.notes || '',
         },
         paymentMethod: body.paymentMethod,
-        paymentStatus: body.paymentStatus,
+        paymentStatus: body.paymentMethod === 'paypal' ? 'completed' : body.paymentStatus,
         paypalOrderId: body.paypalOrderId || null,
         bitTransactionId: body.bitTransactionId || null,
         bitSenderDetails: body.bitSenderDetails || null,
@@ -315,7 +407,7 @@ export async function POST(request: NextRequest) {
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
 
-    if (body.paymentMethod === 'paypal' && body.paymentStatus === 'completed') {
+    if (body.paymentMethod === 'paypal') {
       // Instant confirmation for PayPal orders
       await sendOrderConfirmation({
         to: body.shippingInfo.email,
@@ -340,7 +432,12 @@ export async function POST(request: NextRequest) {
           country: body.shippingInfo.country,
         },
         paymentMethod: body.paymentMethod,
-      }).catch((e) => console.error('Email send error:', e));
+      }).catch(async (e) => {
+        console.error('Email send error:', e);
+        try {
+          await updateDoc(doc(db, 'orders', orderDoc.id), { emailSendFailed: true });
+        } catch { /* best-effort */ }
+      });
     } else if (body.paymentMethod === 'bit') {
       // BIT: send "waiting for approval" email immediately
       await sendBitPendingEmail({
@@ -348,7 +445,12 @@ export async function POST(request: NextRequest) {
         customerName: emailCustomerName,
         orderId: orderDoc.id,
         total: body.total,
-      }).catch((e) => console.error('Email send error:', e));
+      }).catch(async (e) => {
+        console.error('Email send error:', e);
+        try {
+          await updateDoc(doc(db, 'orders', orderDoc.id), { emailSendFailed: true });
+        } catch { /* best-effort */ }
+      });
     }
 
     return NextResponse.json(
