@@ -78,7 +78,7 @@ export function Recommendations({ currentJersey, allJerseys }: RecommendationsPr
         {recommendations.map((jersey, i) => (
           <div key={jersey.id} className="shrink-0 w-[180px] md:w-[220px]">
             <Reveal delay={i * 50}>
-              <ProductCard jersey={jersey} />
+              <ProductCard jersey={jersey} imageSizes="(max-width: 768px) 180px, 220px" imageQuality={65} />
             </Reveal>
           </div>
         ))}

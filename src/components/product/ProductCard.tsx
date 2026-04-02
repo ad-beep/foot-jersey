@@ -168,8 +168,8 @@ export const ProductCard = React.memo(function ProductCard({
               src={retryCount > 0 ? `${jersey.imageUrl}?retry=${retryCount}` : jersey.imageUrl}
               alt={displayName}
               fill
-              sizes={imageSizes ?? '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'}
-              quality={imageQuality}
+              sizes={imageSizes ?? '(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px'}
+              quality={imageQuality ?? 70}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               onLoad={() => setImgLoaded(true)}
