@@ -61,7 +61,6 @@ export const ProductCard = React.memo(function ProductCard({
 
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [heartPulse, setHeartPulse] = useState(false);
   const [sizePickerOpen, setSizePickerOpen] = useState(false);
   const sizePickerRef = useRef<HTMLDivElement>(null);
@@ -161,7 +160,7 @@ export const ProductCard = React.memo(function ProductCard({
               <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />
             )}
             <Image
-              src={retryCount > 0 ? `${jersey.imageUrl}?retry=${retryCount}` : jersey.imageUrl}
+              src={jersey.imageUrl}
               alt={displayName}
               fill
               sizes={imageSizes ?? '(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px'}
@@ -169,13 +168,7 @@ export const ProductCard = React.memo(function ProductCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               onLoad={() => setImgLoaded(true)}
-              onError={() => {
-                if (retryCount < 2) {
-                  setRetryCount((c) => c + 1);
-                } else {
-                  setImgError(true);
-                }
-              }}
+              onError={() => setImgError(true)}
             />
           </>
         )}
