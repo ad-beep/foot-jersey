@@ -3,6 +3,8 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       // Sporthub / any Shopify-hosted store

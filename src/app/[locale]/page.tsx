@@ -48,11 +48,11 @@ export default async function HomePage({
 
   // Preload the first 2 marquee images so the browser starts the download
   // before client JS finishes parsing (LandingHero is ssr: false).
-  // Preload via Next.js built-in image optimizer (CDN edge, AVIF/WebP, cached)
+  // Preload directly from Shopify CDN — bypasses /_next/image quota.
   const preloadImages = jerseys
     .filter((j) => j.imageUrl && j.type === 'special')
     .slice(0, 2)
-    .map((j) => `/_next/image?url=${encodeURIComponent(j.imageUrl)}&w=128&q=40`);
+    .map((j) => j.imageUrl);
 
   return (
     <>
