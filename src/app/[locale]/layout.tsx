@@ -59,11 +59,10 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Primary image CDN — start TCP+TLS handshake before any image request */}
-        <link rel="preconnect" href="https://cdn.shopify.com" crossOrigin="anonymous" />
+        {/* DNS-prefetch only — all images route through /_next/image (same origin)
+            so the browser never opens a direct connection. Hints help Vercel's
+            edge on cache-miss upstream fetches. */}
         <link rel="dns-prefetch" href="https://cdn.shopify.com" />
-        {/* Firebase Storage — admin-uploaded product images */}
-        <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         {/* next/font inlines fonts at build time — no runtime request to Google Fonts */}
         <script

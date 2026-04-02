@@ -52,7 +52,7 @@ export default async function HomePage({
   const preloadImages = jerseys
     .filter((j) => j.imageUrl && j.type === 'special')
     .slice(0, 2)
-    .map((j) => `/_next/image?url=${encodeURIComponent(j.imageUrl)}&w=256&q=60`);
+    .map((j) => `/_next/image?url=${encodeURIComponent(j.imageUrl)}&w=128&q=40`);
 
   return (
     <>

@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
@@ -192,7 +193,7 @@ export function OrderConfirmedClient() {
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 0', borderBottom: i < order.items.length - 1 ? '1px solid #161616' : 'none' }}>
                   <div style={{ width: 52, height: 52, borderRadius: 10, background: '#1a1a1a', border: '1px solid #222', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {item.imageUrl
-                      ? <img src={item.imageUrl} alt={item.teamName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <Image src={item.imageUrl} alt={item.teamName} width={52} height={52} sizes="52px" quality={60} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <ShoppingBag style={{ width: 22, height: 22, color: '#444' }} />
                     }
                   </div>
