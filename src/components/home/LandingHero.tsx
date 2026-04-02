@@ -12,7 +12,7 @@ import type { Jersey } from '@/types';
 const CARD_W  = 120;
 const CARD_H  = 160;
 const CARD_MR = 8;
-const HALF    = 16;  // cards per half → 16 × 128px = 2048px (covers ≤2048px screens)
+const HALF    = 12;  // cards per half → 12 × 128px = 1536px
 const STRIP_W = HALF * (CARD_W + CARD_MR); // 1536px — one full copy
 
 const ROWS = [

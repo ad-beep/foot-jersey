@@ -258,9 +258,7 @@ export function CategoryGrid() {
         minHeight: 'calc(100vh - 64px)',
         backgroundColor: 'var(--bg-primary)',
         borderTop: '1px solid var(--border)',
-        contentVisibility: 'auto',
-        containIntrinsicSize: 'auto 100vh',
-      } as React.CSSProperties}
+      }}
     >
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 w-full">
         {/* Section header */}

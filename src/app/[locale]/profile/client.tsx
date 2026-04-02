@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { User as UserIcon, LogOut, Trash2, ChevronDown, ChevronUp, MapPin, Pencil, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/auth-store';
@@ -156,7 +155,8 @@ export default function ProfileClient({ allJerseys }: ProfileClientProps) {
             style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '2px solid var(--border)' }}
           >
             {user.photoURL ? (
-              <Image src={user.photoURL} alt="" width={80} height={80} sizes="80px" className="w-full h-full object-cover" />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
             ) : (
               <UserIcon className="w-8 h-8 md:w-10 md:h-10" style={{ color: 'var(--text-muted)' }} />
             )}
