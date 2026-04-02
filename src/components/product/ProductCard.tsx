@@ -14,7 +14,7 @@ import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, getJerseyName } from '@/lib/utils';
-import { CURRENCY, KIDS_SIZES } from '@/lib/constants';
+import { CURRENCY, KIDS_SIZES, BLUR_DATA_URL } from '@/lib/constants';
 import type { Jersey, JerseyType, Size, KidsSize } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────
@@ -59,7 +59,6 @@ export const ProductCard = React.memo(function ProductCard({
   const recordCartAdd  = useAnalyticsStore((s) => s.recordCartAdd);
   const { toast }      = useToast();
 
-  const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [heartPulse, setHeartPulse] = useState(false);
@@ -157,22 +156,16 @@ export const ProductCard = React.memo(function ProductCard({
           </div>
         ) : (
           <>
-            {/* Shimmer skeleton — visible until image loads */}
-            {!imgLoaded && (
-              <div
-                className="absolute inset-0 animate-pulse"
-                style={{ backgroundColor: 'var(--bg-elevated)' }}
-              />
-            )}
             <Image
               src={retryCount > 0 ? `${jersey.imageUrl}?retry=${retryCount}` : jersey.imageUrl}
               alt={displayName}
               fill
               sizes={imageSizes ?? '(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px'}
               quality={imageQuality ?? 70}
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
-              onLoad={() => setImgLoaded(true)}
               onError={() => {
                 if (retryCount < 2) {
                   setRetryCount((c) => c + 1);

@@ -114,6 +114,12 @@ export const SHEET_RANGE = 'A:J';
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'FootJersey';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://footjersey.com';
 
+// ─── Image blur placeholder ─────────────────────────────────
+// Tiny dark SVG used as blurDataURL for remote images.
+// Matches the dark theme bg so the blur-up transition feels seamless.
+export const BLUR_DATA_URL =
+  'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%2713%27%3E%3Crect width=%2710%27 height=%2713%27 fill=%27%23161616%27/%3E%3C/svg%3E';
+
 // ─── Available Sizes ─────────────────────────────────────────
 export const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'] as const;
 export const KIDS_SIZES = ['16', '18', '20', '22', '24', '26', '28'] as const;
