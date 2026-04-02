@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag, Trash2, Plus, Minus, Truck, ArrowLeft, ArrowRight,
-  Package, CreditCard, X, AlertCircle,
+  Package, CreditCard, X, AlertCircle, Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -246,7 +246,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     if (!form.city.trim()) e.city = isHe ? 'עיר היא שדה חובה' : 'City is required';
     if (!form.street.trim()) e.street = isHe ? 'רחוב הוא שדה חובה' : 'Street is required';
     if (!form.zip.trim()) e.zip = isHe ? 'מיקוד הוא שדה חובה' : 'Zip code is required';
-    else if (!/^\d{7}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד חייב להיות 7 ספרות' : 'Zip code must be exactly 7 digits';
+    else if (!/^[a-zA-Z0-9]{3,10}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד לא תקין' : 'Invalid postal code';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -483,9 +483,9 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             <input
               type="text"
               value={form.zip}
-              onChange={(e) => set('zip', e.target.value.replace(/\D/g, '').slice(0, 7))}
+              onChange={(e) => set('zip', e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10))}
               placeholder="6100000"
-              maxLength={7}
+              maxLength={10}
               className={inputClass}
               style={{ ...inputStyle(!!errors.zip), direction: 'ltr' }}
             />
@@ -598,10 +598,12 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               type="button"
               onClick={applyDiscount}
               disabled={discountLoading || !discountCode.trim()}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-black transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-black transition-colors disabled:opacity-50 flex items-center gap-1.5"
               style={{ backgroundColor: 'var(--accent)' }}
             >
-              {discountLoading ? '...' : isHe ? 'החל' : 'Apply'}
+              {discountLoading
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>{isHe ? 'בודק...' : '...'}</span></>
+                : (isHe ? 'החל' : 'Apply')}
             </button>
           )}
         </div>
@@ -879,7 +881,7 @@ export function CartPageClient() {
                 <div className="space-y-3">
                   <AnimatePresence mode="popLayout">
                     {items.map((item) => (
-                      <CartItemCard key={`${item.jerseyId}-${item.size}`} item={item} />
+                      <CartItemCard key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}`} item={item} />
                     ))}
                   </AnimatePresence>
                 </div>

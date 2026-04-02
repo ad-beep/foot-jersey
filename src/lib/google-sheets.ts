@@ -42,6 +42,10 @@ async function fetchRawRows(): Promise<SheetRow[]> {
 }
 
 // ─── Cached Fetch ────────────────────────────────────────────
+// NOTE: This in-memory cache is per-serverless instance (each cold start gets its own Map).
+// Because the Google Sheets SDK is used instead of raw fetch(), we cannot leverage Next.js's
+// built-in fetch cache here. The trade-off is acceptable: warm instances share the cache, and
+// cold starts simply re-fetch. Introducing Redis or another shared cache is out of scope.
 const CACHE_KEY = 'google_sheets_jerseys';
 
 export async function fetchJerseys(): Promise<Jersey[]> {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchJerseys, fetchJerseysByLeague, invalidateJerseysCache } from '@/lib/google-sheets';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +11,10 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id');
     const refresh = searchParams.get('refresh');
 
-    // Force cache refresh
+    // Force cache refresh — admin only
     if (refresh === 'true') {
+      const auth = await requireAdmin(request);
+      if (!auth.ok) return auth.response;
       invalidateJerseysCache();
     }
 

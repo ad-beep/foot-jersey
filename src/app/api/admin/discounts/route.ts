@@ -121,6 +121,16 @@ export async function POST(request: NextRequest) {
     const spreadsheetId = getSpreadsheetId();
     const sheets = getSheets();
 
+    // Check for duplicate code
+    const existingRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${SHEET_TAB}!A:A`,
+    });
+    const existingCodes = (existingRes.data.values ?? []).slice(1).map(r => (r[0] ?? '').toUpperCase().trim());
+    if (existingCodes.includes(code.toUpperCase().trim())) {
+      return NextResponse.json({ error: `Code "${code.toUpperCase().trim()}" already exists` }, { status: 409 });
+    }
+
     // Column order must match the header row:
     // A:code  B:type  C:value  D:min_order  E:max_uses  F:current_uses  G:expiry_date  H:is_active  I:created_at
     const row = [

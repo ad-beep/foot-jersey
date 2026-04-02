@@ -37,10 +37,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch the original image from the upstream CDN
-    const upstream = await fetch(src, {
-      headers: { 'User-Agent': 'FootJersey-ImgProxy/1.0' },
-    });
+    // Fetch the original image from the upstream CDN (10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+    let upstream: Response;
+    try {
+      upstream = await fetch(src, {
+        headers: { 'User-Agent': 'FootJersey-ImgProxy/1.0' },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!upstream.ok) {
       return new NextResponse(`Upstream ${upstream.status}`, { status: 502 });

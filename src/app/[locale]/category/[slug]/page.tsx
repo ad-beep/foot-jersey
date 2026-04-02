@@ -47,9 +47,12 @@ export async function generateMetadata({
       : { en: slug, he: slug };
 
   const name = locale === 'he' ? names.he : names.en;
+  const description = locale === 'he'
+    ? `קנו חולצות ${names.he} כדורגל ב-${SITE_NAME}. כל המידות, משלוח לישראל.`
+    : `Shop ${names.en} football jerseys at ${SITE_NAME}. All sizes, fast shipping to Israel.`;
   return {
     title: `${name} | ${SITE_NAME}`,
-    description: `Shop ${names.en} football jerseys at ${SITE_NAME}.`,
+    description,
   };
 }
 

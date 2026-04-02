@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { sendBitApprovedEmail } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
@@ -56,8 +56,19 @@ async function updateSheetStatus(orderId: string, status: string) {
 
 const VALID_STATUSES = [
   'pending', 'pending_bit_approval', 'processing',
-  'shipped', 'completed', 'bit_declined',
+  'shipped', 'delivered', 'completed', 'bit_declined',
 ];
+
+// Allowed forward transitions — prevents nonsensical backwards moves
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  pending:               ['processing', 'shipped', 'completed', 'bit_declined'],
+  pending_bit_approval:  ['processing', 'bit_declined'],
+  bit_declined:          ['pending_bit_approval'],
+  processing:            ['shipped', 'completed'],
+  shipped:               ['delivered', 'completed'],
+  delivered:             ['completed'],
+  completed:             [],
+};
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -71,6 +82,19 @@ export async function POST(request: NextRequest) {
     }
     if (!VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
+    // Validate transition is allowed
+    const orderSnap = await getDoc(doc(db, 'orders', orderId));
+    if (orderSnap.exists()) {
+      const currentStatus = orderSnap.data().status as string;
+      const allowed = ALLOWED_TRANSITIONS[currentStatus];
+      if (allowed !== undefined && !allowed.includes(status)) {
+        return NextResponse.json(
+          { error: `Cannot transition from "${currentStatus}" to "${status}"` },
+          { status: 400 }
+        );
+      }
     }
 
     await updateDoc(doc(db, 'orders', orderId), { status });

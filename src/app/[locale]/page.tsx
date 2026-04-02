@@ -5,7 +5,7 @@ import { fetchJerseys } from '@/lib/google-sheets';
 import HomeClient from './home-client';
 import type { Locale, Jersey } from '@/types';
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -18,7 +18,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       : 'Shop premium football jerseys from every league worldwide. Premier League, La Liga, Serie A, retro classics, World Cup 2026 and more. Fast shipping to Israel.',
     alternates: {
       canonical: `https://shopfootjersey.com/${params.locale}`,
-      languages: { en: '/en', he: '/he' },
+      languages: {
+        en: 'https://shopfootjersey.com/en',
+        he: 'https://shopfootjersey.com/he',
+      },
     },
   };
 }
@@ -45,10 +48,11 @@ export default async function HomePage({
 
   // Preload the first 2 marquee images so the browser starts the download
   // before client JS finishes parsing (LandingHero is ssr: false).
+  // Route through the image proxy (same path the imageLoader uses at runtime)
   const preloadImages = jerseys
     .filter((j) => j.imageUrl && j.type === 'special')
     .slice(0, 2)
-    .map((j) => `/_next/image?url=${encodeURIComponent(j.imageUrl)}&w=256&q=60`);
+    .map((j) => `/api/img?url=${encodeURIComponent(j.imageUrl)}&w=256`);
 
   return (
     <>

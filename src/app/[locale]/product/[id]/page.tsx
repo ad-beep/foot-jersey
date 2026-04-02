@@ -7,7 +7,7 @@ import { getImageUrl } from '@/lib/utils';
 import type { Locale } from '@/types';
 import { ProductPageClient } from './client';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,
@@ -29,8 +29,15 @@ export async function generateMetadata({
   const leagueName = leagueNames[jersey.league] || jersey.league;
   const jerseyTypeLabel = jersey.type === 'retro' ? 'Retro Classic' : jersey.type === 'special' ? 'Special Edition' : jersey.type === 'drip' ? 'Drip Style' : 'Official';
 
-  const title = `${jersey.teamName} ${jersey.season} ${jerseyTypeLabel} Jersey`;
-  const description = `Buy the ${jersey.teamName} ${jersey.season} ${jerseyTypeLabel.toLowerCase()} football jersey from ${leagueName}. Available in all sizes from ₪${jersey.price}. Fast shipping to Israel. Custom name & number printing available.`;
+  const locale = params.locale;
+  const isHe = locale === 'he';
+
+  const title = isHe
+    ? `חולצת ${jersey.teamName} ${jersey.season}`
+    : `${jersey.teamName} ${jersey.season} ${jerseyTypeLabel} Jersey`;
+  const description = isHe
+    ? `קנו את חולצת ${jersey.teamName} ${jersey.season} מהדורת ${jerseyTypeLabel === 'Retro Classic' ? 'רטרו' : jerseyTypeLabel === 'Special Edition' ? 'מיוחדת' : 'רשמית'} — ${leagueName}. כל המידות ₪${jersey.price}+. משלוח לישראל. הדפסת שם ומספר.`
+    : `Buy the ${jersey.teamName} ${jersey.season} ${jerseyTypeLabel.toLowerCase()} football jersey from ${leagueName}. Available in all sizes from ₪${jersey.price}. Fast shipping to Israel. Custom name & number printing available.`;
   const imageUrl = jersey.imageUrl ? `${SITE_URL}${getImageUrl(jersey.imageUrl)}` : `${SITE_URL}/og-image.jpg`;
 
   return {
@@ -50,7 +57,7 @@ export async function generateMetadata({
       description,
       images: [{ url: imageUrl, width: 800, height: 800, alt: title }],
       url: `${SITE_URL}/${params.locale}/product/${params.id}`,
-      type: 'website',
+      type: 'website' as const,
     },
     twitter: {
       card: 'summary_large_image',

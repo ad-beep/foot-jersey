@@ -248,7 +248,7 @@ export function CartDrawer({ dict: _dict }: CartDrawerProps) {
                 <div className="flex-1 overflow-y-auto px-6">
                   <AnimatePresence mode="popLayout">
                     {items.map((item) => (
-                      <CartItemRow key={`${item.jerseyId}-${item.size}`} item={item} />
+                      <CartItemRow key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}`} item={item} />
                     ))}
                   </AnimatePresence>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { type Dispatch, type SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useLocale } from '@/hooks/useLocale';
 import { PRICES, CURRENCY } from '@/lib/constants';
 import type { CartCustomization, JerseyType } from '@/types';
@@ -31,6 +31,10 @@ export function CustomizationOptions({
   const { locale, isRtl } = useLocale();
   const isHe = locale === 'he';
   const isRetro = jerseyType === 'retro';
+
+  // For character counter visibility
+  const [nameFocused, setNameFocused] = useState(false);
+  const [patchFocused, setPatchFocused] = useState(false);
 
   // Build visible options based on jersey type
   const options = [
@@ -120,12 +124,13 @@ export function CustomizationOptions({
               {/* Row */}
               <button
                 onClick={() => handleToggle(opt.key)}
-                className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/[0.02]"
+                className="w-full flex items-center justify-between px-4 transition-colors hover:bg-white/[0.02]"
+                style={{ minHeight: 44 }}
                 aria-checked={active}
                 role="switch"
               >
-                <div className="flex items-center gap-3">
-                  {/* Toggle switch */}
+                <div className="flex items-center gap-3" style={{ minHeight: 44 }}>
+                  {/* Toggle switch — visual only; tap target is the full button row */}
                   <div
                     className="w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0"
                     style={{ backgroundColor: active ? 'var(--accent)' : 'rgba(255,255,255,0.1)' }}
@@ -144,36 +149,51 @@ export function CustomizationOptions({
 
               {/* Name & Number inputs */}
               {opt.key === 'nameNumber' && nameNumberOpen && (
-                <div className="px-4 pb-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={customization.customName}
-                    onChange={(e) => onChange({ ...customization, customName: e.target.value.slice(0, 12) })}
-                    placeholder={isHe ? 'שם' : 'Name'}
-                    maxLength={12}
-                    className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
-                    style={{
-                      ...inputStyle,
-                      direction: isRtl ? 'rtl' : 'ltr',
-                      borderColor: nameNumberError ? '#f87171' : undefined,
-                    }}
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={customization.customNumber}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/\D/g, '').slice(0, 2);
-                      onChange({ ...customization, customNumber: v });
-                    }}
-                    placeholder="#"
-                    maxLength={2}
-                    className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
-                    style={{
-                      ...inputStyle,
-                      borderColor: nameNumberError ? '#f87171' : undefined,
-                    }}
-                  />
+                <div className="px-4 pb-3">
+                  <div className="flex gap-2" style={{ flexDirection: isRtl ? 'row-reverse' : 'row' }}>
+                    <div className="flex-1 flex flex-col">
+                      <input
+                        type="text"
+                        value={customization.customName}
+                        onChange={(e) => onChange({ ...customization, customName: e.target.value.slice(0, 12) })}
+                        onFocus={() => setNameFocused(true)}
+                        onBlur={() => setNameFocused(false)}
+                        placeholder={isHe ? 'שם' : 'Name'}
+                        maxLength={12}
+                        className="rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                        style={{
+                          ...inputStyle,
+                          direction: isRtl ? 'rtl' : 'ltr',
+                          borderColor: nameNumberError ? '#f87171' : undefined,
+                        }}
+                      />
+                      {(nameFocused || customization.customName.length > 0) && (
+                        <span
+                          className="text-right mt-1"
+                          style={{ fontSize: 11, color: 'var(--text-muted)' }}
+                        >
+                          {customization.customName.length}/12
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={customization.customNumber}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 2);
+                        onChange({ ...customization, customNumber: v });
+                      }}
+                      placeholder="#"
+                      maxLength={2}
+                      className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                      style={{
+                        ...inputStyle,
+                        borderColor: nameNumberError ? '#f87171' : undefined,
+                        alignSelf: 'flex-start',
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -184,6 +204,8 @@ export function CustomizationOptions({
                     type="text"
                     value={customization.patchText}
                     onChange={(e) => onChange({ ...customization, patchText: e.target.value.slice(0, 30) })}
+                    onFocus={() => setPatchFocused(true)}
+                    onBlur={() => setPatchFocused(false)}
                     placeholder={isHe ? "איזה פאצ' תרצה?" : 'Which patch would you like?'}
                     maxLength={30}
                     className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
@@ -193,6 +215,14 @@ export function CustomizationOptions({
                       borderColor: patchError ? '#f87171' : undefined,
                     }}
                   />
+                  {(patchFocused || customization.patchText.length > 0) && (
+                    <span
+                      className="block text-right mt-1"
+                      style={{ fontSize: 11, color: 'var(--text-muted)' }}
+                    >
+                      {customization.patchText.length}/30
+                    </span>
+                  )}
                 </div>
               )}
 

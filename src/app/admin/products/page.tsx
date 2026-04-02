@@ -140,7 +140,7 @@ export default function AddProductPage() {
   const [nameHe, setNameHe] = useState('');
   const [nameEn, setNameEn] = useState('');
   const [league, setLeague] = useState('england');
-  const [season, setSeason] = useState('24/25');
+  const [season, setSeason] = useState(CURRENT_SEASON);
   const [tag, setTag] = useState('regular');
   const [isLongSleeve, setIsLongSleeve] = useState(false);
   const [availableSizes, setAvailableSizes] = useState('S,M,L,XL,XXL');

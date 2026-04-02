@@ -76,20 +76,22 @@ export async function POST(request: NextRequest) {
     const expiryDate = row[6];
     const isActive = row[7]?.toLowerCase() !== 'false';
 
-    // Validation checks
+    // Validation checks — use a single generic message to prevent code enumeration
+    const INVALID_MSG = 'Invalid or expired code';
+
     if (!isActive) {
-      return NextResponse.json({ valid: false, error: 'Code is inactive' });
+      return NextResponse.json({ valid: false, error: INVALID_MSG });
     }
 
     if (expiryDate) {
       const expiry = new Date(expiryDate);
       if (expiry < new Date()) {
-        return NextResponse.json({ valid: false, error: 'Code expired' });
+        return NextResponse.json({ valid: false, error: INVALID_MSG });
       }
     }
 
     if (maxUses > 0 && currentUses >= maxUses) {
-      return NextResponse.json({ valid: false, error: 'Code usage limit reached' });
+      return NextResponse.json({ valid: false, error: INVALID_MSG });
     }
 
     if (minOrder > 0 && (subtotal || 0) < minOrder) {
@@ -118,20 +120,7 @@ export async function POST(request: NextRequest) {
       discountAmount,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('Validate discount error:', msg);
-
-    let hint = 'Validation failed';
-    if (msg.includes('Unable to parse range')) {
-      hint = 'DiscountCodes tab not found in spreadsheet';
-    } else if (msg.includes('Missing Google credentials')) {
-      hint = 'Server credentials not configured';
-    } else if (msg.includes('403')) {
-      hint = 'Permission denied — check spreadsheet sharing';
-    } else if (msg.includes('GOOGLE_SHEETS_SPREADSHEET_ID')) {
-      hint = 'Spreadsheet ID not configured';
-    }
-
-    return NextResponse.json({ valid: false, error: hint }, { status: 500 });
+    console.error('Validate discount error:', error instanceof Error ? error.message : error);
+    return NextResponse.json({ valid: false, error: 'Could not validate code. Please try again.' }, { status: 500 });
   }
 }

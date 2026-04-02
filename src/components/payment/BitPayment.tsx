@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Copy, Smartphone, CheckCircle2, User, Phone, Banknote } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -30,6 +30,7 @@ export function BitPayment({
   const [senderName, setSenderName] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const submittingRef = useRef(false);
 
   // Owner details
   const ownerPhone = '058-414-0508';
@@ -60,7 +61,9 @@ export function BitPayment({
   };
 
   const handleConfirm = () => {
+    if (submittingRef.current || loading) return;
     if (!validateSenderFields()) return;
+    submittingRef.current = true;
     setConfirmed(true);
     onConfirm({
       senderName: senderName.trim(),

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Loader2, Package } from 'lucide-react';
+import { Loader2, Package, Search } from 'lucide-react';
 
 interface OrderSummary {
   id: string;
@@ -26,14 +26,32 @@ const TABS: { id: Tab; label: string; filter: (o: OrderSummary) => boolean }[] =
   { id: 'shipped',     label: 'Shipped',       filter: (o) => o.status === 'shipped' },
 ];
 
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'pending_bit_approval', label: 'Pending BIT Approval' },
+  { value: 'bit_declined', label: 'BIT Declined' },
+];
+
+function daysSince(ts: Timestamp | null): number {
+  if (!ts) return 0;
+  return (Date.now() - ts.toMillis()) / (1000 * 60 * 60 * 24);
+}
+
 export default function OrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('all');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
-    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(500));
     return onSnapshot(q, (snap) => {
       setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() } as OrderSummary)));
       setLoading(false);
@@ -41,7 +59,22 @@ export default function OrdersPage() {
   }, []);
 
   const jerseyCount = (o: OrderSummary) => o.items.reduce((s, i) => s + (i.quantity || 1), 0);
-  const displayed = orders.filter(TABS.find((t) => t.id === tab)!.filter);
+
+  const displayed = useMemo(() => {
+    const tabFilter = TABS.find((t) => t.id === tab)!.filter;
+    return orders.filter((o) => {
+      if (!tabFilter(o)) return false;
+      if (statusFilter && o.status !== statusFilter) return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const matchesName = o.shippingInfo?.name?.toLowerCase().includes(q);
+        const matchesId = o.id.toLowerCase().includes(q) ||
+          (o.orderNumber != null && String(o.orderNumber).includes(q));
+        if (!matchesName && !matchesId) return false;
+      }
+      return true;
+    });
+  }, [orders, tab, search, statusFilter]);
 
   if (loading) {
     return (
@@ -55,6 +88,29 @@ export default function OrdersPage() {
     <div className="p-6 max-w-4xl">
       <h1 className="text-xl font-bold mb-1">Orders</h1>
       <p className="text-sm text-gray-500 mb-5">{orders.length} order{orders.length !== 1 ? 's' : ''} total</p>
+
+      {/* Search + Status filter */}
+      <div className="flex gap-3 mb-5 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or order ID…"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/40"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white focus:outline-none focus:border-cyan-500/40"
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-white/8 mb-5">
@@ -95,6 +151,8 @@ export default function OrdersPage() {
             const isBitPending  = order.status === 'pending_bit_approval';
             const isBitDeclined = order.status === 'bit_declined';
             const count = jerseyCount(order);
+            const stale = isBitPending && daysSince(order.createdAt) > 7;
+            const staleDays = Math.floor(daysSince(order.createdAt));
             return (
               <button
                 key={order.id}
@@ -128,6 +186,11 @@ export default function OrdersPage() {
                 ) : (
                   <span className="text-[11px] font-semibold px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15">
                     PayPal
+                  </span>
+                )}
+                {stale && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/15 text-red-400 border border-red-500/20 shrink-0">
+                    Stale ({staleDays}d)
                   </span>
                 )}
                 <span className="text-gray-700 text-sm">›</span>

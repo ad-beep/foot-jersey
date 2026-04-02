@@ -65,8 +65,7 @@ export default async function LocaleLayout({
         {/* Firebase Storage — admin-uploaded product images */}
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* next/font inlines fonts at build time — no runtime request to Google Fonts */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -101,7 +100,7 @@ export default async function LocaleLayout({
                     '@type': 'SearchAction',
                     target: {
                       '@type': 'EntryPoint',
-                      urlTemplate: 'https://shopfootjersey.com/en/search?q={search_term_string}',
+                      urlTemplate: `https://shopfootjersey.com/${locale}/search?q={search_term_string}`,
                     },
                     'query-input': 'required name=search_term_string',
                   },

@@ -88,9 +88,9 @@ export const useCartStore = create<CartState>()(
         );
 
         if (existingIndex >= 0) {
-          // Identical customization — just increment quantity
+          // Identical customization — increment quantity up to max 10
           const items = [...get().items];
-          items[existingIndex].quantity += 1;
+          if (items[existingIndex].quantity < 10) items[existingIndex].quantity += 1;
           set({ items, isOpen: true });
         } else {
           // Different customization or new item — add as separate line item
@@ -129,12 +129,13 @@ export const useCartStore = create<CartState>()(
           get().removeItem(jerseyId, size, customization);
           return;
         }
+        const clamped = Math.min(quantity, 10);
         set({
           items: get().items.map((item) =>
             item.jerseyId === jerseyId &&
             item.size === size &&
             customizationsMatch(item.customization, customization)
-              ? { ...item, quantity }
+              ? { ...item, quantity: clamped }
               : item
           ),
         });
@@ -176,3 +177,17 @@ export const useCartStore = create<CartState>()(
     }
   )
 );
+
+// Multi-tab cart sync: when another tab writes to localStorage, update this tab's state
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'foot-jersey-cart' && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (parsed?.state?.items) {
+          useCartStore.setState({ items: parsed.state.items });
+        }
+      } catch { /* ignore parse errors */ }
+    }
+  });
+}

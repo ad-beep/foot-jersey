@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Heart, ShoppingCart, ChevronDown, SearchX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -143,6 +143,21 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   const [patchError, setPatchError] = useState(false);
   const [nameNumberError, setNameNumberError] = useState(false);
 
+  // Timeout refs to prevent memory leaks on unmount
+  const shakeSizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartPulseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nameNumberErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const patchErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (shakeSizeTimeoutRef.current) clearTimeout(shakeSizeTimeoutRef.current);
+      if (heartPulseTimeoutRef.current) clearTimeout(heartPulseTimeoutRef.current);
+      if (nameNumberErrorTimeoutRef.current) clearTimeout(nameNumberErrorTimeoutRef.current);
+      if (patchErrorTimeoutRef.current) clearTimeout(patchErrorTimeoutRef.current);
+    };
+  }, []);
+
   // ── Fetch ────────────────────────────────────────────────────────────────
   useEffect(() => {
     fetch('/api/products')
@@ -180,13 +195,15 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
     if (!jersey) return;
     if (!selectedSize) {
       setShakeSize(true);
-      setTimeout(() => setShakeSize(false), 500);
+      if (shakeSizeTimeoutRef.current) clearTimeout(shakeSizeTimeoutRef.current);
+      shakeSizeTimeoutRef.current = setTimeout(() => setShakeSize(false), 500);
       toast({ title: isHe ? 'בחר מידה' : 'Please select a size', variant: 'error' });
       return;
     }
     if (nameNumberOpen && !customization.customName.trim() && !customization.customNumber.trim()) {
       setNameNumberError(true);
-      setTimeout(() => setNameNumberError(false), 800);
+      if (nameNumberErrorTimeoutRef.current) clearTimeout(nameNumberErrorTimeoutRef.current);
+      nameNumberErrorTimeoutRef.current = setTimeout(() => setNameNumberError(false), 800);
       toast({
         title: isHe ? 'אנא הזן שם או מספר' : 'Please enter a name or number',
         variant: 'error',
@@ -195,7 +212,8 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
     }
     if (customization.hasPatch && !customization.patchText.trim()) {
       setPatchError(true);
-      setTimeout(() => setPatchError(false), 800);
+      if (patchErrorTimeoutRef.current) clearTimeout(patchErrorTimeoutRef.current);
+      patchErrorTimeoutRef.current = setTimeout(() => setPatchError(false), 800);
       toast({
         title: isHe ? "אנא הזן טקסט לפאצ'" : 'Please enter patch text',
         variant: 'error',
@@ -213,7 +231,8 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
     toggleFavorite(productId);
     recordInteraction(productId, 'like');
     setHeartPulse(true);
-    setTimeout(() => setHeartPulse(false), 300);
+    if (heartPulseTimeoutRef.current) clearTimeout(heartPulseTimeoutRef.current);
+    heartPulseTimeoutRef.current = setTimeout(() => setHeartPulse(false), 300);
     const wasFav = useFavoritesStore.getState().isFavorite(productId);
     toast({
       title: wasFav
