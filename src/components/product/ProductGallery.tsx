@@ -50,7 +50,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
     scrollRef.current?.scrollTo({ left: idx * (scrollRef.current.clientWidth ?? 0), behavior: 'smooth' });
   }, []);
 
-  const renderImage = (src: string, idx: number, priority: boolean, fill: boolean) => {
+  const renderImage = (src: string, idx: number, priority: boolean, fill: boolean, thumbnail = false) => {
     if (!src || errors.has(idx)) {
       return (
         <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'var(--bg-elevated)' }}>
@@ -61,6 +61,9 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
     const retry = retryCounts[idx] ?? 0;
     const imgSrc = retry > 0 ? `${src}?retry=${retry}` : src;
     const isLoaded = loadedSet.has(idx);
+    const sizesAttr = fill
+      ? (thumbnail ? '64px' : '(max-width: 1024px) 100vw, 55vw')
+      : undefined;
     return (
       <>
         {!isLoaded && (
@@ -70,7 +73,8 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
           src={imgSrc}
           alt={`${alt} ${idx + 1}`}
           fill={fill}
-          sizes={fill ? '(max-width: 1024px) 100vw, 55vw' : undefined}
+          sizes={sizesAttr}
+          quality={thumbnail ? 60 : 85}
           className="object-cover"
           priority={priority}
           onLoad={() => setLoadedSet((prev) => new Set(prev).add(idx))}
@@ -152,7 +156,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                 }}
                 aria-label={`View image ${i + 1}`}
               >
-                {renderImage(src, i, false, true)}
+                {renderImage(src, i, false, true, true)}
               </button>
             ))}
           </div>

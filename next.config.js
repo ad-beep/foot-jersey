@@ -3,15 +3,24 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    loader: 'custom',
-    loaderFile: './src/lib/image-loader.ts',
+    // Use Next.js built-in optimizer (Vercel CDN edge) instead of a serverless proxy.
+    // Benefits: no cold starts, no connection pool saturation, automatic AVIF/WebP,
+    // CDN-level caching, proper responsive sizing for every image on the site.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
+      // Sporthub / any Shopify-hosted store
+      { protocol: 'https', hostname: 'cdn.shopify.com' },
+      { protocol: 'https', hostname: '**.shopify.com' },
+      // Firebase Storage (user-uploaded images)
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
+      // Catch-all for any other CDN the image sheet may reference
       { protocol: 'https', hostname: '**' },
     ],
-    // Smaller sizes let mobile cards (50vw ≈ 187px) pick 384w instead of 640w
+    // Smaller breakpoints reduce download size on mobile product cards
     deviceSizes: [320, 384, 480, 640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    minimumCacheTTL: 2592000, // 30 days — Shopify CDN URLs are versioned, safe to cache long
+    // CDN URLs from Shopify are versioned — 30-day cache is safe
+    minimumCacheTTL: 2592000,
     dangerouslyAllowSVG: false,
   },
   experimental: {

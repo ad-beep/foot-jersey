@@ -54,6 +54,7 @@ function CartItemCard({ item }: { item: CartItem }) {
           alt={displayName}
           width={88}
           height={110}
+          sizes="88px"
           className="w-full h-full object-cover"
         />
       </Link>

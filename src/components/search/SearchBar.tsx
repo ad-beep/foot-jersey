@@ -412,6 +412,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
                             alt={displayName}
                             width={48}
                             height={64}
+                            sizes="48px"
                             className="w-full h-full object-cover"
                           />
                         </div>

@@ -111,8 +111,9 @@ function MarqueeRow({
               alt=""
               width={CARD_W}
               height={CARD_H}
-              unoptimized
-              loading="eager"
+              sizes="120px"
+              quality={60}
+              {...(eager && i < 4 ? { priority: true } : { loading: 'eager' as const })}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           </div>

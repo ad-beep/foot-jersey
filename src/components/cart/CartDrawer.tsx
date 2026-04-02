@@ -47,6 +47,7 @@ function CartItemRow({ item }: { item: CartItem }) {
           alt={displayName}
           width={72}
           height={90}
+          sizes="72px"
           className="w-full h-full object-cover"
         />
       </Link>
