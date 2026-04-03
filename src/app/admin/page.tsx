@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { Loader2, TrendingUp, ShoppingBag, Monitor } from 'lucide-react';
 
 // ─── Constants ───────────────────────────────────────────────
-const USD_TO_ILS = 3.7;
+const USD_TO_ILS = 3.4;
 const MARKETING_PER_JERSEY = 15;
 const PAYPAL_RATE = 0.05;
 
