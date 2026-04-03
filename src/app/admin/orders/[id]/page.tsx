@@ -83,7 +83,7 @@ async function callUpdateStatus(orderId: string, status: string, order?: Order) 
 
   const currentUser = getAuth().currentUser;
   const idToken = currentUser ? await currentUser.getIdToken() : null;
-  await fetch('/api/admin/orders/update-status', {
+  const res = await fetch('/api/admin/orders/update-status', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -91,6 +91,10 @@ async function callUpdateStatus(orderId: string, status: string, order?: Order) 
     },
     body: JSON.stringify({ orderId, status, orderData }),
   });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `Status update failed (${res.status})`);
+  }
 }
 
 export default function OrderDetailPage() {
@@ -99,6 +103,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
@@ -114,7 +119,12 @@ export default function OrderDetailPage() {
   const handleStatus = useCallback(async (status: string) => {
     if (!order || actionLoading) return;
     setActionLoading(true);
-    await callUpdateStatus(order.id, status, order);
+    setActionError('');
+    try {
+      await callUpdateStatus(order.id, status, order);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Status update failed');
+    }
     setActionLoading(false);
   }, [order, actionLoading]);
 
@@ -286,6 +296,14 @@ export default function OrderDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Action error */}
+      {actionError && (
+        <div className="mb-4 flex items-center gap-2 text-red-400 text-sm p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+          <span className="shrink-0">⚠</span>
+          {actionError}
+        </div>
+      )}
 
       {/* Body */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
