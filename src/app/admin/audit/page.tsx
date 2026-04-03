@@ -48,10 +48,16 @@ export default function AuditLogPage() {
       orderBy('timestamp', 'desc'),
       limit(200),
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditEntry)));
-      setLoading(false);
-    });
+    const unsub = onSnapshot(q,
+      (snap) => {
+        setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditEntry)));
+        setLoading(false);
+      },
+      (err) => {
+        console.error('[AuditLog] Firestore error:', err.message);
+        setLoading(false);
+      },
+    );
     return unsub;
   }, []);
 

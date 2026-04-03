@@ -31,5 +31,13 @@ service cloud.firestore {
     match /meta/{docId} {
       allow read, write: if true;
     }
+
+    // ── Admin Audit Log ───────────────────────────────────────────────────────
+    // Writes come from server-side API routes (no auth session) — allow create.
+    // Reads restricted to admin only.
+    match /adminAuditLog/{entryId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
   }
 }
