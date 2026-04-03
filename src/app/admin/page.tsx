@@ -236,6 +236,7 @@ export default function AdminDashboard() {
   const [productMap, setProductMap] = useState<Map<string, ProductInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
+  const [visits, setVisits] = useState<number | null>(null);
 
   // Load orders from Firestore
   useEffect(() => {
@@ -258,7 +259,15 @@ export default function AdminDashboard() {
         }
         setProductMap(map);
       })
-      .catch(() => {/* non-fatal: costs degrade to estimates */});
+      .catch(() => {/* non-fatal */});
+  }, []);
+
+  // Load Vercel Analytics page views
+  useEffect(() => {
+    fetch('/api/admin/analytics')
+      .then((r) => r.json())
+      .then((res) => { if (res.visits != null) setVisits(res.visits); })
+      .catch(() => {/* non-fatal */});
   }, []);
 
   // ─── Metrics ───────────────────────────────────────────────
@@ -379,7 +388,9 @@ export default function AdminDashboard() {
         </div>
         <div className="flex flex-col items-center py-7 px-4 rounded-2xl border border-white/7 bg-white/[0.02]">
           <Monitor className="w-4 h-4 text-purple-400 mb-3 opacity-60" />
-          <span className="text-3xl font-extrabold tracking-tight text-purple-400">—</span>
+          <span className="text-3xl font-extrabold tracking-tight text-purple-400">
+            {visits != null ? fmt(visits) : '—'}
+          </span>
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mt-2">Website Visits</span>
         </div>
       </div>
