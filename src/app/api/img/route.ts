@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     // Resize + convert to WebP using sharp (quality 82 = visually lossless for product photos)
     const webp = await sharp(buffer)
       .resize(width, null, { withoutEnlargement: true, fit: 'inside' })
-      .webp({ quality: 82 })
+      .webp({ quality: 88 })
       .toBuffer();
 
     return new NextResponse(webp as unknown as BodyInit, {

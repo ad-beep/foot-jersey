@@ -719,7 +719,7 @@ export function DiscoverClient() {
             >
               {visibleJerseys.map((jersey, i) => (
                 <Reveal key={jersey.id} delay={i < 4 ? i * 50 : 0}>
-                  <ProductCard jersey={jersey} priority={i < 4} />
+                  <ProductCard jersey={jersey} priority={i < 4} imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
                 </Reveal>
               ))}
             </div>

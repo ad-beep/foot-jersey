@@ -656,7 +656,7 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {visibleJerseys.map((jersey, i) => (
                     <Reveal key={jersey.id} delay={Math.min(i * 50, 300)}>
-                      <ProductCard jersey={jersey} priority={i < 8} />
+                      <ProductCard jersey={jersey} priority={i < 8} imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
                     </Reveal>
                   ))}
                 </div>
