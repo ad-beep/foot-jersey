@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Loader2, TrendingUp, ShoppingBag, Monitor } from 'lucide-react';
+import { getAuth } from 'firebase/auth';
 import {
   USD_TO_ILS,
   MARKETING_PER_JERSEY,
@@ -174,10 +175,16 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/admin/analytics')
-      .then((r) => r.json())
-      .then((res) => { if (res.visits != null) setVisits(res.visits); })
-      .catch(() => {});
+    (async () => {
+      const idToken = await getAuth().currentUser?.getIdToken().catch(() => null);
+      if (!idToken) return;
+      fetch('/api/admin/analytics', {
+        headers: { Authorization: `Bearer ${idToken}` },
+      })
+        .then((r) => r.json())
+        .then((res) => { if (res.visits != null) setVisits(res.visits); })
+        .catch(() => {});
+    })();
   }, []);
 
   // ─── Metrics ───────────────────────────────────────────────
