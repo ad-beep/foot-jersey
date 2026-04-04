@@ -7,6 +7,7 @@ import { doc, onSnapshot, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2 } from 'lucide-react';
+import { calcOrderCost, type ProductInfo } from '@/lib/cost-utils';
 
 interface OrderItem {
   jerseyId: string;
@@ -107,6 +108,7 @@ export default function OrderDetailPage() {
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
+  const [productMap, setProductMap] = useState<Map<string, ProductInfo>>(new Map());
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'orders', id), (snap) => {
@@ -115,6 +117,19 @@ export default function OrderDetailPage() {
     });
     return unsub;
   }, [id]);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((res) => {
+        const map = new Map<string, ProductInfo>();
+        for (const p of (res.data ?? res ?? [])) {
+          map.set(p.id, { type: p.type || 'regular', isLongSleeve: !!p.isLongSleeve, teamName: p.teamName || '' });
+        }
+        setProductMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleStatus = useCallback(async (status: string) => {
     if (!order || actionLoading) return;
@@ -457,6 +472,90 @@ export default function OrderDetailPage() {
               <span className="text-cyan-400">₪{order.total}</span>
             </div>
           </div>
+
+          {/* ── Owner's Cost Receipt ── */}
+          {(() => {
+            const cost = calcOrderCost(order.items, order.total, order.paymentMethod, productMap);
+            const fmtN = (n: number) => n.toFixed(1);
+            return (
+              <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-5">
+                <p className="text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-4">My Cost Breakdown</p>
+
+                {/* Per-item costs */}
+                <div className="flex flex-col gap-3 mb-4">
+                  {cost.itemDetails.map((detail, i) => {
+                    const item = order.items[i];
+                    return (
+                      <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+                        <p className="text-xs font-bold text-white mb-2 truncate">{item.teamName || detail.displayType}</p>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-gray-500">{detail.displayType} material</span>
+                          <span className="text-gray-300">${detail.baseCostUSD} = ₪{fmtN(detail.baseCostUSD * 3.4)}</span>
+                        </div>
+                        {detail.addOnLines.map((line, j) => (
+                          <div key={j} className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-500">{line.split(':')[0]}</span>
+                            <span className="text-gray-300">{line.split(':')[1]?.trim()} = ₪{fmtN(parseFloat(line.match(/\$(\d+)/)?.[1] || '0') * 3.4)}</span>
+                          </div>
+                        ))}
+                        {detail.quantity > 1 && (
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-500">Quantity</span>
+                            <span className="text-gray-300">× {detail.quantity}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-xs font-bold pt-1.5 mt-1 border-t border-white/[0.06]">
+                          <span className="text-gray-400">Item Cost</span>
+                          <span className="text-red-400">₪{fmtN(detail.totalILS)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Summary lines */}
+                <div className="flex flex-col gap-0 border-t border-white/[0.06] pt-3">
+                  {[
+                    { label: 'Products subtotal', value: `₪${fmtN(cost.productCostILS)}`, color: 'text-gray-300' },
+                    {
+                      label: cost.shippingFree
+                        ? `Shipping (free — ${cost.totalJerseys}+ jerseys)`
+                        : `Shipping ($5 = ₪${fmtN(cost.shippingCostILS)})`,
+                      value: cost.shippingFree ? '₪0' : `₪${fmtN(cost.shippingCostILS)}`,
+                      color: cost.shippingFree ? 'text-green-400' : 'text-gray-300',
+                    },
+                    { label: `Marketing (${cost.totalJerseys} × ₪15)`, value: `₪${fmtN(cost.marketingILS)}`, color: 'text-gray-300' },
+                    ...(cost.paypalCommissionILS > 0
+                      ? [{ label: 'PayPal commission (5%)', value: `₪${fmtN(cost.paypalCommissionILS)}`, color: 'text-gray-300' }]
+                      : []),
+                  ].map((row) => (
+                    <div key={row.label} className="flex justify-between text-xs py-1.5 border-b border-white/[0.04] last:border-0">
+                      <span className="text-gray-500">{row.label}</span>
+                      <span className={`font-semibold ${row.color}`}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Totals */}
+                <div className="mt-3 pt-3 border-t border-white/[0.08] flex flex-col gap-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total Cost</span>
+                    <span className="font-bold text-red-400">₪{fmtN(cost.totalCostILS)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Revenue (customer paid)</span>
+                    <span className="font-bold text-white">₪{order.total}</span>
+                  </div>
+                  <div className="flex justify-between text-base font-extrabold pt-2 border-t border-white/[0.08]">
+                    <span className="text-white">Profit</span>
+                    <span className={cost.profitILS >= 0 ? 'text-green-400' : 'text-red-400'}>
+                      ₪{fmtN(cost.profitILS)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
