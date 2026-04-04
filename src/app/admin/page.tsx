@@ -175,16 +175,24 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    (async () => {
+    let interval: ReturnType<typeof setInterval>;
+
+    const fetchVisits = async () => {
       const idToken = await getAuth().currentUser?.getIdToken().catch(() => null);
       if (!idToken) return;
-      fetch('/api/admin/analytics', {
-        headers: { Authorization: `Bearer ${idToken}` },
-      })
-        .then((r) => r.json())
-        .then((res) => { if (res.visits != null) setVisits(res.visits); })
-        .catch(() => {});
-    })();
+      try {
+        const res = await fetch('/api/admin/analytics', {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        const data = await res.json();
+        if (data.visits != null) setVisits(data.visits);
+      } catch { /* non-fatal */ }
+    };
+
+    fetchVisits();
+    // Poll every 60 seconds for near real-time updates
+    interval = setInterval(fetchVisits, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── Metrics ───────────────────────────────────────────────

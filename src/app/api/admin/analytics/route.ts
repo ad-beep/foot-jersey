@@ -1,108 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 
-const VERCEL_API = 'https://api.vercel.com';
-
-async function getProjectId(token: string): Promise<string | null> {
-  // Vercel injects VERCEL_PROJECT_ID automatically in every deployment
-  if (process.env.VERCEL_PROJECT_ID) return process.env.VERCEL_PROJECT_ID;
-
-  // Fallback: search all projects for the slug "foot-jersey"
-  try {
-    const res = await fetch(`${VERCEL_API}/v9/projects?limit=100`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) {
-      console.error('[analytics] project list error:', res.status, await res.text());
-      return null;
-    }
-    const data = await res.json();
-    const projects: { id: string; name: string }[] = data.projects ?? [];
-    // Try to match by slug or name
-    const match =
-      projects.find((p) => p.name === 'foot-jersey') ??
-      projects.find((p) => p.name.toLowerCase().includes('jersey'));
-    if (match) return match.id;
-    // Last resort: return first project if only one
-    if (projects.length === 1) return projects[0].id;
-    console.error('[analytics] no matching project found, projects:', projects.map((p) => p.name));
-    return null;
-  } catch (err) {
-    console.error('[analytics] project lookup failed:', err);
-    return null;
-  }
-}
+// Hobby plan allows max 31 days of history
+const DAYS_WINDOW = 31;
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
   const token = process.env.VERCEL_API_TOKEN;
-  if (!token) {
-    return NextResponse.json({ visits: null, error: 'VERCEL_API_TOKEN not set' });
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  const teamId = process.env.VERCEL_TEAM_ID;
+
+  if (!token || !projectId || !teamId) {
+    return NextResponse.json({ visits: null, error: 'Missing VERCEL_API_TOKEN / VERCEL_PROJECT_ID / VERCEL_TEAM_ID' });
   }
 
-  const projectId = await getProjectId(token);
-  if (!projectId) {
-    return NextResponse.json({ visits: null, error: 'Could not resolve project ID' });
-  }
+  const to = new Date();
+  const from = new Date(to.getTime() - DAYS_WINDOW * 86400000);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-  const from = '2024-01-01';
-  const to = new Date().toISOString().slice(0, 10);
+  const url =
+    `https://vercel.com/api/web-analytics/timeseries` +
+    `?projectId=${projectId}&teamId=${teamId}` +
+    `&from=${fmt(from)}&to=${fmt(to)}` +
+    `&granularity=day&filter=%7B%7D`;
 
-  // Try the two known Vercel Analytics endpoint formats
-  const endpoints = [
-    `${VERCEL_API}/v1/web-analytics/stat?projectId=${projectId}&environment=production&from=${from}&to=${to}`,
-    `${VERCEL_API}/v1/web-analytics/timeseries?projectId=${projectId}&environment=production&from=${from}&to=${to}&granularity=month`,
-  ];
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      // No caching — caller controls freshness via polling
+      cache: 'no-store',
+    });
 
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        next: { revalidate: 300 },
-      });
-
-      const raw = await res.text();
-
-      if (!res.ok) {
-        console.error(`[analytics] ${url} → ${res.status}:`, raw);
-        continue;
-      }
-
-      console.log(`[analytics] ${url} → OK:`, raw.slice(0, 300));
-
-      let data: unknown;
-      try { data = JSON.parse(raw); } catch { continue; }
-
-      // Handle multiple possible response shapes from Vercel
-      const d = data as Record<string, unknown>;
-      const pageviews =
-        // Shape: { data: { pageviews, visitors } }
-        (d?.data as Record<string, unknown>)?.pageviews ??
-        (d?.data as Record<string, unknown>)?.visitors ??
-        // Shape: { pageviews, visitors }
-        d?.pageviews ??
-        d?.visitors ??
-        // Shape: { data: [{ key, value }] }
-        (Array.isArray((d as Record<string, unknown>)?.data)
-          ? ((d as Record<string, unknown>).data as { key: string; value: number }[])
-              .find((x) => x.key === 'pageviews' || x.key === 'visitors')?.value
-          : undefined) ??
-        // Shape: array of { t, visitors }
-        (Array.isArray(data)
-          ? (data as { visitors?: number; pageviews?: number }[]).reduce(
-              (s, x) => s + (x.pageviews ?? x.visitors ?? 0),
-              0,
-            )
-          : undefined) ??
-        null;
-
-      if (pageviews != null) return NextResponse.json({ visits: pageviews });
-    } catch (err) {
-      console.error(`[analytics] fetch error for ${url}:`, err);
+    if (!res.ok) {
+      const body = await res.text();
+      console.error('[analytics] Vercel error:', res.status, body);
+      return NextResponse.json({ visits: null, error: `Vercel ${res.status}` });
     }
-  }
 
-  return NextResponse.json({ visits: null, error: 'Could not parse Vercel Analytics response' });
+    const data = await res.json();
+    // Response: { data: { groups: { all: [{ key, total, devices, bounceRate }] } } }
+    const days: { total: number }[] = data?.data?.groups?.all ?? [];
+    const totalVisits = days.reduce((s, d) => s + (d.total ?? 0), 0);
+
+    return NextResponse.json({ visits: totalVisits, days: days.length });
+  } catch (err) {
+    console.error('[analytics] fetch error:', err);
+    return NextResponse.json({ visits: null, error: 'Fetch failed' });
+  }
 }
