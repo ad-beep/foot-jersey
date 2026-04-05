@@ -37,8 +37,9 @@ export function AdminSidebar() {
   };
 
   return (
+    <>
     <aside
-      className="shrink-0 h-screen sticky top-0 flex flex-col border-r border-white/10 bg-[#0d0d0d] transition-all duration-200"
+      className="hidden md:flex shrink-0 h-screen sticky top-0 flex-col border-r border-white/10 bg-[#0d0d0d] transition-all duration-200"
       style={{ width: collapsed ? '56px' : '224px' }}
     >
       {/* Header */}
@@ -97,5 +98,27 @@ export function AdminSidebar() {
         </button>
       </div>
     </aside>
+
+    {/* ─── Mobile bottom navigation bar ─── */}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#0d0d0d] border-t border-white/10">
+      <div className="flex items-stretch justify-around">
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || (href !== '/admin' && pathname.startsWith(href));
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[56px] text-[10px] font-medium transition-colors ${
+                active ? 'text-cyan-400' : 'text-gray-500 hover:text-white'
+              }`}
+            >
+              <Icon className={`w-5 h-5 ${active ? 'text-cyan-400' : ''}`} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+    </>
   );
 }

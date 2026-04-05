@@ -5,7 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 import { storage } from '@/lib/firebase';
 import { PRICES, CURRENT_SEASON } from '@/lib/constants';
-import { Upload, Loader2, CheckCircle, AlertCircle, X, ImagePlus, Plus, Layers } from 'lucide-react';
+import { Upload, Loader2, CheckCircle, AlertCircle, X, ImagePlus, Plus, Layers, Trash2 } from 'lucide-react';
 
 // ─── Tag options (user-facing label is "Tag") ──────────
 const JERSEY_TAGS = [
@@ -345,6 +345,27 @@ export default function AddProductPage() {
     });
   }
 
+  function handleDeleteCurrentJersey() {
+    const newImages = batchImages.filter((_, i) => i !== currentIndex);
+    const newPreviews = batchPreviews.filter((_, i) => i !== currentIndex);
+    URL.revokeObjectURL(batchPreviews[currentIndex]);
+    const newNames = batchNames.filter((_, i) => i !== currentIndex);
+
+    if (newImages.length === 0) {
+      setBatchImages([]);
+      setBatchPreviews([]);
+      setBatchNames([]);
+      setBatchStep('details');
+      setCurrentIndex(0);
+      return;
+    }
+
+    setBatchImages(newImages);
+    setBatchPreviews(newPreviews);
+    setBatchNames(newNames);
+    setCurrentIndex(Math.min(currentIndex, newImages.length - 1));
+  }
+
   async function handleBatchPublish() {
     setBatchStatus('publishing');
     setBatchError('');
@@ -426,7 +447,7 @@ export default function AddProductPage() {
   // Choose screen
   if (mode === 'choose') {
     return (
-      <div className="p-8 max-w-4xl">
+      <div className="p-4 sm:p-8 max-w-4xl">
         <h1 className="text-2xl font-bold mb-8">Add Product</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Individual card */}
@@ -470,7 +491,7 @@ export default function AddProductPage() {
   // Individual screen
   if (mode === 'individual') {
     return (
-      <div className="p-8 max-w-4xl">
+      <div className="p-4 sm:p-8 max-w-4xl">
         <button
           type="button"
           onClick={() => setMode('choose')}
@@ -486,7 +507,7 @@ export default function AddProductPage() {
           {/* ─── Left: Form ─── */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name (Hebrew) + Name (English) side-by-side */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Name (Hebrew)" required>
                 <input
                   type="text"
@@ -508,7 +529,7 @@ export default function AddProductPage() {
             </div>
 
             {/* Tag + League row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Tag">
                 <select value={tag} onChange={(e) => setTag(e.target.value)} className="admin-select">
                   {JERSEY_TAGS.map((t) => (
@@ -526,7 +547,7 @@ export default function AddProductPage() {
             </div>
 
             {/* Season + Sizes row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Season">
                 <input
                   type="text"
@@ -598,7 +619,7 @@ export default function AddProductPage() {
                 <span className="text-xs text-gray-500 ml-2">First image = main photo</span>
               </label>
 
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {previews.map((src, i) => (
                   <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -719,7 +740,7 @@ export default function AddProductPage() {
 
   // Batch screen
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 sm:p-8 max-w-3xl">
       {/* Back button */}
       <button
         type="button"
@@ -744,7 +765,7 @@ export default function AddProductPage() {
           </div>
 
           {/* Tag + League row */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Tag">
               <select value={batchTag} onChange={(e) => setBatchTag(e.target.value)} className="admin-select">
                 {JERSEY_TAGS.map((t) => (
@@ -762,7 +783,7 @@ export default function AddProductPage() {
           </div>
 
           {/* Season + Sizes row */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Season">
               <input
                 type="text"
@@ -837,7 +858,7 @@ export default function AddProductPage() {
             </p>
 
             {batchPreviews.length > 0 && (
-              <div className="grid grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
                 {batchPreviews.map((src, i) => (
                   <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -938,9 +959,9 @@ export default function AddProductPage() {
           {batchStatus !== 'publishing' && batchStatus !== 'done' && (
             <>
               {/* Current image */}
-              <div className="flex gap-6 items-start">
-                <div className="shrink-0" style={{ width: '280px', maxWidth: '100%' }}>
-                  <div className="aspect-[3/4] rounded-xl overflow-hidden border border-white/10 bg-[#1a1a1a]">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+                <div className="shrink-0 w-full sm:w-[280px]">
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden border border-white/10 bg-[#1a1a1a] relative">
                     {batchPreviews[currentIndex] && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -949,6 +970,15 @@ export default function AddProductPage() {
                         className="w-full h-full object-cover"
                       />
                     )}
+                    <button
+                      type="button"
+                      onClick={handleDeleteCurrentJersey}
+                      title="Remove this jersey from batch"
+                      className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white text-xs font-medium transition-colors min-h-[32px]"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Remove
+                    </button>
                   </div>
                 </div>
 
@@ -975,13 +1005,22 @@ export default function AddProductPage() {
                   </Field>
 
                   {/* Navigation */}
-                  <div className="pt-2">
+                  <div className="pt-2 space-y-2">
+                    {currentIndex > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCurrentIndex((i) => i - 1)}
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-gray-400 hover:text-white border border-white/10 hover:bg-white/[0.05] font-medium text-sm transition-colors min-h-[44px]"
+                      >
+                        ← Previous
+                      </button>
+                    )}
                     {currentIndex < batchImages.length - 1 ? (
                       <button
                         type="button"
                         disabled={!batchNames[currentIndex]?.he?.trim()}
                         onClick={() => setCurrentIndex((i) => i + 1)}
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.09] border border-white/10 text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.09] border border-white/10 text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
                       >
                         Next Jersey →
                       </button>
@@ -990,7 +1029,7 @@ export default function AddProductPage() {
                         type="button"
                         disabled={!batchNames[currentIndex]?.he?.trim()}
                         onClick={handleBatchPublish}
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
                       >
                         Publish All
                       </button>
