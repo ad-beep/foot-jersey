@@ -152,6 +152,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
   const [visits, setVisits] = useState<number | null>(null);
+  const [orphanedCount, setOrphanedCount] = useState<number>(0);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -193,6 +194,21 @@ export default function AdminDashboard() {
     // Poll every 60 seconds for near real-time updates
     interval = setInterval(fetchVisits, 60_000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const checkOrphanedPayments = async () => {
+      const idToken = await getAuth().currentUser?.getIdToken().catch(() => null);
+      if (!idToken) return;
+      try {
+        const res = await fetch('/api/admin/orphaned-payments', {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        const data = await res.json();
+        if (Array.isArray(data.orphaned)) setOrphanedCount(data.orphaned.length);
+      } catch { /* non-fatal */ }
+    };
+    checkOrphanedPayments();
   }, []);
 
   // ─── Metrics ───────────────────────────────────────────────
@@ -306,6 +322,13 @@ export default function AdminDashboard() {
     <div className="p-6 max-w-[1200px]">
       <h1 className="text-xl font-bold mb-1">Admin Cockpit</h1>
       <p className="text-sm text-gray-500 mb-8">Business performance at a glance</p>
+
+      {/* ── Orphaned payment warning ── */}
+      {orphanedCount > 0 && (
+        <div className="mb-6 px-4 py-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-400 text-sm font-semibold">
+          ⚠️ {orphanedCount} payment{orphanedCount !== 1 ? 's' : ''} captured but order not created — check <span className="font-bold">capturedPayments</span> in Firebase
+        </div>
+      )}
 
       {/* ── Top 3 Metrics ── */}
       <div className="grid grid-cols-3 gap-4 mb-8">

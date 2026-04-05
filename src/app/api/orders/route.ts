@@ -157,8 +157,9 @@ async function incrementDiscountUsage(code: string) {
 }
 
 export async function POST(request: NextRequest) {
+  let body: OrderData | undefined;
   try {
-    const body: OrderData = await request.json();
+    body = (await request.json()) as OrderData;
 
     // Validate required fields
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -339,48 +340,50 @@ export async function POST(request: NextRequest) {
     const ordersCollection = collection(db, 'orders');
     const newOrderRef = doc(ordersCollection);
 
-    await runTransaction(db, async (transaction) => {
-      const counterSnap = await transaction.get(counterRef);
-      const orderNumber = counterSnap.exists()
-        ? (counterSnap.data().count as number) + 1
-        : 1;
-      transaction.set(counterRef, { count: orderNumber });
-      transaction.set(newOrderRef, {
-        orderNumber,
-        items: body.items.map((item) => ({
-          jerseyId: item.jerseyId,
-          teamName: item.jersey?.teamName || '',
-          imageUrl: item.jersey?.imageUrl || '',
-          size: item.size,
-          quantity: item.quantity,
-          customization: item.customization,
-          totalPrice: item.totalPrice,
-        })),
-        shippingInfo: {
-          name: customerName,
-          phone: body.shippingInfo.phone,
-          email: body.shippingInfo.email,
-          country: body.shippingInfo.country,
-          city: body.shippingInfo.city,
-          street: body.shippingInfo.street,
-          zip: body.shippingInfo.zip,
-          notes: body.shippingInfo.notes || '',
-        },
-        paymentMethod: body.paymentMethod,
-        paymentStatus: body.paymentMethod === 'paypal' ? 'completed' : body.paymentStatus,
-        paypalOrderId: body.paypalOrderId || null,
-        bitTransactionId: body.bitTransactionId || null,
-        bitSenderDetails: body.bitSenderDetails || null,
-        discountCode: body.discountCode || null,
-        discountAmount: body.discountAmount || 0,
-        subtotal: body.subtotal,
-        shipping: body.shipping ?? 0,
-        total: body.total,
-        currency: body.currency,
-        createdAt: serverTimestamp(),
-        status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+    await withRetry(async () => {
+      await runTransaction(db, async (transaction) => {
+        const counterSnap = await transaction.get(counterRef);
+        const orderNumber = counterSnap.exists()
+          ? (counterSnap.data().count as number) + 1
+          : 1;
+        transaction.set(counterRef, { count: orderNumber });
+        transaction.set(newOrderRef, {
+          orderNumber,
+          items: body.items.map((item) => ({
+            jerseyId: item.jerseyId,
+            teamName: item.jersey?.teamName || '',
+            imageUrl: item.jersey?.imageUrl || '',
+            size: item.size,
+            quantity: item.quantity,
+            customization: item.customization,
+            totalPrice: item.totalPrice,
+          })),
+          shippingInfo: {
+            name: customerName,
+            phone: body.shippingInfo.phone,
+            email: body.shippingInfo.email,
+            country: body.shippingInfo.country,
+            city: body.shippingInfo.city,
+            street: body.shippingInfo.street,
+            zip: body.shippingInfo.zip,
+            notes: body.shippingInfo.notes || '',
+          },
+          paymentMethod: body.paymentMethod,
+          paymentStatus: body.paymentMethod === 'paypal' ? 'completed' : body.paymentStatus,
+          paypalOrderId: body.paypalOrderId || null,
+          bitTransactionId: body.bitTransactionId || null,
+          bitSenderDetails: body.bitSenderDetails || null,
+          discountCode: body.discountCode || null,
+          discountAmount: body.discountAmount || 0,
+          subtotal: body.subtotal,
+          shipping: body.shipping ?? 0,
+          total: body.total,
+          currency: body.currency,
+          createdAt: serverTimestamp(),
+          status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+        });
       });
-    });
+    }, 3);
 
     const orderDoc = newOrderRef;
 
@@ -462,8 +465,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error creating order:', error);
+    // If this was a PayPal order, the payment may have been captured.
+    // The capturedPayments record will allow the admin to recover the order manually.
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      {
+        error: 'Failed to create order. If you were charged, please contact support with your order reference.',
+        supportRef: (body as any)?.paypalOrderId || undefined,
+      },
       { status: 500 }
     );
   }
