@@ -27,6 +27,7 @@ const LEAGUES = [
   { value: 'france', label: 'Ligue 1' },
   { value: 'national_teams', label: 'International' },
   { value: 'rest_of_world', label: 'Rest of the World' },
+  { value: 'israeli_league', label: 'Israeli League (ליגת העל)' },
 ];
 
 const LEAGUE_LABELS: Record<string, string> = {
@@ -37,6 +38,7 @@ const LEAGUE_LABELS: Record<string, string> = {
   france: 'Ligue 1',
   national_teams: 'International',
   rest_of_world: 'Rest of the World',
+  israeli_league: 'Israeli League (ליגת העל)',
 };
 
 // ─── Auto-category / collections logic ───────────────────

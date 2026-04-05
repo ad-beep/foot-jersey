@@ -8,7 +8,8 @@ export type League =
   | 'germany'
   | 'france'
   | 'national_teams'
-  | 'rest_of_world';
+  | 'rest_of_world'
+  | 'israeli_league';
 
 export type Size = 'S' | 'M' | 'L' | 'XL' | 'XXL';
 export type KidsSize = '16' | '18' | '20' | '22' | '24' | '26' | '28';

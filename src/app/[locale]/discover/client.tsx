@@ -43,6 +43,7 @@ const labels = {
     ligue1: 'Ligue 1',
     restOfWorld: 'Rest of World',
     international: 'International',
+    israeliLeague: 'Israeli League',
     retro: 'Retro',
     season2526: '25/26 Season',
     special: 'Special Edition',
@@ -83,6 +84,7 @@ const labels = {
     drip: 'דריפ',
     otherProducts: 'מוצרים נוספים',
     stussyEdition: 'מהדורת סטוסי',
+    israeliLeague: 'ליגת העל',
     clearAll: 'נקה הכל',
     showingSuggested: (n: number) => `מציג ${n} חולצות מומלצות`,
     showingFiltered: (n: number) => `מציג ${n} חולצות`,
@@ -112,6 +114,7 @@ const LEAGUE_PILLS: Pill[] = [
   { id: 'france',         labelKey: 'ligue1' },
   { id: 'rest_of_world',  labelKey: 'restOfWorld' },
   { id: 'national_teams', labelKey: 'international' },
+  { id: 'israeli_league', labelKey: 'israeliLeague' },
 ];
 
 const COLLECTION_PILLS: Pill[] = [

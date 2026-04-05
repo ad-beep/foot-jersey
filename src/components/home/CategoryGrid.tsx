@@ -214,16 +214,25 @@ const CATEGORIES: CategoryDef[] = [
     he: 'מהדורת סטוסי',
     bg: 'rgba(30,20,60,0.7)',
     image: 'stussy-edition',
-    grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
-    size: 'lg',
+    grid: 'min-h-[140px] lg:col-start-1 lg:col-end-4 lg:row-start-7 lg:row-end-8 lg:min-h-0',
+    size: 'sm',
     special: true,
-    sizes: '(max-width: 1024px) 100vw, 1200px', // full-width banner on desktop
+    sizes: '(max-width: 1024px) 50vw, 600px',
+  },
+  {
+    slug: 'israeli_league',
+    en: 'Israeli League',
+    he: 'ליגת העל',
+    bg: 'rgba(0,56,184,0.35)',
+    grid: 'min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
+    size: 'sm',
+    sizes: '(max-width: 1024px) 50vw, 600px',
   },
 ];
 
 // ── Discover URL helpers ─────────────────────────────────────────────────────
 
-const LEAGUE_SLUGS = new Set(['england', 'spain', 'italy', 'germany', 'france', 'rest_of_world', 'national_teams']);
+const LEAGUE_SLUGS = new Set(['england', 'spain', 'italy', 'germany', 'france', 'rest_of_world', 'national_teams', 'israeli_league']);
 
 const COLLECTION_SLUG_MAP: Record<string, string> = {
   'retro': 'retro',

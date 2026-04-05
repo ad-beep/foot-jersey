@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { Jersey, Locale } from '@/types';
 
@@ -17,6 +18,17 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientProps) {
+  useEffect(() => {
+    if (window.location.hash === '#collections-section') {
+      // Small delay to allow dynamic components to mount before scrolling
+      const timer = setTimeout(() => {
+        const el = document.getElementById('collections-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   return (
     <div
       className="overflow-y-auto scrollbar-hide"

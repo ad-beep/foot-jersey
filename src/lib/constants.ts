@@ -43,6 +43,7 @@ export const CATEGORIES: {
   { slug: 'france', labelKey: 'categories.france', labelHe: 'ליג 1', labelEn: 'Ligue 1', icon: 'ligue-1' },
   { slug: 'rest_of_world', labelKey: 'categories.restOfWorld', labelHe: 'שאר העולם', labelEn: 'Rest of the World', icon: 'rest-of-world' },
   { slug: 'national_teams', labelKey: 'categories.nationalTeams', labelHe: 'נבחרות', labelEn: 'International', icon: 'international' },
+  { slug: 'israeli_league', labelKey: 'categories.israeliLeague', labelHe: 'ליגת העל', labelEn: 'Israeli League', icon: 'israeli-league' },
 ];
 
 // ─── Special Sections ───────────────────────────────────────
