@@ -157,9 +157,11 @@ async function incrementDiscountUsage(code: string) {
 }
 
 export async function POST(request: NextRequest) {
-  let body: OrderData | undefined;
+  let paypalOrderIdForRecovery: string | undefined;
   try {
-    body = (await request.json()) as OrderData;
+    const body = (await request.json()) as OrderData;
+
+    paypalOrderIdForRecovery = body.paypalOrderId;
 
     // Validate required fields
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -470,7 +472,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Failed to create order. If you were charged, please contact support with your order reference.',
-        supportRef: (body as any)?.paypalOrderId || undefined,
+        supportRef: paypalOrderIdForRecovery || undefined,
       },
       { status: 500 }
     );
