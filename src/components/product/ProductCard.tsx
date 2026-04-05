@@ -65,6 +65,18 @@ export const ProductCard = React.memo(function ProductCard({
   const [sizePickerOpen, setSizePickerOpen] = useState(false);
   const sizePickerRef = useRef<HTMLDivElement>(null);
 
+  // Timeout fallback: if image hasn't loaded or errored after 8s, force placeholder
+  useEffect(() => {
+    if (isMysteryBox) return;
+    const timer = setTimeout(() => {
+      setImgLoaded((loaded) => {
+        if (!loaded) setImgError(true);
+        return loaded;
+      });
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [isMysteryBox, jersey.imageUrl]);
+
   const isHe          = locale === 'he';
   const isMysteryBox  = jersey.category === 'mystery-box';
   const isKids        = jersey.type === 'kids';

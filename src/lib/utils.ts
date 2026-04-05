@@ -148,6 +148,8 @@ function normalizeLeague(league: string): Jersey['league'] {
     'rest of world': 'rest_of_world',
     'rest-of-world': 'rest_of_world',
     'israel': 'rest_of_world',
+    'israeli_league': 'israeli_league',
+    'ליגת העל': 'israeli_league',
     'rest of the world': 'rest_of_world',
   };
   return map[league.toLowerCase()] || 'rest_of_world';

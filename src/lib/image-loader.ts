@@ -18,11 +18,13 @@ export default function imageLoader({
   // Local static files — served from Vercel edge as-is
   if (src.startsWith('/')) return src;
 
-  // External images — route through our /api/img proxy for WebP + resize
-  if (
-    src.includes('cdn.shopify.com') ||
-    src.includes('firebasestorage.googleapis.com')
-  ) {
+  // Firebase Storage URLs are publicly accessible — serve directly, no proxy needed
+  if (src.includes('firebasestorage.googleapis.com')) {
+    return src;
+  }
+
+  // Shopify CDN — route through proxy to bypass hotlink protection
+  if (src.includes('cdn.shopify.com')) {
     return `/api/img?url=${encodeURIComponent(src)}&w=${width}`;
   }
 

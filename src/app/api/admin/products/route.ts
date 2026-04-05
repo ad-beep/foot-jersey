@@ -28,6 +28,9 @@ function generateId(): string {
 
 /** Strip Hebrew characters and non-ASCII from a URL/filename to prevent column drift */
 function slugifyUrl(url: string): string {
+  // Firebase Storage URLs are already ASCII-safe — return unchanged
+  if (url.includes('firebasestorage.googleapis.com')) return url;
+
   try {
     const parsed = new URL(url);
     // Only sanitize the pathname portion
