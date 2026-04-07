@@ -227,21 +227,33 @@ export async function POST(request: NextRequest) {
 
       let captureVerified = false;
 
-      // 1. Fast path: check Firestore record written by capture-order route
+      // 1. Fast path: atomically claim the capturedPayments record.
+      //    Using a transaction prevents two concurrent requests from both creating
+      //    an order for the same payment (race condition).
       try {
         const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
-        const capturedSnap = await getDoc(capturedRef);
-        if (capturedSnap.exists() && capturedSnap.data().status === 'captured') {
+        const claimResult = await runTransaction(db, async (tx) => {
+          const snap = await tx.get(capturedRef);
+          if (!snap.exists() || snap.data().status !== 'captured') return 'not_found';
+          if (snap.data().orderCreated === true) return snap.data().orderId as string;
+          if (snap.data().orderCreated === 'processing') return 'duplicate_in_progress';
+          // Atomically mark as processing so no other request can claim it
+          tx.update(capturedRef, { orderCreated: 'processing' });
+          paypalCaptureIdForRefund = snap.data().captureId || undefined;
+          return 'claimed';
+        });
+
+        if (claimResult === 'claimed') {
           captureVerified = true;
-          paypalCaptureIdForRefund = capturedSnap.data().captureId || undefined;
-          // Idempotency: if order already created for this capture, return existing ID
-          if (capturedSnap.data().orderCreated === true) {
-            const existingOrderId = capturedSnap.data().orderId as string;
-            return NextResponse.json({ orderId: existingOrderId, message: 'Order already created' }, { status: 201 });
-          }
+        } else if (claimResult === 'duplicate_in_progress') {
+          // Another request is processing this — return 409 so frontend retries
+          return NextResponse.json({ error: 'Order already being processed. Please wait a moment.' }, { status: 409 });
+        } else if (typeof claimResult === 'string' && claimResult !== 'not_found') {
+          // claimResult is an existing orderId
+          return NextResponse.json({ orderId: claimResult, message: 'Order already created' }, { status: 201 });
         }
       } catch (firestoreErr) {
-        console.warn('[orders] Firestore capturedPayments lookup failed, falling back to PayPal API:', firestoreErr);
+        console.warn('[orders] Firestore capturedPayments claim failed, falling back to PayPal API:', firestoreErr);
       }
 
       // 2. Fallback: verify directly with PayPal API.
@@ -298,22 +310,33 @@ export async function POST(request: NextRequest) {
     try {
       const { fetchJerseys } = await import('@/lib/google-sheets');
       const { calculateCustomizationPrice } = await import('@/lib/utils');
-      const { PRICES, SHIPPING_POLICY } = await import('@/lib/constants');
+      const { PRICES, SHIPPING_POLICY, MYSTERY_BOX_OPTIONS } = await import('@/lib/constants');
 
       const catalogJerseys = await fetchJerseys();
 
       for (const item of body.items) {
-        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
-        if (!jersey) {
-          throw new Error(`Product not found: ${item.jerseyId}`);
-        }
-
         const extras = calculateCustomizationPrice({
           hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
           hasPatch: !!item.customization?.hasPatch,
           hasPants: !!item.customization?.hasPants,
           isPlayerVersion: !!item.customization?.isPlayerVersion,
         });
+
+        // Mystery boxes are priced from constants, not Google Sheets
+        const mysteryBox = MYSTERY_BOX_OPTIONS.find((m) => m.slug === item.jerseyId);
+        if (mysteryBox) {
+          const expectedItemPrice = mysteryBox.price + extras;
+          if (item.totalPrice !== expectedItemPrice) {
+            console.warn(`Mystery box price mismatch for ${item.jerseyId}: client ${item.totalPrice}, expected ${expectedItemPrice}`);
+            throw new Error('Price mismatch. Please refresh and try again.');
+          }
+          continue;
+        }
+
+        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
+        if (!jersey) {
+          throw new Error(`Product not found: ${item.jerseyId}`);
+        }
 
         const expectedItemPrice = jersey.price + extras;
 
@@ -541,7 +564,11 @@ export async function POST(request: NextRequest) {
       if (refunded) {
         console.log(`[orders] Auto-refund succeeded for capture ${paypalCaptureIdForRefund}`);
         try {
-          await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), { status: 'refunded' });
+          // Reset orderCreated so orphaned-payment check can detect it; mark as refunded
+          await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), {
+            status: 'refunded',
+            orderCreated: false,
+          });
         } catch { /* best-effort */ }
         // Notify the customer immediately so they know what happened
         if (catchEmail) {

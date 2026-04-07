@@ -138,8 +138,7 @@ function renderItems(items: OrderItem[]): string {
 async function sendMail(opts: { to: string; subject: string; html: string }): Promise<void> {
   const transporter = getTransporter();
   if (!transporter) {
-    console.warn('[Email] GMAIL_USER or GMAIL_APP_PASSWORD not set — skipping email');
-    return;
+    throw new Error('[Email] GMAIL_USER or GMAIL_APP_PASSWORD not configured — email not sent');
   }
   const from = `FootJersey <${process.env.GMAIL_USER}>`;
   console.log(`[Email] Sending to ${opts.to} — "${opts.subject}"`);
