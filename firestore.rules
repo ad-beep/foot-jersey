@@ -39,5 +39,20 @@ service cloud.firestore {
       allow create: if true;
       allow read: if isAdmin();
     }
+
+    // ── Captured Payments (PayPal recovery records) ───────────────────────────
+    // Written by capture-order route and orders route (no auth session).
+    // Read/delete restricted to admin only.
+    match /capturedPayments/{docId} {
+      allow create, update: if true;
+      allow read, delete: if isAdmin();
+    }
+
+    // ── Discount Usage counters ───────────────────────────────────────────────
+    // Written by orders route (no auth session). Read by discount validation.
+    // Admin can read/write for management.
+    match /discountUsage/{code} {
+      allow read, write: if true;
+    }
   }
 }
