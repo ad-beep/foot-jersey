@@ -14,6 +14,36 @@ import { google } from 'googleapis';
 import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
 
+const PAYPAL_API_BASE = 'https://api.paypal.com';
+
+async function getPayPalAccessToken(): Promise<string> {
+  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error('PayPal credentials not configured');
+  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const res = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials',
+  });
+  if (!res.ok) throw new Error('Failed to get PayPal access token');
+  return (await res.json()).access_token;
+}
+
+async function issuePayPalRefund(captureId: string): Promise<boolean> {
+  try {
+    const accessToken = await getPayPalAccessToken();
+    const res = await fetch(`${PAYPAL_API_BASE}/v2/payments/captures/${captureId}/refund`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Retry helper with exponential backoff
 async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
   let lastErr: unknown;
@@ -158,6 +188,8 @@ async function incrementDiscountUsage(code: string) {
 
 export async function POST(request: NextRequest) {
   let paypalOrderIdForRecovery: string | undefined;
+  let paypalCaptureIdForRefund: string | undefined;
+  let paymentConfirmedCaptured = false;
   try {
     const body = (await request.json()) as OrderData;
 
@@ -306,30 +338,74 @@ export async function POST(request: NextRequest) {
       if (!body.paypalOrderId) {
         return NextResponse.json({ error: 'PayPal order ID required' }, { status: 400 });
       }
+
+      let captureVerified = false;
+
+      // 1. Fast path: check Firestore record written by capture-order route
       try {
         const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
         const capturedSnap = await getDoc(capturedRef);
-        if (!capturedSnap.exists() || capturedSnap.data().status !== 'captured') {
-          return NextResponse.json(
-            { error: 'Payment not verified. Please contact support if funds were deducted.' },
-            { status: 400 }
-          );
+        if (capturedSnap.exists() && capturedSnap.data().status === 'captured') {
+          captureVerified = true;
+          paypalCaptureIdForRefund = capturedSnap.data().captureId || undefined;
+          // Idempotency: if order already created for this capture, return existing ID
+          if (capturedSnap.data().orderCreated === true) {
+            const existingOrderId = capturedSnap.data().orderId as string;
+            return NextResponse.json({ orderId: existingOrderId, message: 'Order already created' }, { status: 201 });
+          }
         }
-        // Idempotency: if order already created for this capture, return existing ID
-        if (capturedSnap.data().orderCreated === true) {
-          const existingOrderId = capturedSnap.data().orderId as string;
-          return NextResponse.json(
-            { orderId: existingOrderId, message: 'Order already created' },
-            { status: 201 }
+      } catch (firestoreErr) {
+        console.warn('[orders] Firestore capturedPayments lookup failed, falling back to PayPal API:', firestoreErr);
+      }
+
+      // 2. Fallback: verify directly with PayPal API.
+      //    This handles the case where the Firebase write in capture-order failed silently.
+      if (!captureVerified) {
+        try {
+          const accessToken = await getPayPalAccessToken();
+          const paypalRes = await fetch(
+            `${PAYPAL_API_BASE}/v2/checkout/orders/${body.paypalOrderId}`,
+            { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
           );
+          if (paypalRes.ok) {
+            const paypalOrder = await paypalRes.json();
+            if (paypalOrder.status === 'COMPLETED') {
+              captureVerified = true;
+              const captureId: string | undefined = paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+              paypalCaptureIdForRefund = captureId;
+              // Recreate the missing Firestore record so orphaned-payment checks work
+              try {
+                const capturedAmount = parseFloat(
+                  paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
+                );
+                await setDoc(doc(db, 'capturedPayments', body.paypalOrderId!), {
+                  paypalOrderId: body.paypalOrderId,
+                  payerId: paypalOrder.payer?.email_address || '',
+                  capturedAt: serverTimestamp(),
+                  status: 'captured',
+                  capturedAmount,
+                  captureId: captureId || null,
+                  orderCreated: false,
+                  recoveredViaPayPalApi: true,
+                });
+              } catch (writeErr) {
+                console.error('[orders] Failed to recreate capturedPayments record:', writeErr);
+              }
+            }
+          }
+        } catch (paypalApiErr) {
+          console.error('[orders] PayPal API fallback verification failed:', paypalApiErr);
         }
-      } catch (paypalVerifyErr) {
-        console.error('PayPal verification check failed:', paypalVerifyErr);
+      }
+
+      if (!captureVerified) {
         return NextResponse.json(
-          { error: 'Could not verify payment status. Please contact support.' },
-          { status: 503 }
+          { error: 'Payment not verified. Please contact support if funds were deducted.' },
+          { status: 400 }
         );
       }
+
+      paymentConfirmedCaptured = true;
     }
 
     // Normalize name field
@@ -467,8 +543,26 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error creating order:', error);
-    // If this was a PayPal order, the payment may have been captured.
-    // The capturedPayments record will allow the admin to recover the order manually.
+
+    // Auto-refund: if we confirmed the payment was captured but order creation failed,
+    // automatically refund the customer so no money is taken without an order.
+    if (paymentConfirmedCaptured && paypalCaptureIdForRefund) {
+      console.log(`[orders] Order creation failed after capture — attempting auto-refund of capture ${paypalCaptureIdForRefund}`);
+      const refunded = await issuePayPalRefund(paypalCaptureIdForRefund);
+      if (refunded) {
+        console.log(`[orders] Auto-refund succeeded for capture ${paypalCaptureIdForRefund}`);
+        try {
+          await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), { status: 'refunded' });
+        } catch { /* best-effort */ }
+        return NextResponse.json(
+          { error: 'Order processing failed. Your payment has been automatically refunded. Please try again in a few minutes.' },
+          { status: 500 }
+        );
+      } else {
+        console.error(`[orders] Auto-refund FAILED for capture ${paypalCaptureIdForRefund} — manual intervention required`);
+      }
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to create order. If you were charged, please contact support with your order reference.',

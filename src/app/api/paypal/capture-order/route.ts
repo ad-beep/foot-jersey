@@ -95,19 +95,22 @@ export async function POST(request: NextRequest) {
       try {
         const { db } = await import('@/lib/firebase');
         const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-        const capturedAmount = parseFloat(
-          order.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
-        );
+        const capture = order.purchase_units?.[0]?.payments?.captures?.[0];
+        const capturedAmount = parseFloat(capture?.amount?.value ?? '0');
+        const captureId: string | null = capture?.id || null;
         await setDoc(doc(db, 'capturedPayments', order.id), {
           paypalOrderId: order.id,
           payerId: order.payer?.email_address || '',
+          payerName: `${order.payer?.name?.given_name || ''} ${order.payer?.name?.surname || ''}`.trim(),
           capturedAt: serverTimestamp(),
           status: 'captured',
           capturedAmount,
+          captureId,
           orderCreated: false,
         });
       } catch (e) {
-        // Non-blocking — best effort
+        // Non-blocking — best effort. If this write fails, orders/route.ts will
+        // fall back to verifying directly with the PayPal API.
         console.error('[capture-order] Failed to write recovery record:', e);
       }
     }
