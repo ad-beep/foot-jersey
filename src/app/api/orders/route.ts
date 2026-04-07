@@ -11,7 +11,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
-import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
+import { sendOrderConfirmation, sendBitPendingEmail, sendOrderFailedRefundEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
 
 const PAYPAL_API_BASE = 'https://api.paypal.com';
@@ -190,8 +190,9 @@ export async function POST(request: NextRequest) {
   let paypalOrderIdForRecovery: string | undefined;
   let paypalCaptureIdForRefund: string | undefined;
   let paymentConfirmedCaptured = false;
+  let body: OrderData | undefined;
   try {
-    const body = (await request.json()) as OrderData;
+    body = (await request.json()) as OrderData;
 
     paypalOrderIdForRecovery = body.paypalOrderId;
 
@@ -554,6 +555,19 @@ export async function POST(request: NextRequest) {
         try {
           await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), { status: 'refunded' });
         } catch { /* best-effort */ }
+        // Notify the customer immediately so they know what happened
+        if (body?.shippingInfo?.email) {
+          const name =
+            body.shippingInfo.name ||
+            `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim() ||
+            'Customer';
+          sendOrderFailedRefundEmail({
+            to: body.shippingInfo.email,
+            customerName: name,
+            paypalOrderId: paypalOrderIdForRecovery!,
+            amount: body.total,
+          }).catch((emailErr) => console.error('[orders] Failed to send refund notification email:', emailErr));
+        }
         return NextResponse.json(
           { error: 'Order processing failed. Your payment has been automatically refunded. Please try again in a few minutes.' },
           { status: 500 }

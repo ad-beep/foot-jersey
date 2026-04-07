@@ -323,6 +323,52 @@ export async function sendBitApprovedEmail(opts: {
   }
 }
 
+// ─── Order Failed + Refund Issued Email ──────────────────────────────────────
+export async function sendOrderFailedRefundEmail(opts: {
+  to: string;
+  customerName: string;
+  paypalOrderId: string;
+  amount: number;
+}): Promise<void> {
+  const content = `
+    <div class="body">
+      <div style="margin-bottom:16px;">
+        <span class="status-badge status-pending">⚠ Order Could Not Be Processed</span>
+      </div>
+      <h1 class="title">We're sorry, ${opts.customerName.split(' ')[0] || 'there'}.</h1>
+      <p class="subtitle">Your payment went through, but we ran into a technical issue while creating your order. We've automatically issued a full refund.</p>
+
+      <div class="info-box warning">
+        <strong>What happened?</strong><br><br>
+        Your payment of <strong>₪${opts.amount}</strong> was captured successfully, but a server error prevented your order from being recorded. <br><br>
+        <strong>We have automatically refunded the full amount.</strong> Refunds typically appear on your account within 3–5 business days depending on your bank or PayPal account.
+      </div>
+
+      <div class="order-id">PayPal Reference: ${opts.paypalOrderId}</div>
+
+      <div class="info-box success">
+        <strong>What to do next:</strong><br><br>
+        Please try placing your order again — everything should work now. If the problem persists, contact us via WhatsApp or reply to this email and we'll sort it out immediately.
+      </div>
+
+      <a href="${SITE_URL}/cart" class="cta-button">Try Again</a>
+
+      <p style="font-size:12px;color:#555;text-align:center;margin-top:16px;">
+        We sincerely apologize for the inconvenience. Your refund reference is: ${opts.paypalOrderId}
+      </p>
+    </div>`;
+
+  try {
+    await sendMail({
+      to: opts.to,
+      subject: 'Your order failed — Full refund issued — FootJersey',
+      html: wrapEmail(content, 'Order Failed & Refunded — FootJersey'),
+    });
+  } catch (err) {
+    console.error('[Email] Failed to send order-failed-refund email:', err);
+  }
+}
+
 // ─── Password Reset Email ─────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(opts: { to: string; resetLink: string }): Promise<void> {
   const content = `
