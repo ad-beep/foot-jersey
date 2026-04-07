@@ -211,130 +211,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Server-side price validation ─────────────────────────────────────────
-    try {
-      const { fetchJerseys } = await import('@/lib/google-sheets');
-      const { calculateCustomizationPrice } = await import('@/lib/utils');
-      const { PRICES, SHIPPING_POLICY } = await import('@/lib/constants');
-
-      const catalogJerseys = await fetchJerseys();
-
-      for (const item of body.items) {
-        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
-        if (!jersey) {
-          return NextResponse.json(
-            { error: `Product not found: ${item.jerseyId}` },
-            { status: 400 }
-          );
-        }
-
-        const extras = calculateCustomizationPrice({
-          hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
-          hasPatch: !!item.customization?.hasPatch,
-          hasPants: !!item.customization?.hasPants,
-          isPlayerVersion: !!item.customization?.isPlayerVersion,
-        });
-
-        const expectedItemPrice = jersey.price + extras;
-
-        if (item.totalPrice !== expectedItemPrice) {
-          console.warn(
-            `Price mismatch for ${item.jerseyId}: client sent ${item.totalPrice}, expected ${expectedItemPrice}`
-          );
-          return NextResponse.json(
-            { error: 'Price mismatch. Please refresh and try again.' },
-            { status: 400 }
-          );
-        }
-      }
-
-      // Recompute order total
-      const computedSubtotal = body.items.reduce(
-        (sum, item) => sum + item.totalPrice * item.quantity,
-        0
-      );
-      const totalItemCount = body.items.reduce((sum, item) => sum + item.quantity, 0);
-      const freeShipping = totalItemCount >= SHIPPING_POLICY.freeShippingMinItems;
-      const computedShipping = freeShipping ? 0 : PRICES.shippingFlat;
-      const computedTotal =
-        computedSubtotal + computedShipping - (body.discountAmount || 0);
-
-      if (Math.abs(computedTotal - body.total) > 1) {
-        console.warn(
-          `Total mismatch: client sent ${body.total}, server computed ${computedTotal}`
-        );
-        return NextResponse.json(
-          { error: 'Order total mismatch. Please refresh and try again.' },
-          { status: 400 }
-        );
-      }
-    } catch (priceCheckErr) {
-      console.error('Price validation unavailable:', priceCheckErr);
-      return NextResponse.json(
-        { error: 'Could not validate order prices. Please try again in a moment.' },
-        { status: 503 }
-      );
-    }
-
-    // ── Re-validate discount code at order time ──────────────────────────────
-    if (body.discountCode) {
-      try {
-        const auth = getSheetsAuth();
-        const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-        if (spreadsheetId) {
-          const discountRes = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'DiscountCodes!A:I',
-          });
-          const rows = discountRes.data.values;
-          const normalizedCode = body.discountCode.toUpperCase().trim();
-          const rowIndex = rows
-            ? rows.findIndex((r, i) => i > 0 && r[0]?.toUpperCase().trim() === normalizedCode)
-            : -1;
-
-          if (rowIndex === -1) {
-            return NextResponse.json(
-              { error: 'Discount code is no longer valid. Please remove it and try again.' },
-              { status: 400 }
-            );
-          }
-
-          const row = rows![rowIndex];
-          const maxUses = parseInt(row[4]) || 0;
-          const sheetsUses = parseInt(row[5]) || 0;
-          const expiryDate = row[6];
-          const isActive = row[7]?.toLowerCase() !== 'false';
-
-          let firestoreUses = 0;
-          try {
-            const usageSnap = await getDoc(doc(db, 'discountUsage', normalizedCode));
-            if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
-          } catch { /* fall back to Sheets count */ }
-          const currentUses = Math.max(sheetsUses, firestoreUses);
-
-          const codeInvalid =
-            !isActive ||
-            (expiryDate && new Date(expiryDate) < new Date()) ||
-            (maxUses > 0 && currentUses >= maxUses);
-
-          if (codeInvalid) {
-            return NextResponse.json(
-              { error: 'Discount code is no longer valid. Please remove it and try again.' },
-              { status: 400 }
-            );
-          }
-        }
-      } catch (discountCheckErr) {
-        console.error('Discount re-validation unavailable:', discountCheckErr);
-        return NextResponse.json(
-          { error: 'Could not validate discount code. Please try again in a moment.' },
-          { status: 503 }
-        );
-      }
-    }
-
-    // ── Verify PayPal payment was actually captured server-side ─────────────
+    // ── Verify PayPal payment FIRST — before any other validation ───────────
+    // This ensures paymentConfirmedCaptured=true before price/discount checks,
+    // so any failure below automatically triggers the auto-refund in the catch block.
     if (body.paymentMethod === 'paypal') {
       if (!body.paypalOrderId) {
         return NextResponse.json({ error: 'PayPal order ID required' }, { status: 400 });
@@ -360,7 +239,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Fallback: verify directly with PayPal API.
-      //    This handles the case where the Firebase write in capture-order failed silently.
+      //    Handles the case where the Firebase write in capture-order failed silently.
       if (!captureVerified) {
         try {
           const accessToken = await getPayPalAccessToken();
@@ -374,7 +253,6 @@ export async function POST(request: NextRequest) {
               captureVerified = true;
               const captureId: string | undefined = paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.id;
               paypalCaptureIdForRefund = captureId;
-              // Recreate the missing Firestore record so orphaned-payment checks work
               try {
                 const capturedAmount = parseFloat(
                   paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
@@ -406,7 +284,110 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // From this point on, any thrown error will trigger auto-refund in the catch block.
       paymentConfirmedCaptured = true;
+    }
+
+    // ── Server-side price validation ─────────────────────────────────────────
+    try {
+      const { fetchJerseys } = await import('@/lib/google-sheets');
+      const { calculateCustomizationPrice } = await import('@/lib/utils');
+      const { PRICES, SHIPPING_POLICY } = await import('@/lib/constants');
+
+      const catalogJerseys = await fetchJerseys();
+
+      for (const item of body.items) {
+        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
+        if (!jersey) {
+          throw new Error(`Product not found: ${item.jerseyId}`);
+        }
+
+        const extras = calculateCustomizationPrice({
+          hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
+          hasPatch: !!item.customization?.hasPatch,
+          hasPants: !!item.customization?.hasPants,
+          isPlayerVersion: !!item.customization?.isPlayerVersion,
+        });
+
+        const expectedItemPrice = jersey.price + extras;
+
+        if (item.totalPrice !== expectedItemPrice) {
+          console.warn(
+            `Price mismatch for ${item.jerseyId}: client sent ${item.totalPrice}, expected ${expectedItemPrice}`
+          );
+          throw new Error('Price mismatch. Please refresh and try again.');
+        }
+      }
+
+      // Recompute order total
+      const computedSubtotal = body.items.reduce(
+        (sum, item) => sum + item.totalPrice * item.quantity,
+        0
+      );
+      const totalItemCount = body.items.reduce((sum, item) => sum + item.quantity, 0);
+      const freeShipping = totalItemCount >= SHIPPING_POLICY.freeShippingMinItems;
+      const computedShipping = freeShipping ? 0 : PRICES.shippingFlat;
+      const computedTotal =
+        computedSubtotal + computedShipping - (body.discountAmount || 0);
+
+      if (Math.abs(computedTotal - body.total) > 1) {
+        console.warn(
+          `Total mismatch: client sent ${body.total}, server computed ${computedTotal}`
+        );
+        throw new Error('Order total mismatch. Please refresh and try again.');
+      }
+    } catch (priceCheckErr) {
+      // Re-throw so the outer catch block can issue a refund if payment was captured.
+      throw priceCheckErr;
+    }
+
+    // ── Re-validate discount code at order time ──────────────────────────────
+    if (body.discountCode) {
+      try {
+        const auth = getSheetsAuth();
+        const sheets = google.sheets({ version: 'v4', auth });
+        const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+        if (spreadsheetId) {
+          const discountRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'DiscountCodes!A:I',
+          });
+          const rows = discountRes.data.values;
+          const normalizedCode = body.discountCode.toUpperCase().trim();
+          const rowIndex = rows
+            ? rows.findIndex((r, i) => i > 0 && r[0]?.toUpperCase().trim() === normalizedCode)
+            : -1;
+
+          if (rowIndex === -1) {
+            throw new Error('Discount code is no longer valid. Please remove it and try again.');
+          }
+
+          const row = rows![rowIndex];
+          const maxUses = parseInt(row[4]) || 0;
+          const sheetsUses = parseInt(row[5]) || 0;
+          const expiryDate = row[6];
+          const isActive = row[7]?.toLowerCase() !== 'false';
+
+          let firestoreUses = 0;
+          try {
+            const usageSnap = await getDoc(doc(db, 'discountUsage', normalizedCode));
+            if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
+          } catch { /* fall back to Sheets count */ }
+          const currentUses = Math.max(sheetsUses, firestoreUses);
+
+          const codeInvalid =
+            !isActive ||
+            (expiryDate && new Date(expiryDate) < new Date()) ||
+            (maxUses > 0 && currentUses >= maxUses);
+
+          if (codeInvalid) {
+            throw new Error('Discount code is no longer valid. Please remove it and try again.');
+          }
+        }
+      } catch (discountCheckErr) {
+        // Re-throw so outer catch can refund if payment was already captured.
+        throw discountCheckErr;
+      }
     }
 
     // Normalize name field
