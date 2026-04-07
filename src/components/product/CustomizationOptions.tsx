@@ -30,7 +30,9 @@ export function CustomizationOptions({
 }: CustomizationOptionsProps) {
   const { locale, isRtl } = useLocale();
   const isHe = locale === 'he';
-  const isRetro = jerseyType === 'retro';
+
+  // Player Version only available for regular and world cup jerseys
+  const showPlayerVersion = jerseyType === 'regular' || jerseyType === 'world_cup';
 
   // For character counter visibility
   const [nameFocused, setNameFocused] = useState(false);
@@ -56,8 +58,7 @@ export function CustomizationOptions({
       he: 'מכנסיים',
       price: PRICES.customization.pants,
     },
-    // Player Version — hidden for retro jerseys
-    ...(!isRetro
+    ...(showPlayerVersion
       ? [{
           key: 'playerVersion' as const,
           en: 'Player Version',

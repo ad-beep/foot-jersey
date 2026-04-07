@@ -315,16 +315,15 @@ export async function POST(request: NextRequest) {
       const catalogJerseys = await fetchJerseys();
 
       for (const item of body.items) {
-        const extras = calculateCustomizationPrice({
-          hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
-          hasPatch: !!item.customization?.hasPatch,
-          hasPants: !!item.customization?.hasPants,
-          isPlayerVersion: !!item.customization?.isPlayerVersion,
-        });
-
         // Mystery boxes are priced from constants, not Google Sheets
         const mysteryBox = MYSTERY_BOX_OPTIONS.find((m) => m.slug === item.jerseyId);
         if (mysteryBox) {
+          const extras = calculateCustomizationPrice({
+            hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
+            hasPatch: !!item.customization?.hasPatch,
+            hasPants: !!item.customization?.hasPants,
+            isPlayerVersion: !!item.customization?.isPlayerVersion,
+          });
           const expectedItemPrice = mysteryBox.price + extras;
           if (item.totalPrice !== expectedItemPrice) {
             console.warn(`Mystery box price mismatch for ${item.jerseyId}: client ${item.totalPrice}, expected ${expectedItemPrice}`);
@@ -338,12 +337,19 @@ export async function POST(request: NextRequest) {
           throw new Error(`Product not found: ${item.jerseyId}`);
         }
 
+        // Player Version is only allowed for regular and world_cup jerseys — enforce server-side
+        const playerVersionAllowed = jersey.type === 'regular' || jersey.type === 'world_cup';
+        const extras = calculateCustomizationPrice({
+          hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
+          hasPatch: !!item.customization?.hasPatch,
+          hasPants: !!item.customization?.hasPants,
+          isPlayerVersion: playerVersionAllowed && !!item.customization?.isPlayerVersion,
+        });
+
         const expectedItemPrice = jersey.price + extras;
 
         if (item.totalPrice !== expectedItemPrice) {
-          console.warn(
-            `Price mismatch for ${item.jerseyId}: client sent ${item.totalPrice}, expected ${expectedItemPrice}`
-          );
+          console.warn(`Price mismatch for ${item.jerseyId}: client ${item.totalPrice}, expected ${expectedItemPrice}`);
           throw new Error('Price mismatch. Please refresh and try again.');
         }
       }
