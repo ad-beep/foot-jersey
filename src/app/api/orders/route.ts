@@ -187,14 +187,20 @@ async function incrementDiscountUsage(code: string) {
 }
 
 export async function POST(request: NextRequest) {
+  // These are set progressively so the catch block can refund/notify without body in scope.
   let paypalOrderIdForRecovery: string | undefined;
   let paypalCaptureIdForRefund: string | undefined;
   let paymentConfirmedCaptured = false;
-  let body: OrderData | undefined;
+  let catchEmail: string | undefined;
+  let catchName: string | undefined;
+  let catchTotal: number | undefined;
+
   try {
-    body = (await request.json()) as OrderData;
+    const body = (await request.json()) as OrderData;
 
     paypalOrderIdForRecovery = body.paypalOrderId;
+    catchEmail = body.shippingInfo?.email;
+    catchTotal = body.total;
 
     // Validate required fields
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -394,6 +400,7 @@ export async function POST(request: NextRequest) {
     const customerName =
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
+    catchName = customerName;
 
     // 1. Write to Firestore with atomic order number
     const counterRef = doc(db, 'meta', 'orderCounter');
@@ -537,16 +544,12 @@ export async function POST(request: NextRequest) {
           await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), { status: 'refunded' });
         } catch { /* best-effort */ }
         // Notify the customer immediately so they know what happened
-        if (body?.shippingInfo?.email) {
-          const name =
-            body.shippingInfo.name ||
-            `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim() ||
-            'Customer';
+        if (catchEmail) {
           sendOrderFailedRefundEmail({
-            to: body.shippingInfo.email,
-            customerName: name,
+            to: catchEmail,
+            customerName: catchName || 'Customer',
             paypalOrderId: paypalOrderIdForRecovery!,
-            amount: body.total,
+            amount: catchTotal || 0,
           }).catch((emailErr) => console.error('[orders] Failed to send refund notification email:', emailErr));
         }
         return NextResponse.json(
