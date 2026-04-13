@@ -1,200 +1,105 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useLocale } from '@/hooks/useLocale';
-import { ChevronRight, Search } from 'lucide-react';
-import type { Jersey } from '@/types';
+import { Search } from 'lucide-react';
 
-// ── Marquee constants ────────────────────────────────────────────────────────
-const CARD_W  = 110;
-const CARD_H  = 148;
-const CARD_MR = 10;
-const HALF    = 12;
-const STRIP_W = HALF * (CARD_W + CARD_MR);  // 1440px
+// ── League ticker text ───────────────────────────────────────────────────────
+const TICKER_EN =
+  'PREMIER LEAGUE · LA LIGA · SERIE A · BUNDESLIGA · LIGUE 1 · WORLD CUP 2026 · RETRO CLASSICS · DRIP · STUSSY EDITION · MYSTERY BOX · SPECIAL EDITION · ISRAELI LEAGUE · 25/26 SEASON · ';
+const TICKER_HE =
+  'פרמייר ליג · לה ליגה · סרייה A · בונדסליגה · ליג 1 · מונדיאל 2026 · רטרו קלאסיק · דריפ · מהדורת סטוסי · קופסת הפתעה · מהדורה מיוחדת · ליגת העל · עונת 25/26 · ';
 
-const ROWS = [
-  { dir: 'left'  as const, speed: 55, opacity: 0.22, scale: 1.0  },
-  { dir: 'right' as const, speed: 40, opacity: 0.18, scale: 0.92 },
-];
-
-// ── Order ticker messages ────────────────────────────────────────────────────
-const TICKER_ITEMS = {
-  en: [
-    'A fan in Tel Aviv just grabbed Real Madrid 24/25 ⚽',
-    'Someone in Jerusalem ordered Argentina WC 2026 🏆',
-    'A fan in Haifa picked up PSG Retro Classic 📦',
-    'Someone in Beer Sheva ordered Maccabi Tel Aviv Drip ✨',
-    'A fan in Rishon got 3 jerseys + free shipping 🎁',
-    'Someone in Netanya ordered Barcelona 2024/25 ⚽',
-    'A fan in Ashdod just grabbed the Stussy Edition 🔥',
-    'Someone in Eilat ordered a Mystery Box 📦',
-  ],
-  he: [
-    'אוהד בתל אביב הזמין ריאל מדריד 24/25 ⚽',
-    'מישהו בירושלים הזמין ארגנטינה מונדיאל 2026 🏆',
-    'אוהד בחיפה בחר ב-PSG רטרו קלאסיק 📦',
-    'מישהו בבאר שבע הזמין Drip של מכבי תל אביב ✨',
-    'אוהד בראשון קיבל 3 חולצות + משלוח חינם 🎁',
-    'מישהו בנתניה הזמין ברצלונה 2024/25 ⚽',
-    'אוהד באשדוד הזמין את מהדורת Stussy 🔥',
-    'מישהו באילת הזמין Mystery Box 📦',
-  ],
-};
-
-// ── Marquee Row ──────────────────────────────────────────────────────────────
-function MarqueeRow({
-  images,
-  dir,
-  speed,
-  opacity,
-  scale = 1,
-}: {
-  images: { id: string; imageUrl: string }[];
-  dir: 'left' | 'right';
-  speed: number;
-  opacity: number;
-  scale?: number;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const pxPerMs = STRIP_W / (speed * 1000);
-    let pos  = dir === 'left' ? 0 : -STRIP_W;
-    let prev = performance.now();
-    let raf: number;
-
-    const step = (now: number) => {
-      const dt = Math.min(now - prev, 100);
-      prev = now;
-      if (dir === 'left') {
-        pos -= pxPerMs * dt;
-        if (pos <= -STRIP_W) pos += STRIP_W;
-      } else {
-        pos += pxPerMs * dt;
-        if (pos >= 0) pos -= STRIP_W;
-      }
-      el.style.transform = `translateX(${pos}px)`;
-      raf = requestAnimationFrame(step);
-    };
-
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [dir, speed]);
-
-  if (images.length === 0) return null;
-
-  const half: typeof images = [];
-  for (let i = 0; i < HALF; i++) half.push(images[i % images.length]);
-  const all = [...half, ...half];
-
+// ── Inline SVG jersey silhouette — zero network requests ─────────────────────
+function JerseySilhouette() {
   return (
-    <div style={{ overflow: 'hidden', width: '100%', transform: `scale(${scale})` }}>
-      <div
-        ref={trackRef}
-        style={{
-          display: 'flex',
-          flexWrap: 'nowrap',
-          width: STRIP_W * 2,
-          willChange: 'transform',
-          transform: `translateX(${dir === 'left' ? 0 : -STRIP_W}px)`,
-          opacity,
-        }}
-      >
-        {all.map((j, i) => (
-          <div
-            key={`${j.id}-${i}`}
-            style={{
-              width: CARD_W,
-              height: CARD_H,
-              marginRight: CARD_MR,
-              borderRadius: 10,
-              overflow: 'hidden',
-              flexShrink: 0,
-              backgroundColor: '#141416',
-              position: 'relative',
-            }}
-          >
-            <Image
-              src={j.imageUrl}
-              alt=""
-              width={CARD_W}
-              height={CARD_H}
-              unoptimized
-              loading="eager"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Order Ticker ─────────────────────────────────────────────────────────────
-function OrderTicker({ locale }: { locale: 'en' | 'he' }) {
-  const items = TICKER_ITEMS[locale];
-  // Duplicate for seamless loop
-  const all = [...items, ...items];
-
-  return (
-    <div
-      className="w-full overflow-hidden"
-      style={{ backgroundColor: 'rgba(15,61,46,0.25)', borderTop: '1px solid rgba(15,61,46,0.5)', borderBottom: '1px solid rgba(15,61,46,0.5)' }}
+    <svg
+      viewBox="0 0 220 260"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{
+        width: '100%',
+        maxWidth: '260px',
+        height: 'auto',
+        animation: 'breathe 5s ease-in-out infinite',
+        filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.6))',
+      }}
       aria-hidden="true"
     >
-      <div
-        style={{
-          display: 'flex',
-          whiteSpace: 'nowrap',
-          animation: 'tickerScroll 30s linear infinite',
-          direction: 'ltr', // always ltr for ticker
-        }}
+      {/* Jersey body */}
+      <path
+        d="M65 42 L18 74 L36 98 L58 82 L58 210 L162 210 L162 82 L184 98 L202 74 L155 42 C142 36 128 31 110 31 C92 31 78 36 65 42Z"
+        fill="rgba(15,61,46,0.55)"
+        stroke="rgba(200,162,75,0.35)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      {/* Sleeve seam left */}
+      <path
+        d="M58 82 L65 42"
+        stroke="rgba(200,162,75,0.2)"
+        strokeWidth="1"
+        strokeDasharray="4 3"
+      />
+      {/* Sleeve seam right */}
+      <path
+        d="M162 82 L155 42"
+        stroke="rgba(200,162,75,0.2)"
+        strokeWidth="1"
+        strokeDasharray="4 3"
+      />
+      {/* Collar — V-neck */}
+      <path
+        d="M83 44 C90 60 104 67 110 67 C116 67 130 60 137 44"
+        stroke="rgba(200,162,75,0.5)"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* Center stripe */}
+      <line
+        x1="110" y1="67"
+        x2="110" y2="210"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth="1"
+        strokeDasharray="6 4"
+      />
+      {/* Jersey number */}
+      <text
+        x="110"
+        y="158"
+        textAnchor="middle"
+        fontFamily="Playfair Display, serif"
+        fontSize="56"
+        fontWeight="bold"
+        fill="rgba(200,162,75,0.18)"
+        letterSpacing="-2"
       >
-        {all.map((item, i) => (
-          <span
-            key={i}
-            className="font-mono text-xs py-2 px-6 shrink-0"
-            style={{ color: 'rgba(200,162,75,0.9)' }}
-          >
-            {item}
-            <span className="mx-6 opacity-30">·</span>
-          </span>
-        ))}
-      </div>
-    </div>
+        10
+      </text>
+      {/* Sponsor block placeholder */}
+      <rect
+        x="85" y="100"
+        width="50" height="18"
+        rx="2"
+        fill="rgba(255,255,255,0.05)"
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth="0.75"
+      />
+    </svg>
   );
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-interface LandingHeroProps {
-  jerseys?: Jersey[];
-}
-
-export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
+export default function LandingHero() {
   const { locale, isRtl } = useLocale();
-  const router = useRouter();
-  const isHe = locale === 'he';
+  const router  = useRouter();
+  const isHe    = locale === 'he';
 
   const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Use all jerseys for marquee (diverse look)
-  const pool = jerseys
-    .filter((j) => j.imageUrl)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, HALF * ROWS.length);
-  const perRow = Math.max(1, Math.ceil(pool.length / ROWS.length));
-  const chunks = ROWS.map((_, i) => {
-    const chunk = pool.slice(i * perRow, (i + 1) * perRow);
-    return chunk.length > 0 ? chunk : (pool.length > 0 ? pool.slice(0, perRow) : []);
-  });
+  const [query, setQuery]           = useState('');
+  const searchInputRef              = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
@@ -205,173 +110,289 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
     const q = query.trim();
     if (q) router.push(`/${locale}/search?q=${encodeURIComponent(q)}`);
     setSearchOpen(false);
+    setQuery('');
   };
 
-  const headline = isHe
-    ? ['כל', 'חולצה', 'מספרת', 'סיפור.']
-    : ['Every', 'jersey', 'tells', 'a', 'story.'];
+  const ticker = isHe ? TICKER_HE : TICKER_EN;
 
   return (
     <section
-      className="snap-start relative flex flex-col overflow-hidden"
+      className="relative overflow-hidden flex flex-col"
       style={{ minHeight: 'calc(100vh - 64px)', backgroundColor: 'var(--ink)' }}
     >
-      {/* ── Layer 0: Marquee background ──────────────────────────────────── */}
-      {pool.length > 0 && (
+      {/* ── Split-screen container ──────────────────────────────────────── */}
+      <div className={`flex flex-col md:flex-row flex-1 ${isHe ? 'md:flex-row-reverse' : ''}`}>
+
+        {/* ── Left panel: editorial text ───────────────────────────────── */}
         <div
-          className="absolute inset-0 z-0 flex flex-col justify-evenly"
-          style={{ direction: 'ltr', overflow: 'hidden' }}
-          aria-hidden="true"
+          className="relative flex flex-col justify-center px-8 md:px-16 lg:px-24 py-20 md:py-0 w-full md:w-[55%]"
+          style={{ backgroundColor: 'var(--ink)', zIndex: 2 }}
         >
-          {ROWS.map((row, i) => (
-            <MarqueeRow
-              key={i}
-              images={chunks[i] || []}
-              dir={row.dir}
-              speed={row.speed}
-              opacity={row.opacity}
-              scale={row.scale}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ── Layer 1: Gradient vignette overlay ───────────────────────────── */}
-      <div
-        className="absolute inset-0 z-10 pointer-events-none"
-        style={{
-          background: [
-            'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(10,10,11,0.5) 0%, rgba(10,10,11,0.85) 70%, #0A0A0B 100%)',
-          ].join(', '),
-        }}
-      />
-
-      {/* ── Layer 2: Film grain ───────────────────────────────────────────── */}
-      <div
-        className="absolute inset-0 z-10 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: '256px 256px',
-          opacity: 0.04,
-          mixBlendMode: 'overlay',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* ── Layer 3: Hero content ─────────────────────────────────────────── */}
-      <div className="relative z-20 flex flex-col justify-center flex-1 px-6 pt-12 pb-4">
-        <div className="max-w-[1200px] mx-auto w-full">
-
-          {/* Kicker */}
+          {/* Gold hairline — animates in from start side */}
           <div
-            className="section-kicker mb-6 md:mb-8"
-            style={{ opacity: 0, animation: 'heroFadeUp 0.5s ease 0.1s forwards' }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: isHe ? 'auto' : 0,
+              right: isHe ? 0 : 'auto',
+              width: '42%',
+              height: '2px',
+              background: 'linear-gradient(to right, var(--gold), transparent)',
+              transformOrigin: isHe ? 'right center' : 'left center',
+              animation: 'hairlineIn 1s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+            }}
+          />
+
+          {/* Mono kicker */}
+          <p
+            className="section-kicker mb-8"
+            style={{ opacity: 0, animation: 'heroFadeUp 0.5s ease 0.35s forwards' }}
           >
             {isHe
               ? 'מאז 2023 · ישראל · 17 קולקציות'
-              : 'EST. · ISRAEL · 17 COLLECTIONS · SINCE 2023'}
-          </div>
+              : 'EST. IL · SINCE 2023 · 17 COLLECTIONS'}
+          </p>
 
-          {/* Headline — word-by-word reveal */}
+          {/* Display headline — 3 lines, last line in gold */}
           <h1
-            className={`font-playfair font-bold text-white mb-6 md:mb-8 leading-none ${isHe ? 'text-right' : ''}`}
+            className={`font-playfair font-bold text-white mb-8 ${isHe ? 'text-right' : ''}`}
             style={{
-              fontSize: 'clamp(3rem, 9vw, 7.5rem)',
+              fontSize: 'clamp(3.8rem, 6.5vw, 7.5rem)',
               letterSpacing: '-0.04em',
-              lineHeight: 0.95,
+              lineHeight: 0.88,
             }}
           >
-            {headline.map((word, i) => (
-              <span
-                key={i}
-                className="inline-block word-reveal"
-                style={{
-                  animationDelay: `${0.3 + i * 0.1}s`,
-                  marginRight: isHe ? 0 : '0.25em',
-                  marginLeft: isHe ? '0.25em' : 0,
-                }}
-              >
-                {word}
-              </span>
-            ))}
+            <span
+              className="block word-reveal"
+              style={{ animationDelay: '0.45s' }}
+            >
+              {isHe ? 'כל' : 'Wear'}
+            </span>
+            <span
+              className="block word-reveal"
+              style={{ animationDelay: '0.6s' }}
+            >
+              {isHe ? 'חולצה' : 'Every'}
+            </span>
+            <span
+              className="block word-reveal"
+              style={{ animationDelay: '0.75s', color: 'var(--gold)' }}
+            >
+              {isHe ? 'מספרת.' : 'Story.'}
+            </span>
           </h1>
 
-          {/* Subline */}
+          {/* Subtitle */}
           <p
-            className={`text-base md:text-lg mb-10 max-w-md ${isHe ? 'text-right' : ''}`}
+            className={`text-base md:text-lg mb-10 max-w-[44ch] leading-relaxed ${isHe ? 'text-right' : ''}`}
             style={{
               color: 'var(--muted)',
               opacity: 0,
-              animation: 'heroFadeUp 0.6s ease 0.9s forwards',
-              fontWeight: 400,
+              animation: 'heroFadeUp 0.6s ease 0.95s forwards',
             }}
           >
             {isHe
-              ? 'חולצות כדורגל פרמיום מכל הליגות. תשלום מאובטח. משלוח לכל ישראל.'
-              : 'Premium football jerseys from every league. Secure payment. Fast delivery across Israel.'}
+              ? 'חולצות כדורגל פרמיום מכל הליגות — פרמייר ליג, לה ליגה, מונדיאל 2026, רטרו ועוד. PayPal · BIT · משלוח לכל ישראל.'
+              : 'Premium football jerseys from every league — Premier League, La Liga, World Cup 2026, Retro and more. PayPal · BIT · Ships across Israel.'}
           </p>
 
-          {/* CTAs */}
+          {/* CTA row */}
           <div
-            className={`flex items-center gap-3 md:gap-4 ${isHe ? 'flex-row-reverse justify-end' : ''}`}
+            className={`flex items-center flex-wrap gap-3 mb-10 ${isHe ? 'flex-row-reverse' : ''}`}
             style={{ opacity: 0, animation: 'heroFadeUp 0.6s ease 1.1s forwards' }}
           >
             <button
               onClick={() => router.push(`/${locale}/discover`)}
-              className="group flex items-center gap-2 px-6 py-3.5 rounded-full font-semibold text-sm transition-all duration-300"
+              className="flex items-center gap-2 px-7 py-4 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 hover:opacity-90 active:scale-95"
               style={{
                 backgroundColor: 'var(--flare)',
                 color: '#fff',
-                boxShadow: '0 0 28px rgba(255,77,46,0.35)',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare-hover)';
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare)';
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                boxShadow: '0 0 32px rgba(255,77,46,0.4)',
               }}
             >
               {isHe ? 'גלה את הקולקציה' : 'Shop the Drop'}
-              <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isHe ? 'rotate-180' : ''}`} />
+              <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path
+                  d={isHe ? 'M13 8H3M7 4l-4 4 4 4' : 'M3 8h10M9 4l4 4-4 4'}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
 
-            {/* Search icon button */}
             <button
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-5 py-3.5 rounded-full text-sm font-medium transition-all duration-200"
+              onClick={() => router.push(`/${locale}/discover`)}
+              className="flex items-center gap-2 px-7 py-4 rounded-xl font-medium text-sm tracking-wide transition-all duration-200 hover:bg-white/10"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.07)',
-                color: 'rgba(255,255,255,0.8)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                backdropFilter: 'blur(10px)',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.07)';
+                color: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(255,255,255,0.14)',
               }}
             >
-              <Search className="w-4 h-4" />
-              {isHe ? 'חיפוש' : 'Search'}
+              {isHe ? 'כל הקולקציות' : 'Explore Collections'}
             </button>
+
+            {/* Search icon */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center justify-center w-[52px] h-[52px] rounded-xl transition-all duration-200 hover:bg-white/10"
+              style={{ border: '1px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.6)' }}
+              aria-label={isHe ? 'חיפוש' : 'Search'}
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Social proof micro-row */}
+          <div
+            className={`flex items-center flex-wrap gap-4 ${isHe ? 'flex-row-reverse' : ''}`}
+            style={{ opacity: 0, animation: 'heroFadeUp 0.5s ease 1.3s forwards' }}
+          >
+            {/* Stars */}
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <svg key={i} viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="var(--gold)">
+                  <path d="M8 1l1.9 3.9L14 5.6l-3 2.9.7 4.1L8 10.4l-3.7 2.2.7-4.1-3-2.9 4.1-.7z" />
+                </svg>
+              ))}
+              <span className="font-mono text-[11px] ml-1.5" style={{ color: 'var(--gold)' }}>4.8</span>
+            </div>
+
+            <div style={{ width: 1, height: 14, backgroundColor: 'var(--border)' }} />
+
+            <p className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>
+              {isHe ? '95+ לקוחות מרוצים' : '95+ happy customers'}
+            </p>
+
+            <div style={{ width: 1, height: 14, backgroundColor: 'var(--border)' }} />
+
+            <p className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>
+              {isHe ? 'PayPal · BIT' : 'PayPal · BIT'}
+            </p>
+          </div>
+        </div>
+
+        {/* ── Right panel: jersey visual — desktop only ─────────────────── */}
+        <div
+          className="relative hidden md:flex flex-col items-center justify-center overflow-hidden w-[45%]"
+          style={{
+            backgroundColor: 'var(--pitch)',
+            borderLeft: isHe ? 'none' : '1px solid rgba(200,162,75,0.12)',
+            borderRight: isHe ? '1px solid rgba(200,162,75,0.12)' : 'none',
+          }}
+        >
+          {/* Radial gold glow */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(200,162,75,0.11) 0%, transparent 70%)',
+            }}
+          />
+
+          {/* Film grain */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              backgroundSize: '256px 256px',
+              opacity: 0.04,
+              mixBlendMode: 'overlay',
+            }}
+            aria-hidden="true"
+          />
+
+          {/* Jersey SVG */}
+          <div
+            className="relative z-10 flex items-center justify-center"
+            style={{
+              width: '72%',
+              maxWidth: '280px',
+              opacity: 0,
+              animation: 'heroFadeUp 0.8s ease 0.6s forwards',
+            }}
+          >
+            <JerseySilhouette />
+          </div>
+
+          {/* Rotated vertical label */}
+          <div
+            className="absolute right-5 top-1/2 -translate-y-1/2"
+            style={{
+              writingMode: 'vertical-rl',
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '9px',
+              letterSpacing: '0.28em',
+              color: 'rgba(200,162,75,0.35)',
+              textTransform: 'uppercase',
+            }}
+            aria-hidden="true"
+          >
+            VOL. 01 / 2026
+          </div>
+
+          {/* Bottom "17 / Collections" counter */}
+          <div
+            className="absolute bottom-8 left-0 right-0 flex flex-col items-center"
+            style={{ opacity: 0, animation: 'heroFadeUp 0.6s ease 1.0s forwards' }}
+          >
+            <p
+              className="font-playfair font-bold"
+              style={{ fontSize: '4rem', color: 'rgba(200,162,75,0.2)', letterSpacing: '-0.05em', lineHeight: 1 }}
+              aria-hidden="true"
+            >
+              17
+            </p>
+            <p
+              className="font-mono uppercase"
+              style={{ fontSize: '8px', letterSpacing: '0.32em', color: 'rgba(255,255,255,0.28)' }}
+            >
+              Collections
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ── Expanded Search overlay ───────────────────────────────────────── */}
+      {/* ── League name ticker ────────────────────────────────────────────── */}
+      <div
+        className="w-full overflow-hidden py-2.5 shrink-0"
+        style={{
+          borderTop: '1px solid rgba(200,162,75,0.12)',
+          borderBottom: '1px solid var(--border)',
+          backgroundColor: 'rgba(10,10,11,0.8)',
+        }}
+        aria-hidden="true"
+      >
+        <div
+          style={{
+            display: 'flex',
+            whiteSpace: 'nowrap',
+            animation: 'tickerScroll 45s linear infinite',
+            direction: 'ltr',
+          }}
+        >
+          <span
+            className="font-mono uppercase shrink-0"
+            style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'rgba(200,162,75,0.45)' }}
+          >
+            {ticker}
+          </span>
+          <span
+            className="font-mono uppercase shrink-0"
+            style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'rgba(200,162,75,0.45)' }}
+          >
+            {ticker}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Search overlay ────────────────────────────────────────────────── */}
       {searchOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(10,10,11,0.9)', backdropFilter: 'blur(20px)' }}
+          style={{ backgroundColor: 'rgba(10,10,11,0.92)', backdropFilter: 'blur(20px)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setSearchOpen(false); }}
         >
-          <div
-            className="w-full max-w-lg"
-            style={{ animation: 'searchDropIn 0.25s ease both' }}
-          >
+          <div style={{ animation: 'searchDropIn 0.25s ease both', width: '100%', maxWidth: '520px' }}>
             <form onSubmit={handleSearch}>
               <div
                 className="flex items-center gap-3 px-5 py-4 rounded-2xl"
@@ -384,30 +405,28 @@ export default function LandingHero({ jerseys = [] }: LandingHeroProps) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={isHe ? 'חפש חולצות, ליגות, קבוצות...' : 'Search jerseys, leagues, teams...'}
-                  className="flex-1 bg-transparent text-white text-lg outline-none placeholder:text-[var(--muted)]"
-                  style={{ direction: isRtl ? 'rtl' : 'ltr' }}
+                  className="flex-1 bg-transparent text-white text-lg outline-none"
+                  style={{
+                    direction: isRtl ? 'rtl' : 'ltr',
+                    color: 'white',
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setSearchOpen(false)}
-                  className="text-xs shrink-0"
+                  className="text-xs font-mono shrink-0 transition-colors hover:text-white"
                   style={{ color: 'var(--muted)' }}
                 >
                   {isHe ? 'סגור' : 'ESC'}
                 </button>
               </div>
             </form>
+            <p className="font-mono text-[10px] text-center mt-3" style={{ color: 'var(--muted)' }}>
+              {isHe ? 'לחץ מחוץ לשדה לסגירה' : 'Click outside to close'}
+            </p>
           </div>
         </div>
       )}
-
-      {/* ── Layer 4: Order Ticker ─────────────────────────────────────────── */}
-      <div
-        className="relative z-20 mt-auto"
-        style={{ opacity: 0, animation: 'heroFadeUp 0.5s ease 1.4s forwards' }}
-      >
-        <OrderTicker locale={locale as 'en' | 'he'} />
-      </div>
     </section>
   );
 }

@@ -4,26 +4,25 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { Jersey, Locale } from '@/types';
 
-// Hero — eager load for LCP
-const LandingHero    = dynamic(() => import('@/components/home/LandingHero'), { ssr: false });
+// Hero — static import enables SSR → better LCP
+import LandingHero from '@/components/home/LandingHero';
 
-// Below-fold sections — lazy-loaded
-const TrustBar       = dynamic(() => import('@/components/home/TrustBar').then(m => ({ default: m.TrustBar })), { ssr: false });
-const WhatsHot       = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })), { ssr: false });
-const CategoryGrid   = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })), { ssr: false });
-const RetroSpotlight = dynamic(() => import('@/components/home/RetroSpotlight').then(m => ({ default: m.RetroSpotlight })), { ssr: false });
-const LockerRoom     = dynamic(() => import('@/components/home/LockerRoom').then(m => ({ default: m.LockerRoom })), { ssr: false });
-const FAQPreview     = dynamic(() => import('@/components/home/FAQPreview').then(m => ({ default: m.FAQPreview })), { ssr: false });
-const FounderMoment  = dynamic(() => import('@/components/home/FounderMoment').then(m => ({ default: m.FounderMoment })), { ssr: false });
-const Newsletter     = dynamic(() => import('@/components/home/Newsletter').then(m => ({ default: m.Newsletter })), { ssr: false });
+// Below-fold sections — lazy-loaded to reduce initial bundle
+const TrustBar       = dynamic(() => import('@/components/home/TrustBar').then(m => ({ default: m.TrustBar })));
+const WhatsHot       = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })));
+const CategoryGrid   = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })));
+const RetroSpotlight = dynamic(() => import('@/components/home/RetroSpotlight').then(m => ({ default: m.RetroSpotlight })));
+const LockerRoom     = dynamic(() => import('@/components/home/LockerRoom').then(m => ({ default: m.LockerRoom })));
+const FAQPreview     = dynamic(() => import('@/components/home/FAQPreview').then(m => ({ default: m.FAQPreview })));
+const FounderMoment  = dynamic(() => import('@/components/home/FounderMoment').then(m => ({ default: m.FounderMoment })));
+const Newsletter     = dynamic(() => import('@/components/home/Newsletter').then(m => ({ default: m.Newsletter })));
 
 interface HomeClientProps {
   locale:     Locale;
-  jerseys:    Jersey[];
   hotJerseys: Jersey[];
 }
 
-export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientProps) {
+export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
   useEffect(() => {
     if (window.location.hash === '#collections-section') {
       const timer = setTimeout(() => {
@@ -37,7 +36,7 @@ export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientPr
   return (
     <div className="overflow-x-hidden">
       {/* 1. Hero — "The Cathedral" */}
-      <LandingHero jerseys={jerseys} />
+      <LandingHero />
 
       {/* 2. Trust bar — quick trust signals */}
       <TrustBar />
@@ -50,7 +49,7 @@ export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientPr
         <CategoryGrid />
       </div>
 
-      {/* 5. Retro Classics spotlight — light band */}
+      {/* 5. Retro Classics spotlight — light editorial band */}
       <RetroSpotlight />
 
       {/* 6. The Locker Room — reviews wall */}

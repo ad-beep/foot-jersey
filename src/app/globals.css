@@ -209,3 +209,21 @@
   60%  { transform: scale(1.15); }
   100% { transform: scale(1);   opacity: 1; }
 }
+
+/* Jersey silhouette breathe — gentle float + slight tilt */
+@keyframes breathe {
+  0%, 100% { transform: translateY(0)    rotate(-2deg); }
+  50%       { transform: translateY(-14px) rotate(0deg); }
+}
+
+/* Gold hairline draw-in from left (set transform-origin on element) */
+@keyframes hairlineIn {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Shipping page / map city dots pulse */
+@keyframes citypulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(2.5); opacity: 0; }
+}

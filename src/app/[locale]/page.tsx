@@ -46,5 +46,5 @@ export default async function HomePage({
     .sort(() => Math.random() - 0.5)
     .slice(0, 15);
 
-  return <HomeClient locale={locale} jerseys={jerseys} hotJerseys={hotJerseys} />;
+  return <HomeClient locale={locale} hotJerseys={hotJerseys} />;
 }
