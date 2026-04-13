@@ -4,12 +4,18 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { Jersey, Locale } from '@/types';
 
-// Hero loads eagerly for fast LCP — it's the first visible content
-const LandingHero  = dynamic(() => import('@/components/home/LandingHero'), { ssr: false });
-// Below-fold components — lazy-loaded with no SSR
-const WhatsHot     = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })), { ssr: false });
-const CategoryGrid = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })), { ssr: false });
-const AboutUs      = dynamic(() => import('@/components/home/AboutUs').then(m => ({ default: m.AboutUs })), { ssr: false });
+// Hero — eager load for LCP
+const LandingHero    = dynamic(() => import('@/components/home/LandingHero'), { ssr: false });
+
+// Below-fold sections — lazy-loaded
+const TrustBar       = dynamic(() => import('@/components/home/TrustBar').then(m => ({ default: m.TrustBar })), { ssr: false });
+const WhatsHot       = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })), { ssr: false });
+const CategoryGrid   = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })), { ssr: false });
+const RetroSpotlight = dynamic(() => import('@/components/home/RetroSpotlight').then(m => ({ default: m.RetroSpotlight })), { ssr: false });
+const LockerRoom     = dynamic(() => import('@/components/home/LockerRoom').then(m => ({ default: m.LockerRoom })), { ssr: false });
+const FAQPreview     = dynamic(() => import('@/components/home/FAQPreview').then(m => ({ default: m.FAQPreview })), { ssr: false });
+const FounderMoment  = dynamic(() => import('@/components/home/FounderMoment').then(m => ({ default: m.FounderMoment })), { ssr: false });
+const Newsletter     = dynamic(() => import('@/components/home/Newsletter').then(m => ({ default: m.Newsletter })), { ssr: false });
 
 interface HomeClientProps {
   locale:     Locale;
@@ -20,7 +26,6 @@ interface HomeClientProps {
 export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientProps) {
   useEffect(() => {
     if (window.location.hash === '#collections-section') {
-      // Small delay to allow dynamic components to mount before scrolling
       const timer = setTimeout(() => {
         const el = document.getElementById('collections-section');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -30,20 +35,35 @@ export default function HomeClient({ locale, jerseys, hotJerseys }: HomeClientPr
   }, []);
 
   return (
-    <div
-      className="overflow-y-auto scrollbar-hide"
-      style={{
-        height: 'calc(100vh - 64px)',
-        scrollSnapType: 'y proximity',
-        willChange: 'scroll-position',
-      }}
-    >
+    <div className="overflow-x-hidden">
+      {/* 1. Hero — "The Cathedral" */}
       <LandingHero jerseys={jerseys} />
+
+      {/* 2. Trust bar — quick trust signals */}
+      <TrustBar />
+
+      {/* 3. What's Hot — featured products */}
       <WhatsHot locale={locale} hotJerseys={hotJerseys} />
+
+      {/* 4. Collections grid — 17 categories */}
       <div id="collections-section">
         <CategoryGrid />
       </div>
-      <AboutUs />
+
+      {/* 5. Retro Classics spotlight — light band */}
+      <RetroSpotlight />
+
+      {/* 6. The Locker Room — reviews wall */}
+      <LockerRoom />
+
+      {/* 7. FAQ Preview — trust + AI visibility */}
+      <FAQPreview />
+
+      {/* 8. Founder Moment — human story, trust */}
+      <FounderMoment />
+
+      {/* 9. Newsletter */}
+      <Newsletter />
     </div>
   );
 }

@@ -4,19 +4,36 @@
 
 @layer base {
   :root {
-    --bg-primary:    #111111;
-    --bg-secondary:  #1A1A1A;
-    --bg-elevated:   #222222;
-    --accent:        #00C3D8;
-    --accent-hover:  #00E5FF;
-    --accent-glow:   rgba(0, 195, 216, 0.15);
-    --cta:           #FF8C00;
-    --cta-hover:     #FF7A00;
+    /* ── New "Dark Luxury Editorial" palette ────────────────────────────── */
+    --ink:          #0A0A0B;   /* near-black primary background */
+    --steel:        #141416;   /* elevated surfaces / cards */
+    --steel-hover:  #1C1C1F;   /* hover state */
+    --pitch:        #0F3D2E;   /* deep pitch-green — brand accent */
+    --pitch-light:  #1A5C44;   /* lighter pitch for hover/active */
+    --pitch-glow:   rgba(15, 61, 46, 0.35);
+    --gold:         #C8A24B;   /* retro/premium gold accent */
+    --gold-light:   #D9B870;
+    --chalk:        #F4F1EA;   /* editorial off-white — for light bands */
+    --chalk-dark:   #E8E4D9;   /* darker chalk for borders on light bg */
+    --flare:        #FF4D2E;   /* single CTA vermillion */
+    --flare-hover:  #E63D20;
+    --flare-glow:   rgba(255, 77, 46, 0.25);
+    --muted:        #6B6B6F;   /* secondary text */
+
+    /* ── Legacy aliases (so existing components don't break) ────────────── */
+    --bg-primary:    var(--ink);
+    --bg-secondary:  var(--steel);
+    --bg-elevated:   var(--steel-hover);
+    --accent:        var(--pitch);
+    --accent-hover:  var(--pitch-light);
+    --accent-glow:   var(--pitch-glow);
+    --cta:           var(--flare);
+    --cta-hover:     var(--flare-hover);
     --text-primary:  #FFFFFF;
     --text-secondary:#B8B8B8;
-    --text-muted:    #B3B3B3;
-    --border:        #2A2A2A;
-    --border-accent: rgba(0, 195, 216, 0.3);
+    --text-muted:    var(--muted);
+    --border:        #1E1E21;
+    --border-accent: rgba(15, 61, 46, 0.4);
     --success:       #00C853;
     --error:         #FF3D00;
   }
@@ -24,33 +41,32 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background-color: var(--bg-primary);
+    background-color: var(--ink);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  ::selection { background-color: var(--accent); color: #000; }
+  ::selection { background-color: var(--pitch); color: #fff; }
 
   ::-webkit-scrollbar       { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg-primary); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #444; }
+  ::-webkit-scrollbar-track { background: var(--ink); }
+  ::-webkit-scrollbar-thumb { background: #2a2a2d; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a3d; }
 
   [dir="rtl"] { direction: rtl; }
 }
 
 @layer components {
-  /* Admin form — text inputs */
+  /* ── Admin form inputs ───────────────────────────────────────────────── */
   .admin-input {
     @apply w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white
-           placeholder:text-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30
+           placeholder:text-gray-500 focus:outline-none focus:border-emerald-800/50 focus:ring-1 focus:ring-emerald-900/30
            transition-colors;
   }
-  /* Admin form — selects (force readable option text on all OS) */
   .admin-select {
-    @apply w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 py-2.5 text-sm text-white
-           focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30
+    @apply w-full rounded-lg border border-white/10 bg-[#141416] px-3 py-2.5 text-sm text-white
+           focus:outline-none focus:border-emerald-800/50 focus:ring-1 focus:ring-emerald-900/30
            transition-colors appearance-none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -59,21 +75,59 @@
     padding-right: 2.25rem;
   }
   .admin-select option {
-    background-color: #1a1a1a;
+    background-color: #141416;
     color: #ffffff;
   }
+
+  /* ── Editorial section label ─────────────────────────────────────────── */
+  .section-kicker {
+    @apply text-[10px] font-mono font-medium uppercase tracking-[0.25em];
+    color: var(--muted);
+  }
+
+  /* ── Light chalk band (editorial contrast break) ────────────────────── */
+  .chalk-band {
+    background-color: var(--chalk);
+    color: #111;
+  }
+  .chalk-band .section-kicker { color: #6B6B6F; }
 }
 
 @layer utilities {
   .scrollbar-hide                         { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar      { display: none; }
+
+  /* Film grain overlay — add to a pseudo-element or direct on absolute div */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.045;
+    mix-blend-mode: overlay;
+    border-radius: inherit;
+    z-index: 1;
+  }
+
+  /* Pitch-green glow border */
+  .glow-pitch { box-shadow: 0 0 0 1px var(--pitch), 0 0 20px var(--pitch-glow); }
+
+  /* Gold shimmer text */
+  .text-gold { color: var(--gold); }
 }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
 
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-
 .animate-shimmer { animation: shimmer 2s infinite ease-in-out; }
 
 /* Hide hover overlay on touch devices */
@@ -82,9 +136,7 @@
   [data-hover-overlay] { display: flex; }
 }
 
-/* Hero marquee — pixel-perfect loop (synced with LandingHero.tsx constants)
-   12 cards × (120px wide + 8px margin) = 1536px per half.
-   Content is doubled → 3072px total. Translate by exactly one half = seamless. */
+/* Hero marquee */
 @keyframes marqueeLeft {
   from { transform: translateX(0); }
   to   { transform: translateX(-1536px); }
@@ -93,13 +145,11 @@
   from { transform: translateX(-1536px); }
   to   { transform: translateX(0); }
 }
-
-/* Pause marquee for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .marquee-row { animation-play-state: paused !important; }
 }
 
-/* Hero content fade-up — replaces Framer Motion for zero-JS-dep first paint */
+/* Hero content — zero-JS fade-up */
 @keyframes heroFadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -108,13 +158,38 @@
   from { opacity: 0; }
   to   { opacity: 0.6; }
 }
-
-/* Hero scroll indicator bounce */
 @keyframes heroBounce {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(8px); }
 }
 
+/* Editorial word-reveal: clip-path from bottom → top */
+@keyframes wordReveal {
+  from { clip-path: inset(0 0 100% 0); transform: translateY(12px); opacity: 0; }
+  to   { clip-path: inset(0 0 0% 0);   transform: translateY(0);    opacity: 1; }
+}
+.word-reveal {
+  display: inline-block;
+  animation: wordReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Ticker scroll */
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Fade-in for lazy-loaded sections */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Cart/UI shake */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   20%      { transform: translateX(-4px); }
@@ -126,4 +201,11 @@
 @keyframes searchDropIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Stars rating animation */
+@keyframes starPop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1);   opacity: 1; }
 }

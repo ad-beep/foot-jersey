@@ -3,45 +3,74 @@ import { fetchJerseys } from '@/lib/google-sheets';
 import { CATEGORIES, SPECIAL_SECTIONS } from '@/lib/constants';
 
 const SITE_URL = 'https://shopfootjersey.com';
+const locales  = ['en', 'he'] as const;
 
 export const revalidate = 3600; // rebuild sitemap hourly
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const locales = ['en', 'he'];
+type Freq = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-  // Static pages
-  const staticPaths = [
-    '',
-    '/discover',
-    '/search',
-    '/privacy',
-    '/terms',
-    '/refund',
-  ];
-
-  const staticEntries: MetadataRoute.Sitemap = staticPaths.flatMap((path) =>
+function makeEntries(
+  paths: string[],
+  opts: { freq?: Freq; priority?: number } = {},
+): MetadataRoute.Sitemap {
+  return paths.flatMap((path) =>
     locales.map((locale) => ({
       url: `${SITE_URL}/${locale}${path}`,
       lastModified: new Date(),
-      changeFrequency: path === '' ? 'daily' : 'weekly',
-      priority: path === '' ? 1 : 0.8,
-    }))
+      changeFrequency: (opts.freq ?? 'weekly') as Freq,
+      priority: opts.priority ?? 0.7,
+    })),
+  );
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // ── Homepage ─────────────────────────────────────────────────────────────
+  const homeEntries = makeEntries([''], { freq: 'daily', priority: 1 });
+
+  // ── Core navigation pages ────────────────────────────────────────────────
+  const coreEntries = makeEntries(
+    ['/discover', '/search'],
+    { freq: 'daily', priority: 0.9 },
   );
 
-  // Category pages
-  const categoryEntries: MetadataRoute.Sitemap = [
-    ...CATEGORIES.map((cat) => cat.slug),
+  // ── New trust & SEO pages ────────────────────────────────────────────────
+  const trustEntries = makeEntries(
+    [
+      '/faq',
+      '/about',
+      '/size-guide',
+      '/reviews',
+      '/contact',
+      '/shipping',
+      '/mystery-box',
+    ],
+    { freq: 'monthly', priority: 0.85 },
+  );
+
+  // ── Editorial collection lookbooks ────────────────────────────────────────
+  const collectionSlugs = ['retro', 'drip', 'world-cup-2026', 'stussy-edition'];
+  const collectionEntries = makeEntries(
+    collectionSlugs.map((s) => `/collections/${s}`),
+    { freq: 'weekly', priority: 0.8 },
+  );
+
+  // ── Legal pages ──────────────────────────────────────────────────────────
+  const legalEntries = makeEntries(
+    ['/privacy', '/terms', '/refund'],
+    { freq: 'yearly', priority: 0.4 },
+  );
+
+  // ── Category pages ────────────────────────────────────────────────────────
+  const categorySlugs = [
+    ...CATEGORIES.map((c) => c.slug),
     ...SPECIAL_SECTIONS.map((s) => s.slug),
-  ].flatMap((slug) =>
-    locales.map((locale) => ({
-      url: `${SITE_URL}/${locale}/category/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
+  ];
+  const categoryEntries = makeEntries(
+    categorySlugs.map((s) => `/category/${s}`),
+    { freq: 'weekly', priority: 0.7 },
   );
 
-  // Product pages
+  // ── Product pages ─────────────────────────────────────────────────────────
   let productEntries: MetadataRoute.Sitemap = [];
   try {
     const jerseys = await fetchJerseys();
@@ -49,13 +78,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       locales.map((locale) => ({
         url: `${SITE_URL}/${locale}/product/${jersey.id}`,
         lastModified: new Date(jersey.createdAt || Date.now()),
-        changeFrequency: 'monthly' as const,
+        changeFrequency: 'monthly' as Freq,
         priority: 0.6,
-      }))
+      })),
     );
   } catch {
-    // If sheets unavailable, skip product entries
+    // If Sheets unavailable, skip product entries gracefully
   }
 
-  return [...staticEntries, ...categoryEntries, ...productEntries];
+  return [
+    ...homeEntries,
+    ...coreEntries,
+    ...trustEntries,
+    ...collectionEntries,
+    ...legalEntries,
+    ...categoryEntries,
+    ...productEntries,
+  ];
 }

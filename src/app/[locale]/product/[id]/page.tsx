@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { isValidLocale } from '@/i18n/config';
 import { fetchJerseyById } from '@/lib/google-sheets';
-import { DEFAULT_LOCALE, SITE_NAME, SITE_URL } from '@/lib/constants';
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
 import { getImageUrl } from '@/lib/utils';
-import type { Locale } from '@/types';
+import { productSchema, breadcrumbSchema } from '@/lib/schema';
+import { AGGREGATE_RATING } from '@/data/reviews';
 import { ProductPageClient } from './client';
 
 export const revalidate = 300;
@@ -83,51 +83,42 @@ export default async function ProductPage({
   const jersey = await fetchJerseyById(params.id);
   if (!jersey) notFound();
 
-  // Structured data for SEO
+  const locale = params.locale;
+  const productUrl = `${SITE_URL}/${locale}/product/${params.id}`;
+
   const leagueNamesLd: Record<string, string> = {
     england: 'Premier League', spain: 'La Liga', italy: 'Serie A',
     germany: 'Bundesliga', france: 'Ligue 1', national_teams: 'International', rest_of_world: 'World Football',
   };
-  const structuredData = jersey
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: `${jersey.teamName} ${jersey.season} Jersey`,
-        image: jersey.additionalImages?.length
-          ? [getImageUrl(jersey.imageUrl), ...jersey.additionalImages.map(getImageUrl)].map((u) => `${SITE_URL}${u}`)
-          : [`${SITE_URL}${getImageUrl(jersey.imageUrl)}`],
-        description: `Official ${jersey.teamName} ${jersey.season} football jersey from ${leagueNamesLd[jersey.league] || jersey.league}. Available in S, M, L, XL, XXL. Custom name/number printing available.`,
-        sku: jersey.id,
-        brand: { '@type': 'Brand', name: jersey.teamName },
-        category: 'Football Jerseys',
-        offers: {
-          '@type': 'Offer',
-          price: jersey.price,
-          priceCurrency: 'ILS',
-          availability: jersey.availableSizes?.length > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          seller: { '@type': 'Organization', name: 'FootJersey' },
-          url: `${SITE_URL}/${params.locale}/product/${params.id}`,
-          shippingDetails: {
-            '@type': 'OfferShippingDetails',
-            shippingRate: { '@type': 'MonetaryAmount', value: '15', currency: 'ILS' },
-            deliveryTime: {
-              '@type': 'ShippingDeliveryTime',
-              handlingTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 3, unitCode: 'DAY' },
-              transitTime: { '@type': 'QuantitativeValue', minValue: 7, maxValue: 14, unitCode: 'DAY' },
-            },
-          },
-        },
-      }
-    : null;
+
+  const structuredData = productSchema({
+    id: jersey.id,
+    name: `${jersey.teamName} ${jersey.season} Jersey`,
+    description: `Official ${jersey.teamName} ${jersey.season} football jersey from ${leagueNamesLd[jersey.league] || jersey.league}. Available in S, M, L, XL, XXL. Ships to Israel.`,
+    imageUrl: `${SITE_URL}${getImageUrl(jersey.imageUrl)}`,
+    additionalImages: jersey.additionalImages?.map((u) => `${SITE_URL}${getImageUrl(u)}`),
+    price: jersey.price,
+    sku: jersey.id,
+    inStock: jersey.availableSizes?.length > 0,
+    league: leagueNamesLd[jersey.league] || jersey.league,
+    type: jersey.type,
+    season: jersey.season,
+    brand: jersey.teamName,
+    reviewCount: AGGREGATE_RATING.reviewCount,
+    ratingValue: AGGREGATE_RATING.ratingValue,
+    url: productUrl,
+  });
+
+  const breadcrumbs = breadcrumbSchema([
+    { name: 'Home', href: `${SITE_URL}/${locale}` },
+    { name: leagueNamesLd[jersey.league] || jersey.league, href: `${SITE_URL}/${locale}/category/${jersey.league}` },
+    { name: `${jersey.teamName} ${jersey.season}`, href: productUrl },
+  ]);
 
   return (
     <>
-      {structuredData && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
-      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <ProductPageClient productId={params.id} />
     </>
   );

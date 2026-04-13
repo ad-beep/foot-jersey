@@ -324,11 +324,11 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
 
             {/* Price */}
             <div className="mb-6">
-              <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>
+              <p className="font-mono text-2xl font-bold" style={{ color: 'var(--gold)' }}>
                 {CURRENCY}{totalPrice}
               </p>
               {extras > 0 && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                   {CURRENCY}{jersey.price} + {CURRENCY}{extras} {isHe ? 'התאמה' : 'customization'}
                 </p>
               )}
@@ -372,6 +372,22 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
               <span className="mx-1">·</span>
               {CURRENCY}{totalPrice}
             </Button>
+
+            {/* Trust row */}
+            <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 mb-2 ${isHe ? 'flex-row-reverse' : ''}`}>
+              {[
+                { icon: '🔒', en: 'Secure Payment', he: 'תשלום מאובטח' },
+                { icon: '↩️', en: '30-Day Returns', he: 'החזרות 30 יום' },
+                { icon: '📦', en: 'Ships to Israel', he: 'משלוח לכל ישראל' },
+              ].map((t) => (
+                <div key={t.en} className="flex items-center gap-1.5">
+                  <span className="text-xs">{t.icon}</span>
+                  <span className="font-mono text-[10px] uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                    {isHe ? t.he : t.en}
+                  </span>
+                </div>
+              ))}
+            </div>
 
             {/* Accordions */}
             <div className="mt-8" style={{ borderTop: '1px solid var(--border)' }}>

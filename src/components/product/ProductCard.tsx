@@ -144,8 +144,8 @@ export const ProductCard = React.memo(function ProductCard({
       href={href}
       className={cn(
         'group relative flex flex-col rounded-xl overflow-hidden',
-        'bg-[var(--bg-secondary)] border border-[var(--border)]',
-        'transition-all duration-300 hover:border-[rgba(0,195,216,0.3)] hover:shadow-md',
+        'bg-[var(--steel)] border border-[var(--border)]',
+        'transition-all duration-300 hover:border-[rgba(200,162,75,0.35)] hover:shadow-md',
         className,
       )}
       aria-label={displayName}
@@ -273,9 +273,9 @@ export const ProductCard = React.memo(function ProductCard({
                   style={{ color: '#fff', borderColor: 'var(--border)', backgroundColor: 'rgba(255,255,255,0.08)' }}
                   onMouseEnter={(e) => {
                     const el = e.currentTarget;
-                    el.style.borderColor = 'var(--accent)';
-                    el.style.color = 'var(--accent)';
-                    el.style.backgroundColor = 'rgba(0,195,216,0.12)';
+                    el.style.borderColor = 'var(--gold)';
+                    el.style.color = 'var(--gold)';
+                    el.style.backgroundColor = 'rgba(200,162,75,0.12)';
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget;
@@ -294,15 +294,15 @@ export const ProductCard = React.memo(function ProductCard({
 
       {/* Card body */}
       <div className="p-3 flex flex-col gap-0.5">
-        <p className="text-sm font-semibold leading-tight truncate" style={{ color: 'var(--accent)' }}>
+        <p className="text-sm font-semibold leading-tight truncate text-white">
           {displayName}
         </p>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs" style={{ color: 'var(--muted)' }}>
           {isMysteryBox
             ? (isHe ? 'קופסת הפתעה' : 'Mystery Box')
             : `${jersey.season} · ${isHe ? typeLabel.he : typeLabel.en}`}
         </p>
-        <p className="text-base font-bold mt-1" style={{ color: 'var(--accent)' }}>
+        <p className="font-mono text-base font-bold mt-1" style={{ color: 'var(--gold)' }}>
           {CURRENCY}{jersey.price}
         </p>
       </div>

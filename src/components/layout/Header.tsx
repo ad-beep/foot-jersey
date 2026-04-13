@@ -77,7 +77,7 @@ export function Header({ dict: _dict }: HeaderProps) {
       className={cn('fixed top-0 inset-x-0 z-50 h-16 transition-all duration-300')}
       style={
         scrolled
-          ? { backgroundColor: 'rgba(17,17,17,0.92)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--border)' }
+          ? { backgroundColor: 'rgba(10,10,11,0.94)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border)' }
           : { backgroundColor: 'transparent' }
       }
     >
@@ -89,25 +89,48 @@ export function Header({ dict: _dict }: HeaderProps) {
           className="flex items-center gap-2 shrink-0 group"
           aria-label="FootJersey home"
         >
-          <span
-            className="w-2 h-2 rounded-full shrink-0 transition-all duration-200 group-hover:scale-125"
-            style={{ backgroundColor: 'var(--accent)', boxShadow: '0 0 8px var(--accent)' }}
-          />
-          <span className="font-montserrat font-bold text-white text-lg tracking-tight leading-none">
+          {/* Editorial wordmark */}
+          <span className="font-playfair font-bold text-white text-xl tracking-tight leading-none group-hover:opacity-80 transition-opacity">
             FootJersey
+          </span>
+          <span
+            className="hidden md:block font-mono text-[9px] uppercase tracking-[0.2em] self-end mb-0.5"
+            style={{ color: 'var(--gold)', opacity: 0.8 }}
+          >
+            IL
           </span>
         </Link>
 
-        {/* ── Desktop "Our Collections" button ─────────────────── */}
-        <button
-          onClick={handleCollectionsClick}
-          className="hidden md:inline-flex text-sm font-medium transition-colors duration-200 shrink-0 cursor-pointer"
-          style={{ color: '#E0E0E0' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#E0E0E0'; }}
-        >
-          {locale === 'he' ? 'הקולקציות שלנו' : 'Our Collections'}
-        </button>
+        {/* ── Desktop nav links ─────────────────────────────────── */}
+        <nav className="hidden md:flex items-center gap-1 ms-2">
+          <button
+            onClick={handleCollectionsClick}
+            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200 cursor-pointer"
+            style={{ color: 'var(--muted)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--muted)'; }}
+          >
+            {locale === 'he' ? 'קולקציות' : 'Collections'}
+          </button>
+          <Link
+            href={`/${locale}/about`}
+            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200"
+            style={{ color: 'var(--muted)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--muted)'; }}
+          >
+            {locale === 'he' ? 'אודות' : 'About'}
+          </Link>
+          <Link
+            href={`/${locale}/faq`}
+            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200"
+            style={{ color: 'var(--muted)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--muted)'; }}
+          >
+            FAQ
+          </Link>
+        </nav>
 
         {/* ── Desktop search bar ────────────────────────────────── */}
         <div className="hidden md:flex flex-1 max-w-md mx-auto">
@@ -134,16 +157,16 @@ export function Header({ dict: _dict }: HeaderProps) {
             href={hydrated && authUser ? `/${locale}/profile` : `/${locale}/auth`}
             className="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 shrink-0 min-h-[44px]"
             style={{
-              color: hydrated && firstName ? 'var(--accent)' : '#000',
-              backgroundColor: hydrated && firstName ? 'transparent' : 'var(--accent)',
-              border: hydrated && firstName ? '1px solid var(--accent)' : '1px solid transparent',
+              color: hydrated && firstName ? 'var(--pitch-light)' : '#fff',
+              backgroundColor: hydrated && firstName ? 'transparent' : 'var(--flare)',
+              border: hydrated && firstName ? '1px solid var(--pitch)' : '1px solid transparent',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement;
               if (hydrated && firstName) {
-                el.style.backgroundColor = 'rgba(0,195,216,0.1)';
+                el.style.backgroundColor = 'rgba(15,61,46,0.15)';
               } else {
-                el.style.opacity = '0.85';
+                el.style.backgroundColor = 'var(--flare-hover)';
               }
             }}
             onMouseLeave={(e) => {
@@ -151,7 +174,7 @@ export function Header({ dict: _dict }: HeaderProps) {
               if (hydrated && firstName) {
                 el.style.backgroundColor = 'transparent';
               } else {
-                el.style.opacity = '1';
+                el.style.backgroundColor = 'var(--flare)';
               }
             }}
           >
@@ -168,12 +191,12 @@ export function Header({ dict: _dict }: HeaderProps) {
             aria-label={`Switch to ${locale === 'en' ? 'Hebrew' : 'English'}`}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.color       = 'var(--accent)';
-              el.style.borderColor = 'var(--accent)';
+              el.style.color       = '#fff';
+              el.style.borderColor = 'rgba(255,255,255,0.3)';
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.color       = 'var(--text-muted)';
+              el.style.color       = 'var(--muted)';
               el.style.borderColor = 'var(--border)';
             }}
           >
@@ -194,7 +217,7 @@ export function Header({ dict: _dict }: HeaderProps) {
             {hydrated && favCount > 0 && (
               <span
                 className="absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-black"
-                style={{ backgroundColor: 'var(--accent)' }}
+                style={{ backgroundColor: 'var(--gold)' }}
               >
                 {favCount > 9 ? '9+' : favCount}
               </span>

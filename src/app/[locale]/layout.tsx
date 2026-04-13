@@ -1,16 +1,24 @@
-import { Montserrat, Heebo } from 'next/font/google';
+import { Playfair_Display, Inter_Tight, JetBrains_Mono, Heebo } from 'next/font/google';
 import dynamic from 'next/dynamic';
 import { isValidLocale, getDirection } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { DEFAULT_LOCALE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
+import { organizationSchema } from '@/lib/schema';
 // Footer is below-fold on every page — lazy-load to trim initial JS
 const Footer = dynamic(
   () => import('@/components/layout/Footer').then(m => ({ default: m.Footer })),
   { ssr: false },
 );
+const WhatsAppFloat = dynamic(
+  () => import('@/components/layout/WhatsAppFloat').then(m => ({ default: m.WhatsAppFloat })),
+  { ssr: false },
+);
+const StickyMobileCTA = dynamic(
+  () => import('@/components/layout/StickyMobileCTA').then(m => ({ default: m.StickyMobileCTA })),
+  { ssr: false },
+);
 import { Dock } from '@/components/layout/Dock';
-import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 import { ToastProvider } from '@/components/ui/toast';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -22,11 +30,27 @@ const CartDrawer = dynamic(
   { ssr: false },
 );
 
-const montserrat = Montserrat({
+// ── Editorial font stack ───────────────────────────────────────────────────
+const playfair = Playfair_Display({
   subsets:  ['latin'],
-  variable: '--font-montserrat',
+  variable: '--font-playfair',
+  display:  'swap',
+  weight:   ['400', '500', '600', '700', '800', '900'],
+  style:    ['normal', 'italic'],
+});
+
+const interTight = Inter_Tight({
+  subsets:  ['latin'],
+  variable: '--font-inter-tight',
   display:  'swap',
   weight:   ['400', '500', '600', '700'],
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets:  ['latin'],
+  variable: '--font-jetbrains',
+  display:  'swap',
+  weight:   ['400', '500'],
 });
 
 const heebo = Heebo({
@@ -55,58 +79,21 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={direction}
-      className={`${montserrat.variable} ${heebo.variable}`}
+      className={`${playfair.variable} ${interTight.variable} ${jetbrains.variable} ${heebo.variable}`}
       suppressHydrationWarning
     >
       <head>
-        {/* DNS-prefetch only — all images route through /_next/image (same origin)
-            so the browser never opens a direct connection. Hints help Vercel's
-            edge on cache-miss upstream fetches. */}
+        {/* DNS-prefetch for upstream image sources */}
         <link rel="dns-prefetch" href="https://cdn.shopify.com" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
-        {/* next/font inlines fonts at build time — no runtime request to Google Fonts */}
+        {/* Hreflang alternates for bilingual SEO */}
+        <link rel="alternate" hrefLang="en" href="https://shopfootjersey.com/en" />
+        <link rel="alternate" hrefLang="he" href="https://shopfootjersey.com/he" />
+        <link rel="alternate" hrefLang="x-default" href="https://shopfootjersey.com/en" />
+        {/* Organization + WebSite + SearchAction schema */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@graph': [
-                {
-                  '@type': 'Organization',
-                  '@id': 'https://shopfootjersey.com/#organization',
-                  name: 'FootJersey',
-                  url: 'https://shopfootjersey.com',
-                  logo: {
-                    '@type': 'ImageObject',
-                    url: 'https://shopfootjersey.com/favicon.svg',
-                  },
-                  contactPoint: {
-                    '@type': 'ContactPoint',
-                    contactType: 'customer service',
-                    availableLanguage: ['Hebrew', 'English'],
-                  },
-                  areaServed: 'IL',
-                  description: 'Premium football jerseys from every league worldwide, shipped to Israel.',
-                },
-                {
-                  '@type': 'WebSite',
-                  '@id': 'https://shopfootjersey.com/#website',
-                  url: 'https://shopfootjersey.com',
-                  name: 'FootJersey',
-                  publisher: { '@id': 'https://shopfootjersey.com/#organization' },
-                  inLanguage: ['en', 'he'],
-                  potentialAction: {
-                    '@type': 'SearchAction',
-                    target: {
-                      '@type': 'EntryPoint',
-                      urlTemplate: `https://shopfootjersey.com/${locale}/search?q={search_term_string}`,
-                    },
-                    'query-input': 'required name=search_term_string',
-                  },
-                },
-              ],
-            }),
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}
         />
       </head>
       <body
@@ -121,7 +108,8 @@ export default async function LocaleLayout({
           <Footer />
           <Dock />
           <CartDrawer dict={dict} />
-          <WhatsAppButton />
+          <WhatsAppFloat />
+          <StickyMobileCTA />
         </ToastProvider>
         <Analytics />
         <SpeedInsights />
