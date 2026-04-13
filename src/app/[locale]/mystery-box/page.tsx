@@ -63,11 +63,7 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
       {/* Hero */}
-      <div
-        className="py-20 md:py-28 relative overflow-hidden"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        {/* Decorative blurred circles */}
+      <div className="py-20 md:py-28 relative overflow-hidden" style={{ borderBottom: '1px solid var(--border)' }}>
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(255,77,46,0.08) 0%, transparent 70%)' }}
@@ -105,28 +101,13 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
               <Link
                 key={box.slug}
                 href={`/${locale}/category/mystery-boxes`}
-                className="group flex flex-col p-6 rounded-xl transition-all duration-300"
-                style={{
-                  backgroundColor: 'var(--steel)',
-                  border: '1px solid var(--border)',
-                  textDecoration: 'none',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--flare)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px rgba(255,77,46,0.12)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
+                className="group flex flex-col p-6 rounded-xl transition-all duration-300 border border-[var(--border)] hover:border-[var(--flare)] hover:shadow-[0_0_30px_rgba(255,77,46,0.12)]"
+                style={{ backgroundColor: 'var(--steel)', textDecoration: 'none' }}
               >
                 <div className="text-3xl mb-4" aria-hidden="true">{box.emoji}</div>
                 <div className={`flex items-center justify-between mb-2 ${isHe ? 'flex-row-reverse' : ''}`}>
                   <h3 className="font-semibold text-white text-base">{content.name}</h3>
-                  <span
-                    className="font-mono font-bold text-lg"
-                    style={{ color: 'var(--gold)' }}
-                  >
+                  <span className="font-mono font-bold text-lg" style={{ color: 'var(--gold)' }}>
                     ₪{box.price}
                   </span>
                 </div>
