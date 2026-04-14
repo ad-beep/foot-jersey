@@ -82,13 +82,14 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
     <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-4 text-sm font-medium text-white transition-colors hover:text-[var(--accent)]"
+        className="w-full flex items-center justify-between py-4 text-sm font-medium text-white transition-colors"
+        style={{ color: open ? 'var(--gold)' : 'rgba(255,255,255,0.85)' }}
       >
         {title}
         <ChevronDown
-          className="w-4 h-4 transition-transform duration-200"
+          className="w-4 h-4 transition-transform duration-200 shrink-0"
           style={{
-            color: 'var(--text-muted)',
+            color: open ? 'var(--gold)' : 'var(--muted)',
             transform: open ? 'rotate(180deg)' : undefined,
           }}
         />
@@ -102,7 +103,7 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="pb-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <div className="pb-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
               {children}
             </div>
           </motion.div>
@@ -248,9 +249,11 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   // ── Not found ────────────────────────────────────────────────────────────
   if (!jersey) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
-        <SearchX className="w-16 h-16" style={{ color: 'var(--text-muted)' }} />
-        <p className="text-xl font-semibold text-white">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5" style={{ backgroundColor: 'var(--ink)' }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}>
+          <SearchX className="w-7 h-7" style={{ color: 'var(--muted)' }} />
+        </div>
+        <p className="font-playfair font-bold text-xl text-white">
           {isHe ? 'החולצה לא נמצאה' : 'Jersey not found'}
         </p>
       </div>
@@ -274,45 +277,33 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   ];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 md:py-12">
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
-        <div className="lg:flex lg:gap-10">
+        <div className="lg:flex lg:gap-12">
           {/* ── LEFT: Image gallery ─────────────────────────────────── */}
-          <Reveal className="lg:w-[55%] shrink-0 mb-8 lg:mb-0">
+          <Reveal className="lg:w-[52%] shrink-0 mb-8 lg:mb-0">
             <ProductGallery images={images} alt={displayName} />
           </Reveal>
 
           {/* ── RIGHT: Product info ─────────────────────────────────── */}
-          <Reveal delay={100} className="flex-1">
-            {/* Title + Like */}
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight" style={{ letterSpacing: '-0.02em' }}>
-                {displayName}
-              </h1>
-              <button
-                onClick={handleToggleFavorite}
-                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--border)',
-                  color: hydrated && isFav ? '#FF4D6D' : 'var(--text-muted)',
-                  transform: heartPulse ? 'scale(1.15)' : undefined,
-                }}
-                aria-label={isHe ? 'מועדפים' : 'Toggle favorite'}
-              >
-                <Heart className="w-5 h-5" fill={hydrated && isFav ? 'currentColor' : 'none'} strokeWidth={2} />
-              </button>
-            </div>
+          <Reveal delay={100} className="flex-1 lg:pt-2">
 
-            {/* League + type */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            {/* League kicker */}
+            <div className={`flex items-center gap-2 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
+              <div className="w-4 h-px" style={{ backgroundColor: 'var(--gold)' }} />
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.25em]"
+                style={{ color: 'var(--gold)' }}
+              >
                 {leagueName ? (isHe ? leagueName.he : leagueName.en) : jersey.league}
               </span>
-              <span style={{ color: 'var(--text-muted)' }}>·</span>
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <span className="font-mono text-[10px]" style={{ color: 'var(--border)' }}>·</span>
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                style={{ color: 'var(--muted)' }}
+              >
                 {jersey.season}
               </span>
               {showBadge && (
@@ -322,15 +313,41 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
               )}
             </div>
 
+            {/* Title + Like */}
+            <div className={`flex items-start justify-between gap-3 mb-5 ${isHe ? 'flex-row-reverse' : ''}`}>
+              <h1
+                className="font-playfair font-bold text-white leading-none"
+                style={{ fontSize: 'clamp(1.7rem, 3.5vw, 2.6rem)', letterSpacing: '-0.03em', lineHeight: 1.0 }}
+              >
+                {displayName}
+              </h1>
+              <button
+                onClick={handleToggleFavorite}
+                className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200"
+                style={{
+                  backgroundColor: hydrated && isFav ? 'rgba(255,77,109,0.1)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${hydrated && isFav ? 'rgba(255,77,109,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  color: hydrated && isFav ? '#FF4D6D' : 'var(--muted)',
+                  transform: heartPulse ? 'scale(1.15)' : undefined,
+                }}
+                aria-label={isHe ? 'מועדפים' : 'Toggle favorite'}
+              >
+                <Heart className="w-5 h-5" fill={hydrated && isFav ? 'currentColor' : 'none'} strokeWidth={2} />
+              </button>
+            </div>
+
             {/* Price */}
-            <div className="mb-6">
-              <p className="font-mono text-2xl font-bold" style={{ color: 'var(--gold)' }}>
+            <div className={`flex items-baseline gap-3 mb-7 pb-6 ${isHe ? 'flex-row-reverse' : ''}`} style={{ borderBottom: '1px solid var(--border)' }}>
+              <span
+                className="font-playfair font-bold"
+                style={{ fontSize: '2.4rem', color: 'var(--gold)', letterSpacing: '-0.03em', lineHeight: 1 }}
+              >
                 {CURRENCY}{totalPrice}
-              </p>
+              </span>
               {extras > 0 && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-                  {CURRENCY}{jersey.price} + {CURRENCY}{extras} {isHe ? 'התאמה' : 'customization'}
-                </p>
+                <span className="font-mono text-xs" style={{ color: 'var(--muted)' }}>
+                  {CURRENCY}{jersey.price} + {CURRENCY}{extras} {isHe ? 'התאמה' : 'custom'}
+                </span>
               )}
             </div>
 
@@ -374,16 +391,40 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
             </Button>
 
             {/* Trust row */}
-            <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 mb-2 ${isHe ? 'flex-row-reverse' : ''}`}>
+            <div
+              className={`flex flex-wrap items-center gap-4 mt-4 mb-1 pt-4 ${isHe ? 'flex-row-reverse' : ''}`}
+              style={{ borderTop: '1px solid var(--border)' }}
+            >
               {[
-                { icon: '🔒', en: 'Secure Payment', he: 'תשלום מאובטח' },
-                { icon: '↩️', en: '30-Day Returns', he: 'החזרות 30 יום' },
-                { icon: '📦', en: 'Ships to Israel', he: 'משלוח לכל ישראל' },
-              ].map((t) => (
-                <div key={t.en} className="flex items-center gap-1.5">
-                  <span className="text-xs">{t.icon}</span>
-                  <span className="font-mono text-[10px] uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
-                    {isHe ? t.he : t.en}
+                {
+                  icon: (
+                    <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="7" width="10" height="8" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+                    </svg>
+                  ),
+                  en: 'Secure Payment', he: 'תשלום מאובטח',
+                },
+                {
+                  icon: (
+                    <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 3a6 6 0 1 1 0 8" /><path d="M3 7H1" />
+                    </svg>
+                  ),
+                  en: '30-Day Returns', he: 'החזרות 30 יום',
+                },
+                {
+                  icon: (
+                    <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 3h9v8H1z" /><path d="M10 6h2.5L14 8.5V11h-4V6z" /><circle cx="4" cy="12.5" r="1.2" /><circle cx="12" cy="12.5" r="1.2" />
+                    </svg>
+                  ),
+                  en: 'Ships Israel', he: 'משלוח לכל ישראל',
+                },
+              ].map((item) => (
+                <div key={item.en} className="flex items-center gap-1.5" style={{ color: 'var(--muted)' }}>
+                  {item.icon}
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em]">
+                    {isHe ? item.he : item.en}
                   </span>
                 </div>
               ))}
@@ -423,10 +464,10 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
                   </table>
                 </div>
                 <p
-                  className="mt-3 p-3 rounded-lg text-xs font-semibold"
-                  style={{ backgroundColor: 'rgba(0,195,216,0.08)', color: 'var(--accent)' }}
+                  className="mt-3 p-3 rounded-lg text-xs font-mono uppercase tracking-wide"
+                  style={{ backgroundColor: 'rgba(200,162,75,0.08)', color: 'rgba(200,162,75,0.8)', border: '1px solid rgba(200,162,75,0.15)' }}
                 >
-                  ⚠️ {SIZE_GUIDE.playerVersionNote[isHe ? 'he' : 'en']}
+                  {SIZE_GUIDE.playerVersionNote[isHe ? 'he' : 'en']}
                 </p>
               </Accordion>
             </div>
