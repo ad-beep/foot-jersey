@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Reveal } from '@/components/ui/reveal';
 import { useLocale } from '@/hooks/useLocale';
 
@@ -12,13 +11,12 @@ interface CategoryDef {
   bg: string;
   grid: string;
   size: 'lg' | 'sm';
-  image?: string;
-  imagePosition?: string;
   special?: boolean;
   priceLabel?: { en: string; he: string };
-  sizes: string;
-  /** Editorial accent color for hover glow */
-  accent?: string;
+  /** Accent color for hover glow + radial tint */
+  accent: string;
+  /** Large faint editorial glyph centered in tile */
+  symbol: string;
 }
 
 const CATEGORIES: CategoryDef[] = [
@@ -27,64 +25,61 @@ const CATEGORIES: CategoryDef[] = [
     slug: 'england',
     en: 'Premier League',
     he: 'פרמייר ליג',
-    bg: 'rgba(88,28,135,0.4)',
-    image: 'premier-league',
-    imagePosition: 'bottom',
+    bg: '#0e0a17',
+    symbol: 'PL',
+    accent: 'rgba(88,28,135,0.9)',
     grid: 'col-span-2 min-h-[140px] lg:col-start-3 lg:col-end-6 lg:row-start-3 lg:row-end-4 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 100vw, 600px',
   },
   {
     slug: 'spain',
     en: 'La Liga',
     he: 'לה ליגה',
-    bg: 'rgba(154,52,18,0.4)',
-    image: 'la-liga',
-    imagePosition: 'bottom',
+    bg: '#180a05',
+    symbol: 'LL',
+    accent: 'rgba(180,50,18,0.9)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-6 lg:row-start-1 lg:row-end-2 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'italy',
     en: 'Serie A',
     he: 'סרייה A',
-    bg: 'rgba(30,58,138,0.4)',
-    image: 'serie-a',
+    bg: '#060d1f',
+    symbol: 'SA',
+    accent: 'rgba(30,58,138,0.9)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-2 lg:row-end-3 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 200px',
   },
   {
     slug: 'retro',
     en: 'Retro',
     he: 'רטרו',
-    bg: 'rgba(200,162,75,0.12)',
-    image: 'retro',
+    bg: '#120e04',
+    symbol: "'90",
+    accent: 'rgba(200,162,75,0.8)',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-7 lg:row-start-4 lg:row-end-5 lg:min-h-0',
     size: 'sm',
-    accent: 'rgba(200,162,75,0.5)',
-    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'germany',
     en: 'Bundesliga',
     he: 'בונדסליגה',
-    bg: 'rgba(127,29,29,0.4)',
-    image: 'bundesliga',
+    bg: '#170505',
+    symbol: 'BL',
+    accent: 'rgba(180,20,20,0.9)',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-6 lg:row-start-2 lg:row-end-3 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 200px',
   },
   {
     slug: 'france',
     en: 'Ligue 1',
     he: 'ליג 1',
-    bg: 'rgba(20,83,45,0.4)',
-    image: 'ligue-1',
+    bg: '#030f08',
+    symbol: 'L1',
+    accent: 'rgba(15,100,50,0.9)',
     grid: 'min-h-[140px] lg:col-start-6 lg:col-end-7 lg:row-start-3 lg:row-end-4 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 200px',
   },
 
   // ── Row 3-4 (desktop) ──────────────────────────────────────────────────────
@@ -92,65 +87,62 @@ const CATEGORIES: CategoryDef[] = [
     slug: 'season-2526',
     en: '25/26 Season',
     he: 'עונת 25/26',
-    bg: 'rgba(15,61,46,0.4)',
-    image: 'season-2526',
+    bg: '#03100b',
+    symbol: '25',
+    accent: 'rgba(15,61,46,1)',
     grid: 'col-span-2 min-h-[180px] lg:col-start-1 lg:col-end-3 lg:row-start-3 lg:row-end-5 lg:min-h-0',
     size: 'lg',
-    accent: 'rgba(15,61,46,0.8)',
-    sizes: '(max-width: 1024px) 100vw, 400px',
   },
   {
     slug: 'world-cup-2026',
     en: 'World Cup 2026',
     he: 'מונדיאל 2026',
-    bg: 'rgba(15,61,46,0.45)',
-    image: 'world-cup-2026',
+    bg: '#021009',
+    symbol: 'WC',
+    accent: 'rgba(15,61,46,1)',
     grid: 'col-span-2 min-h-[200px] lg:col-start-1 lg:col-end-4 lg:row-start-1 lg:row-end-3 lg:min-h-0',
     size: 'lg',
-    accent: 'rgba(15,61,46,0.8)',
-    sizes: '(max-width: 1024px) 100vw, 600px',
   },
   {
     slug: 'rest_of_world',
     en: 'Rest of World',
     he: 'שאר העולם',
-    bg: 'rgba(17,94,89,0.4)',
-    image: 'rest-of-world',
+    bg: '#030f10',
+    symbol: '∞',
+    accent: 'rgba(17,94,89,0.9)',
     grid: 'col-span-2 min-h-[180px] lg:col-start-6 lg:col-end-7 lg:row-start-1 lg:row-end-3 lg:min-h-0',
     size: 'lg',
-    sizes: '(max-width: 1024px) 100vw, 200px',
   },
   {
     slug: 'national_teams',
     en: 'International',
     he: 'נבחרות',
-    bg: 'rgba(113,63,18,0.4)',
-    image: 'international',
+    bg: '#130a02',
+    symbol: 'INT',
+    accent: 'rgba(140,80,18,0.9)',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-7 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'special',
     en: 'Special Edition',
     he: 'מהדורה מיוחדת',
-    bg: 'rgba(255,77,46,0.1)',
-    image: 'special-edition',
-    imagePosition: 'bottom',
+    bg: '#140603',
+    symbol: '★',
+    accent: 'rgba(255,77,46,0.8)',
+    special: true,
     grid: 'min-h-[140px] lg:col-start-3 lg:col-end-5 lg:row-start-4 lg:row-end-5 lg:min-h-0',
     size: 'sm',
-    accent: 'rgba(255,77,46,0.4)',
-    sizes: '(max-width: 1024px) 50vw, 400px',
   },
   {
     slug: 'kids',
     en: 'Kids',
     he: 'ילדים',
-    bg: 'rgba(30,58,138,0.25)',
-    image: 'kids',
+    bg: '#060d1f',
+    symbol: 'K',
+    accent: 'rgba(50,80,180,0.9)',
     grid: 'min-h-[140px] lg:col-start-2 lg:col-end-4 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 400px',
   },
 
   // ── Row 5 (desktop) ────────────────────────────────────────────────────────
@@ -158,22 +150,21 @@ const CATEGORIES: CategoryDef[] = [
     slug: 'drip',
     en: 'Drip',
     he: 'דריפ',
-    bg: 'rgba(255,77,46,0.08)',
-    image: 'drip',
-    imagePosition: 'bottom',
+    bg: '#120302',
+    symbol: 'D',
+    accent: 'rgba(220,60,30,0.7)',
     grid: 'col-span-2 min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-6 lg:row-end-7 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 100vw, 600px',
   },
   {
     slug: 'long-sleeve',
     en: 'Long Sleeve',
     he: 'שרוול ארוך',
-    bg: 'rgba(30,58,138,0.3)',
-    image: 'long-sleeve',
+    bg: '#060d1f',
+    symbol: 'LS',
+    accent: 'rgba(30,58,138,0.9)',
     grid: 'min-h-[140px] lg:col-start-1 lg:col-end-2 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 200px',
   },
 
   // ── Row 6 (desktop) ────────────────────────────────────────────────────────
@@ -181,25 +172,23 @@ const CATEGORIES: CategoryDef[] = [
     slug: 'mystery-box',
     en: 'Mystery Box',
     he: 'קופסת הפתעה',
-    bg: 'rgba(255,77,46,0.08)',
-    image: 'mystery-box',
-    imagePosition: 'bottom',
-    grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-4 lg:row-start-6 lg:row-end-7 lg:min-h-0',
-    size: 'sm',
+    bg: '#100302',
+    symbol: '?',
+    accent: 'rgba(255,77,46,0.8)',
     special: true,
     priceLabel: { en: 'From ₪99', he: 'החל מ-₪99' },
-    accent: 'rgba(255,77,46,0.45)',
-    sizes: '(max-width: 1024px) 100vw, 600px',
+    grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-4 lg:row-start-6 lg:row-end-7 lg:min-h-0',
+    size: 'sm',
   },
   {
     slug: 'other-products',
     en: 'Other Products',
     he: 'מוצרים נוספים',
-    bg: 'var(--steel)',
-    image: 'other-products',
+    bg: '#111113',
+    symbol: '+',
+    accent: 'rgba(120,120,130,0.7)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 200px',
   },
 
   // ── Row 7 (desktop) ────────────────────────────────────────────────────────
@@ -207,22 +196,22 @@ const CATEGORIES: CategoryDef[] = [
     slug: 'stussy-edition',
     en: 'Stussy Edition',
     he: 'מהדורת סטוסי',
-    bg: 'rgba(30,20,60,0.7)',
-    image: 'stussy-edition',
+    bg: '#0a0614',
+    symbol: 'S',
+    accent: 'rgba(200,162,75,0.8)',
+    special: true,
     grid: 'min-h-[140px] lg:col-start-1 lg:col-end-4 lg:row-start-7 lg:row-end-8 lg:min-h-0',
     size: 'sm',
-    special: true,
-    accent: 'rgba(200,162,75,0.5)',
-    sizes: '(max-width: 1024px) 50vw, 600px',
   },
   {
     slug: 'israeli_league',
     en: 'Israeli League',
     he: 'ליגת העל',
-    bg: 'rgba(0,56,184,0.35)',
+    bg: '#010818',
+    symbol: 'IL',
+    accent: 'rgba(0,100,230,0.8)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
     size: 'sm',
-    sizes: '(max-width: 1024px) 50vw, 600px',
   },
 ];
 
@@ -257,6 +246,7 @@ export function CategoryGrid() {
       style={{ backgroundColor: 'var(--ink)', borderTop: '1px solid var(--border)' }}
     >
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 w-full">
+
         {/* Section header */}
         <Reveal>
           <div
@@ -300,71 +290,103 @@ export function CategoryGrid() {
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 lg:auto-rows-[130px]">
           {CATEGORIES.map((cat, i) => {
             const num = String(i + 1).padStart(2, '0');
-            const hoverAccent = cat.accent ?? 'rgba(200,162,75,0.4)';
 
             return (
               <Reveal key={cat.slug} delay={i * 30} className={cat.grid}>
                 <Link
                   href={getCategoryHref(locale, cat.slug)}
-                  className="group relative block rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] h-full"
+                  className="group relative flex flex-col justify-end rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] h-full"
                   style={{
                     backgroundColor: cat.bg,
                     border: cat.special
-                      ? '1px solid rgba(255,77,46,0.3)'
-                      : '1px solid var(--border)',
+                      ? '1px solid rgba(255,77,46,0.25)'
+                      : '1px solid rgba(255,255,255,0.06)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                   }}
                   onMouseEnter={(e) => {
                     const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = hoverAccent.replace(/[\d.]+\)$/, '0.8)');
-                    el.style.boxShadow = `0 0 24px ${hoverAccent}`;
+                    el.style.borderColor = cat.accent.replace(/[\d.]+\)$/, '0.7)');
+                    el.style.boxShadow = `0 0 32px ${cat.accent.replace(/[\d.]+\)$/, '0.25)')}, inset 0 1px 0 rgba(255,255,255,0.06)`;
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = cat.special ? 'rgba(255,77,46,0.3)' : 'var(--border)';
-                    el.style.boxShadow = 'none';
+                    el.style.borderColor = cat.special ? 'rgba(255,77,46,0.25)' : 'rgba(255,255,255,0.06)';
+                    el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)';
                   }}
                 >
-                  {/* Background image */}
-                  {cat.image && (
-                    <Image
-                      src={`/images/categories/${locale}/${cat.image}.webp`}
-                      alt={isHe ? cat.he : cat.en}
-                      fill
-                      sizes={cat.sizes}
-                      quality={60}
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      style={cat.imagePosition ? { objectPosition: cat.imagePosition } : undefined}
-                      priority={i < 4}
-                    />
-                  )}
-
-                  {/* Gradient overlay */}
+                  {/* Radial accent glow — top-center */}
                   <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}
+                    className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+                    style={{
+                      background: `radial-gradient(ellipse 80% 70% at 50% 30%, ${cat.accent.replace(/[\d.]+\)$/, '0.12)')}, transparent 70%)`,
+                    }}
                   />
 
-                  {/* Editorial number — top-right, faint */}
+                  {/* Large editorial symbol — centered, very faint */}
+                  <div
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
+                    aria-hidden="true"
+                  >
+                    <span
+                      className="font-playfair font-bold transition-opacity duration-300 group-hover:opacity-[0.18]"
+                      style={{
+                        fontSize: cat.size === 'lg'
+                          ? 'clamp(4.5rem, 14vw, 8rem)'
+                          : 'clamp(3rem, 8vw, 5.5rem)',
+                        color: 'rgba(255,255,255,1)',
+                        opacity: 0.07,
+                        letterSpacing: '-0.05em',
+                        lineHeight: 0.85,
+                        transform: 'translateY(8%)',
+                        fontStyle: cat.slug === 'retro' ? 'italic' : 'normal',
+                      }}
+                    >
+                      {cat.symbol}
+                    </span>
+                  </div>
+
+                  {/* Bottom gradient — keeps label readable */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 45%, transparent 70%)',
+                    }}
+                  />
+
+                  {/* Index number — top corner */}
                   <span
-                    className="absolute top-2 end-3 font-mono text-[10px] pointer-events-none select-none"
-                    style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em' }}
+                    className="absolute top-2.5 end-3 font-mono text-[10px] pointer-events-none select-none z-10"
+                    style={{ color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}
                     aria-hidden="true"
                   >
                     {num}
                   </span>
 
-                  {/* Category label — bottom */}
-                  <div className={`absolute bottom-0 ${isHe ? 'right-0' : 'left-0'} p-3`}>
+                  {/* Gold hairline accent — top edge, only on featured tiles */}
+                  {cat.size === 'lg' && (
+                    <div
+                      className="absolute top-0 left-4 right-4 pointer-events-none"
+                      style={{ height: '1px', background: `linear-gradient(to right, transparent, ${cat.accent.replace(/[\d.]+\)$/, '0.5)')}, transparent)` }}
+                    />
+                  )}
+
+                  {/* Label */}
+                  <div className={`relative z-10 p-3.5 ${isHe ? 'text-right' : ''}`}>
                     <p
                       className={`font-bold leading-tight text-white ${
-                        cat.size === 'lg' ? 'text-lg md:text-xl' : 'text-sm md:text-base'
+                        cat.size === 'lg' ? 'text-base md:text-lg' : 'text-sm'
                       }`}
                     >
                       {isHe ? cat.he : cat.en}
                     </p>
                     {cat.priceLabel && (
-                      <p className="font-mono text-xs mt-0.5" style={{ color: 'var(--flare)' }}>
+                      <p className="font-mono text-[11px] mt-0.5" style={{ color: 'var(--flare)' }}>
                         {isHe ? cat.priceLabel.he : cat.priceLabel.en}
+                      </p>
+                    )}
+                    {cat.special && !cat.priceLabel && (
+                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] mt-0.5" style={{ color: cat.accent.replace(/[\d.]+\)$/, '0.7)') }}>
+                        {isHe ? 'מהדורה מוגבלת' : 'Limited Edition'}
                       </p>
                     )}
                   </div>
