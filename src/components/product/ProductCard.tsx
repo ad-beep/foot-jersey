@@ -181,10 +181,7 @@ export const ProductCard = React.memo(function ProductCard({
               quality={imageQuality ?? 70}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
-              onLoad={() => {
-                console.log('[img ok]', jersey.imageUrl);
-                setImgLoaded(true);
-              }}
+              onLoad={() => setImgLoaded(true)}
               onError={() => {
                 console.warn('[img FAIL]', jersey.imageUrl);
                 setImgError(true);
