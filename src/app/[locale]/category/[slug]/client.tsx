@@ -216,7 +216,7 @@ function MysteryBoxCard({
       <div
         className="relative rounded-xl p-6 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.01]"
         style={{
-          backgroundColor: 'var(--bg-secondary)',
+          backgroundColor: 'var(--steel)',
           border: '1px solid rgba(255,140,0,0.3)',
         }}
       >
@@ -230,7 +230,7 @@ function MysteryBoxCard({
             <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               {isHe ? box.description.he : box.description.en}
             </p>
-            <p className="text-2xl font-bold mt-2" style={{ color: 'var(--accent)' }}>
+            <p className="text-2xl font-bold mt-2 font-mono" style={{ color: 'var(--gold)' }}>
               {CURRENCY}{box.price}
             </p>
           </div>
@@ -255,7 +255,7 @@ function MysteryBoxCard({
                   <div className="flex items-center gap-3">
                     <div
                       className="w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0"
-                      style={{ backgroundColor: opt.active ? 'var(--accent)' : 'rgba(255,255,255,0.1)' }}
+                      style={{ backgroundColor: opt.active ? 'var(--gold)' : 'rgba(255,255,255,0.1)' }}
                     >
                       <div
                         className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200"
@@ -278,7 +278,7 @@ function MysteryBoxCard({
                       onChange={(e) => setCustomName(e.target.value.slice(0, 12))}
                       placeholder={isHe ? 'שם' : 'Name'}
                       maxLength={12}
-                      className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                      className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
                       style={{ ...inputStyle, direction: isRtl ? 'rtl' : 'ltr' }}
                     />
                     <input
@@ -291,7 +291,7 @@ function MysteryBoxCard({
                       }}
                       placeholder="#"
                       maxLength={2}
-                      className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                      className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
                       style={inputStyle}
                     />
                   </div>
@@ -505,7 +505,7 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
 
   // ─── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
@@ -562,10 +562,10 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
                         className="shrink-0 rounded-full px-4 text-sm font-medium transition-all duration-200"
                         style={{
                           height: 44,
-                          backgroundColor: active ? 'rgba(0,195,216,0.2)' : 'rgba(255,255,255,0.05)',
-                          color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                          backgroundColor: active ? 'rgba(200,162,75,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: active ? 'var(--gold)' : 'var(--text-secondary)',
                           border: active
-                            ? '1px solid rgba(0,195,216,0.4)'
+                            ? '1px solid rgba(200,162,75,0.4)'
                             : '1px solid var(--border)',
                         }}
                       >
@@ -576,59 +576,75 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
                 </div>
               )}
 
-              {/* Dropdowns row */}
+              {/* Sort + Team pills row */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Team dropdown — league pages only */}
-                {isLeague && availableTeams.length > 1 && (
-                  <select
-                    value={selectedTeam}
-                    onChange={(e) => handleTeamChange(e.target.value)}
-                    aria-label={isHe ? 'סינון לפי קבוצה' : 'Filter by team'}
-                    className="rounded-lg px-3 text-sm outline-none transition-colors"
-                    style={{
-                      height: 44,
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border)',
-                      color: 'white',
-                      direction: isRtl ? 'rtl' : 'ltr',
-                    }}
-                  >
-                    <option value="">{isHe ? 'כל הקבוצות' : 'All Teams'}</option>
-                    {availableTeams.map((team) => (
-                      <option key={team} value={team}>
-                        {team}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                {/* Sort pills */}
+                <div className="flex gap-1.5">
+                  {SORT_OPTIONS.map((opt) => {
+                    const active = sortBy === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleSortChange(opt.value)}
+                        aria-pressed={active}
+                        className="shrink-0 rounded-full px-3 text-xs font-medium transition-all duration-200"
+                        style={{
+                          height: 36,
+                          backgroundColor: active ? 'rgba(200,162,75,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: active ? 'var(--gold)' : 'var(--text-secondary)',
+                          border: active ? '1px solid rgba(200,162,75,0.4)' : '1px solid var(--border)',
+                        }}
+                      >
+                        {isHe ? opt.he : opt.en}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                {/* Sort dropdown */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  aria-label={isHe ? 'מיון' : 'Sort'}
-                  className="rounded-lg px-3 text-sm outline-none transition-colors"
-                  style={{
-                    height: 44,
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border)',
-                    color: 'white',
-                    direction: isRtl ? 'rtl' : 'ltr',
-                  }}
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {isHe ? opt.he : opt.en}
-                    </option>
-                  ))}
-                </select>
+                {/* Team pills — league pages only */}
+                {isLeague && availableTeams.length > 1 && (
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide max-w-[60vw]">
+                    <button
+                      onClick={() => handleTeamChange('')}
+                      aria-pressed={selectedTeam === ''}
+                      className="shrink-0 rounded-full px-3 text-xs font-medium transition-all duration-200"
+                      style={{
+                        height: 36,
+                        backgroundColor: selectedTeam === '' ? 'rgba(200,162,75,0.15)' : 'rgba(255,255,255,0.05)',
+                        color: selectedTeam === '' ? 'var(--gold)' : 'var(--text-secondary)',
+                        border: selectedTeam === '' ? '1px solid rgba(200,162,75,0.4)' : '1px solid var(--border)',
+                      }}
+                    >
+                      {isHe ? 'כל הקבוצות' : 'All Teams'}
+                    </button>
+                    {availableTeams.map((team) => {
+                      const active = selectedTeam === team;
+                      return (
+                        <button
+                          key={team}
+                          onClick={() => handleTeamChange(team)}
+                          aria-pressed={active}
+                          className="shrink-0 rounded-full px-3 text-xs font-medium transition-all duration-200"
+                          style={{
+                            height: 36,
+                            backgroundColor: active ? 'rgba(200,162,75,0.15)' : 'rgba(255,255,255,0.05)',
+                            color: active ? 'var(--gold)' : 'var(--text-secondary)',
+                            border: active ? '1px solid rgba(200,162,75,0.4)' : '1px solid var(--border)',
+                          }}
+                        >
+                          {team}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Clear all */}
                 {hasActiveFilters && (
                   <button
                     onClick={clearAll}
-                    className="text-sm font-medium transition-colors hover:underline"
-                    style={{ color: 'var(--accent)', height: 44, display: 'flex', alignItems: 'center' }}
+                    className="text-xs font-medium transition-colors hover:underline"
+                    style={{ color: 'var(--gold)', height: 36, display: 'flex', alignItems: 'center' }}
                   >
                     {isHe ? 'נקה הכל' : 'Clear All'}
                   </button>
@@ -646,7 +662,7 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
                 <button
                   onClick={clearAll}
                   className="text-sm font-medium transition-colors hover:underline"
-                  style={{ color: 'var(--accent)' }}
+                  style={{ color: 'var(--gold)' }}
                 >
                   {isHe ? 'נקה סינון' : 'Clear filters'}
                 </button>

@@ -148,7 +148,7 @@ export default function AuthClient() {
   const inputClass = 'w-full bg-white/5 border rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors duration-200 placeholder:text-[var(--text-muted)]';
 
   return (
-    <div className="min-h-screen px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen px-4" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto pt-6">
         <Breadcrumbs
           items={[
@@ -164,9 +164,9 @@ export default function AuthClient() {
         <div className="flex items-center justify-center gap-2 mb-8">
           <span
             className="w-2.5 h-2.5 rounded-full"
-            style={{ backgroundColor: 'var(--accent)', boxShadow: '0 0 10px var(--accent)' }}
+            style={{ backgroundColor: 'var(--gold)', boxShadow: '0 0 10px rgba(200,162,75,0.6)' }}
           />
-          <span className="font-montserrat font-bold text-white text-xl tracking-tight">
+          <span className="font-playfair font-bold text-white text-xl tracking-tight">
             FootJersey
           </span>
         </div>
@@ -222,7 +222,7 @@ export default function AuthClient() {
                 type="text"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: undefined })); }}
-                className={cn(inputClass, errors.name ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--accent)]')}
+                className={cn(inputClass, errors.name ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--gold)]')}
                 dir={isHe ? 'rtl' : 'ltr'}
               />
               {errors.name && <p className="text-xs mt-1" style={{ color: 'var(--error)' }}>{errors.name}</p>}
@@ -238,7 +238,7 @@ export default function AuthClient() {
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
-              className={cn(inputClass, errors.email ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--accent)]')}
+              className={cn(inputClass, errors.email ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--gold)]')}
               dir="ltr"
               required
             />
@@ -255,7 +255,7 @@ export default function AuthClient() {
                 <Link
                   href={`/${locale}/forgot-password`}
                   className="text-xs transition-colors hover:underline"
-                  style={{ color: 'var(--accent)' }}
+                  style={{ color: 'var(--gold)' }}
                 >
                   {isHe ? L.forgotPass.he : L.forgotPass.en}
                 </Link>
@@ -265,7 +265,7 @@ export default function AuthClient() {
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
-              className={cn(inputClass, errors.password ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--accent)]')}
+              className={cn(inputClass, errors.password ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--gold)]')}
               dir="ltr"
               required
               minLength={6}
@@ -286,7 +286,7 @@ export default function AuthClient() {
             type="button"
             onClick={() => { setMode(mode === 'signIn' ? 'signUp' : 'signIn'); setErrors({}); }}
             className="font-semibold transition-colors hover:underline"
-            style={{ color: 'var(--accent)' }}
+            style={{ color: 'var(--gold)' }}
           >
             {mode === 'signIn' ? (isHe ? L.signUp.he : L.signUp.en) : (isHe ? L.signIn.he : L.signIn.en)}
           </button>

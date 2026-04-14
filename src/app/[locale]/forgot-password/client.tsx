@@ -69,7 +69,7 @@ export default function ForgotPasswordClient() {
   const inputClass = 'w-full bg-white/5 border rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors duration-200 placeholder:text-[var(--text-muted)]';
 
   return (
-    <div className="min-h-screen px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen px-4" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto pt-6">
         <Breadcrumbs
           items={[
@@ -86,9 +86,9 @@ export default function ForgotPasswordClient() {
           <div className="flex items-center justify-center gap-2 mb-8">
             <span
               className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: 'var(--accent)', boxShadow: '0 0 10px var(--accent)' }}
+              style={{ backgroundColor: 'var(--gold)', boxShadow: '0 0 10px rgba(200,162,75,0.6)' }}
             />
-            <span className="font-montserrat font-bold text-white text-xl tracking-tight">
+            <span className="font-playfair font-bold text-white text-xl tracking-tight">
               FootJersey
             </span>
           </div>
@@ -98,9 +98,9 @@ export default function ForgotPasswordClient() {
             <div className="text-center space-y-4">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
-                style={{ backgroundColor: 'rgba(0,195,216,0.12)' }}
+                style={{ backgroundColor: 'rgba(200,162,75,0.12)' }}
               >
-                <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+                <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--gold)' }} />
               </div>
               <h1 className="text-2xl font-bold text-white">{t('successTitle')}</h1>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -108,15 +108,15 @@ export default function ForgotPasswordClient() {
               </p>
               <div
                 className="p-3 rounded-lg text-xs"
-                style={{ backgroundColor: 'rgba(0,195,216,0.06)', border: '1px solid rgba(0,195,216,0.15)', color: 'var(--text-secondary)' }}
+                style={{ backgroundColor: 'rgba(200,162,75,0.06)', border: '1px solid rgba(200,162,75,0.2)', color: 'var(--text-secondary)' }}
               >
-                <Mail className="w-4 h-4 inline mr-1.5" style={{ color: 'var(--accent)' }} />
+                <Mail className="w-4 h-4 inline mr-1.5" style={{ color: 'var(--gold)' }} />
                 {t('spamNote')}
               </div>
               <Link
                 href={`/${locale}/auth`}
                 className="inline-flex items-center gap-2 text-sm mt-4 transition-colors"
-                style={{ color: 'var(--accent)' }}
+                style={{ color: 'var(--gold)' }}
               >
                 <ArrowLeft className="w-4 h-4" />
                 {t('back')}
@@ -142,7 +142,7 @@ export default function ForgotPasswordClient() {
                     placeholder="email@example.com"
                     className={cn(
                       inputClass,
-                      error ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--accent)]'
+                      error ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--gold)]'
                     )}
                     dir="ltr"
                     required
@@ -160,7 +160,7 @@ export default function ForgotPasswordClient() {
                 <Link
                   href={`/${locale}/auth`}
                   className="inline-flex items-center gap-1.5 transition-colors hover:underline"
-                  style={{ color: 'var(--accent)' }}
+                  style={{ color: 'var(--gold)' }}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   {t('back')}

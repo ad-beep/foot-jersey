@@ -41,13 +41,13 @@ function CartItemCard({ item }: { item: CartItem }) {
       exit={{ opacity: 0, x: isRtl ? -60 : 60 }}
       transition={{ duration: 0.2 }}
       className="flex gap-4 p-4 rounded-xl"
-      style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+      style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
     >
       {/* Image */}
       <Link
         href={`/${locale}/product/${item.jerseyId}`}
         className="shrink-0 w-[88px] h-[110px] rounded-lg overflow-hidden"
-        style={{ backgroundColor: 'var(--bg-primary)' }}
+        style={{ backgroundColor: 'var(--ink)' }}
       >
         <Image
           src={item.jersey.imageUrl}
@@ -64,7 +64,7 @@ function CartItemCard({ item }: { item: CartItem }) {
         <div className="flex items-start justify-between gap-2">
           <Link
             href={`/${locale}/product/${item.jerseyId}`}
-            className="text-sm font-semibold text-white line-clamp-2 hover:text-[var(--accent)] transition-colors"
+            className="text-sm font-semibold text-white line-clamp-2 hover:text-[var(--gold)] transition-colors"
           >
             {displayName}
           </Link>
@@ -88,7 +88,7 @@ function CartItemCard({ item }: { item: CartItem }) {
             {isHe ? 'מידה' : 'Size'}: {item.size}
           </span>
           {(item.customization.customName || item.customization.customNumber) && (
-            <span className="text-xs" style={{ color: 'var(--accent)' }}>
+            <span className="text-xs" style={{ color: 'var(--gold)' }}>
               {item.customization.customName} {item.customization.customNumber ? `#${item.customization.customNumber}` : ''}
             </span>
           )}
@@ -108,7 +108,7 @@ function CartItemCard({ item }: { item: CartItem }) {
 
         {/* Price + Qty */}
         <div className="flex items-center justify-between mt-3">
-          <p className="text-base font-bold" style={{ color: 'var(--accent)' }}>
+          <p className="text-base font-bold font-mono" style={{ color: 'var(--gold)' }}>
             {CURRENCY}{lineTotal}
           </p>
           <div className="flex items-center gap-1.5">
@@ -374,7 +374,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
-        <CreditCard className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+        <CreditCard className="w-5 h-5" style={{ color: 'var(--gold)' }} />
         <h2 className="text-lg font-bold text-white">
           {isHe ? 'פרטי הזמנה' : 'Checkout'}
         </h2>
@@ -532,7 +532,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               type="checkbox"
               checked={sameAsBilling}
               onChange={(e) => setSameAsBilling(e.target.checked)}
-              className="w-4 h-4 rounded accent-[var(--accent)]"
+              className="w-4 h-4 rounded accent-[var(--gold)]"
             />
             <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
               {isHe ? 'כתובת חיוב זהה לכתובת משלוח' : 'Billing address same as shipping'}
@@ -581,7 +581,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             value={discountCode}
             onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
             placeholder={isHe ? 'קוד הנחה' : 'Discount code'}
-            className="flex-1 px-3 py-2 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+            className="flex-1 px-3 py-2 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[rgba(200,162,75,0.3)]"
             style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}
             disabled={!!discountApplied}
           />
@@ -600,7 +600,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               onClick={applyDiscount}
               disabled={discountLoading || !discountCode.trim()}
               className="px-4 py-2 rounded-lg text-sm font-medium text-black transition-colors disabled:opacity-50 flex items-center gap-1.5"
-              style={{ backgroundColor: 'var(--accent)' }}
+              style={{ backgroundColor: 'var(--gold)' }}
             >
               {discountLoading
                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>{isHe ? 'בודק...' : '...'}</span></>
@@ -612,7 +612,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           <p className="text-xs" style={{ color: '#FF4D6D' }}>{discountError}</p>
         )}
         {discountApplied && (
-          <p className="text-xs" style={{ color: 'var(--accent)' }}>
+          <p className="text-xs" style={{ color: 'var(--gold)' }}>
             {isHe ? `קוד ${discountApplied.code} הוחל!` : `Code ${discountApplied.code} applied!`}
           </p>
         )}
@@ -630,15 +630,15 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
           </div>
           {discountApplied && (
             <div className="flex justify-between text-sm">
-              <span style={{ color: 'var(--accent)' }}>
+              <span style={{ color: 'var(--gold)' }}>
                 {isHe ? 'הנחה' : 'Discount'} ({discountApplied.code})
               </span>
-              <span style={{ color: 'var(--accent)' }}>-{CURRENCY}{discountAmount}</span>
+              <span style={{ color: 'var(--gold)' }}>-{CURRENCY}{discountAmount}</span>
             </div>
           )}
           <div className="flex justify-between text-sm">
             <span style={{ color: 'var(--text-secondary)' }}>{isHe ? 'משלוח' : 'Shipping'}</span>
-            <span style={{ color: freeShipping ? 'var(--accent)' : 'var(--text-secondary)' }}>
+            <span style={{ color: freeShipping ? 'var(--gold)' : 'var(--text-secondary)' }}>
               {freeShipping ? (isHe ? 'חינם!' : 'Free!') : `${CURRENCY}${PRICES.shippingFlat}`}
             </span>
           </div>
@@ -798,17 +798,17 @@ export function CartPageClient() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
         <div className="max-w-[1200px] mx-auto px-4 md:px-6">
-          <div className="h-8 w-48 rounded-lg animate-pulse" style={{ backgroundColor: 'var(--bg-secondary)' }} />
-          <div className="mt-8 h-64 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-secondary)' }} />
+          <div className="h-8 w-48 rounded-lg animate-pulse" style={{ backgroundColor: 'var(--steel)' }} />
+          <div className="mt-8 h-64 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--steel)' }} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
@@ -865,10 +865,10 @@ export function CartPageClient() {
               <Reveal>
                 <div
                   className="rounded-xl p-4 mb-6 flex items-center gap-3"
-                  style={{ backgroundColor: 'rgba(0,195,216,0.06)', border: '1px solid rgba(0,195,216,0.2)' }}
+                  style={{ backgroundColor: 'rgba(200,162,75,0.06)', border: '1px solid rgba(200,162,75,0.25)' }}
                 >
-                  <Truck className="w-5 h-5 shrink-0" style={{ color: 'var(--accent)' }} />
-                  <p className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
+                  <Truck className="w-5 h-5 shrink-0" style={{ color: 'var(--gold)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--gold)' }}>
                     {isHe ? 'משלוח חינם על ההזמנה שלך!' : 'Free shipping on your order!'}
                   </p>
                 </div>
@@ -892,7 +892,7 @@ export function CartPageClient() {
                   href={`/${locale}/discover`}
                   className="inline-flex items-center gap-2 mt-6 text-sm transition-colors"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--accent)'; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
                 >
                   <BackArrow className="w-4 h-4" />
@@ -904,7 +904,7 @@ export function CartPageClient() {
               <div className="lg:w-[40%] mt-8 lg:mt-0">
                 <div
                   className="rounded-xl p-6 lg:sticky lg:top-24"
-                  style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+                  style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
                 >
                   <CheckoutSection
                     isHe={isHe}

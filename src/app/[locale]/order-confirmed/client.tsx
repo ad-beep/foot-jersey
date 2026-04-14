@@ -93,7 +93,6 @@ export function OrderConfirmedClient() {
           } else if (attempts < MAX_ATTEMPTS) {
             setTimeout(tryFetch, RETRY_DELAY_MS);
           } else {
-            // Genuinely not found after all retries
             router.replace(`/${locale}`);
           }
         })
@@ -111,8 +110,8 @@ export function OrderConfirmedClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: '#0a0a0a' }}>
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#00c3d8' }} />
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--gold)' }} />
       </div>
     );
   }
@@ -124,13 +123,28 @@ export function OrderConfirmedClient() {
   const firstName = order.shippingInfo.name?.split(' ')[0] || order.shippingInfo.name;
   const orderRef = order.id.slice(0, 8).toUpperCase();
 
+  // ── colour tokens (inline so no CSS vars needed in inline styles)
+  const gold = '#C8A24B';
+  const goldFaint = 'rgba(200,162,75,0.10)';
+  const goldBorder = 'rgba(200,162,75,0.22)';
+  const amber = '#FFBE32';
+  const amberFaint = 'rgba(255,190,50,0.08)';
+  const amberBorder = 'rgba(255,190,50,0.18)';
+
+  const heroAccentBg   = isPending ? amberFaint  : goldFaint;
+  const heroAccentBord = isPending ? amberBorder : goldBorder;
+  const heroIconColor  = isPending ? amber        : gold;
+  const sectionBg      = isPending ? amberFaint  : goldFaint;
+  const sectionBord    = isPending ? amberBorder : goldBorder;
+  const sectionLabel   = isPending ? amber        : gold;
+
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', padding: '40px 16px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+    <div style={{ backgroundColor: 'var(--ink)', minHeight: '100vh', padding: '40px 16px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
 
       {/* Nav */}
       <div style={{ maxWidth: 680, margin: '0 auto 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <a href={`/${locale}`} style={{ fontSize: 20, fontWeight: 800, color: '#fff', textDecoration: 'none' }}>
-          Foot<span style={{ color: '#00c3d8' }}>Jersey</span>
+        <a href={`/${locale}`} style={{ fontSize: 20, fontWeight: 800, color: '#fff', textDecoration: 'none', fontFamily: 'Playfair Display, Georgia, serif' }}>
+          Foot<span style={{ color: gold }}>Jersey</span>
         </a>
         <a href={`/${locale}/discover`} style={{ fontSize: 13, color: '#555', textDecoration: 'none' }}>
           {isHe ? '← המשך קנייה' : '← Continue Shopping'}
@@ -138,17 +152,17 @@ export function OrderConfirmedClient() {
       </div>
 
       {/* Card */}
-      <div style={{ maxWidth: 680, margin: '0 auto', background: '#111', border: '1px solid #1e1e1e', borderRadius: 20, overflow: 'hidden' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', backgroundColor: 'var(--steel)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden' }}>
 
         {/* Hero */}
-        <div style={{ background: 'linear-gradient(135deg,#0f1f20 0%,#0d1a1b 100%)', borderBottom: '1px solid #1e1e1e', padding: '40px 32px 36px', textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: isPending ? 'rgba(255,190,50,0.1)' : 'rgba(0,195,216,0.12)', border: `2px solid ${isPending ? 'rgba(255,190,50,0.3)' : 'rgba(0,195,216,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #0d1210 0%, #111113 100%)', borderBottom: '1px solid var(--border)', padding: '40px 32px 36px', textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: heroAccentBg, border: `2px solid ${heroAccentBord}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             {isPending
-              ? <Clock style={{ width: 28, height: 28, color: '#FFBE32' }} />
-              : <CheckCircle2 style={{ width: 28, height: 28, color: '#00c3d8' }} />
+              ? <Clock style={{ width: 28, height: 28, color: amber }} />
+              : <CheckCircle2 style={{ width: 28, height: 28, color: gold }} />
             }
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', marginBottom: 8, fontFamily: 'Playfair Display, Georgia, serif' }}>
             {isPending
               ? (isHe ? 'ההזמנה התקבלה!' : 'Order Received!')
               : (isHe ? 'ההזמנה אושרה!' : 'Order Confirmed!')}
@@ -158,7 +172,7 @@ export function OrderConfirmedClient() {
               ? (isHe ? `תודה, ${firstName}! ממתינים לאישור תשלום BIT.` : `Thanks, ${firstName}! We're waiting to confirm your BIT payment.`)
               : (isHe ? `תודה, ${firstName}! התשלום בוצע בהצלחה.` : `Thanks, ${firstName}! Your payment was successful.`)}
           </p>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,195,216,0.08)', border: '1px solid rgba(0,195,216,0.2)', borderRadius: 100, padding: '6px 16px', fontSize: 13, fontFamily: 'monospace', color: '#00c3d8' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: goldFaint, border: `1px solid ${goldBorder}`, borderRadius: 100, padding: '6px 16px', fontSize: 13, fontFamily: 'monospace', color: gold }}>
             {isHe ? 'הזמנה' : 'Order'} #{orderRef}
             {order.orderNumber && <span style={{ color: '#555' }}> · #{order.orderNumber}</span>}
           </div>
@@ -168,13 +182,13 @@ export function OrderConfirmedClient() {
         <div style={{ padding: '28px 32px' }}>
 
           {/* Email notice */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: isPending ? 'rgba(255,190,50,0.05)' : 'rgba(0,195,216,0.05)', border: `1px solid ${isPending ? 'rgba(255,190,50,0.12)' : 'rgba(0,195,216,0.12)'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: isPending ? '#a07820' : '#5aafb8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, backgroundColor: sectionBg, border: `1px solid ${sectionBord}`, borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: isPending ? '#a07820' : '#9e8240' }}>
             <span>📧</span>
             <span>
               {isPending
                 ? (isHe ? 'נשלח אליך אימייל עם פרטי ההמתנה ל-' : 'A confirmation email has been sent to ')
                 : (isHe ? 'הקבלה נשלחה ל-' : 'Receipt sent to ')}
-              <strong style={{ color: isPending ? '#c99030' : '#7dd3d8' }}>{order.shippingInfo.email}</strong>
+              <strong style={{ color: isPending ? amber : gold }}>{order.shippingInfo.email}</strong>
             </span>
           </div>
 
@@ -191,7 +205,7 @@ export function OrderConfirmedClient() {
               if (item.customization?.hasPants) customParts.push(isHe ? 'מכנסיים' : 'Pants');
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 0', borderBottom: i < order.items.length - 1 ? '1px solid #161616' : 'none' }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 10, background: '#1a1a1a', border: '1px solid #222', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 10, backgroundColor: '#1a1a1a', border: '1px solid #222', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {item.imageUrl
                       ? <Image src={item.imageUrl} alt={item.teamName} width={52} height={52} sizes="52px" quality={60} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <ShoppingBag style={{ width: 22, height: 22, color: '#444' }} />
@@ -201,7 +215,7 @@ export function OrderConfirmedClient() {
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 3 }}>{item.teamName}</div>
                     <div style={{ fontSize: 12, color: '#666' }}>{isHe ? 'מידה' : 'Size'} {item.size} · ×{item.quantity}</div>
                     {customParts.length > 0 && (
-                      <div style={{ fontSize: 12, color: '#00c3d8', marginTop: 2 }}>{customParts.join(' · ')}</div>
+                      <div style={{ fontSize: 12, color: gold, marginTop: 2 }}>{customParts.join(' · ')}</div>
                     )}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>₪{item.totalPrice}</div>
@@ -211,7 +225,7 @@ export function OrderConfirmedClient() {
           </div>
 
           {/* Totals */}
-          <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#666', padding: '4px 0' }}>
               <span>{isHe ? 'סכום ביניים' : 'Subtotal'}</span><span>₪{order.subtotal}</span>
             </div>
@@ -220,7 +234,7 @@ export function OrderConfirmedClient() {
               <span>{order.shipping === 0 ? (isHe ? 'חינם 🎉' : 'FREE 🎉') : `₪${order.shipping}`}</span>
             </div>
             {order.discountAmount && order.discountAmount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#00c3d8', padding: '4px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: gold, padding: '4px 0' }}>
                 <span>{isHe ? 'הנחה' : 'Discount'} {order.discountCode ? `(${order.discountCode})` : ''}</span>
                 <span>-₪{order.discountAmount}</span>
               </div>
@@ -232,7 +246,7 @@ export function OrderConfirmedClient() {
 
           {/* Shipping + Payment two-col */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-            <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16 }}>
+            <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#444', marginBottom: 8 }}>{isHe ? 'כתובת משלוח' : 'Ship To'}</div>
               <p style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
                 {order.shippingInfo.name}<br />
@@ -240,10 +254,10 @@ export function OrderConfirmedClient() {
                 {order.shippingInfo.zip}, {order.shippingInfo.country}
               </p>
             </div>
-            <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16 }}>
+            <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#444', marginBottom: 8 }}>{isHe ? 'תשלום' : 'Payment'}</div>
               <div style={{ marginBottom: 8 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,195,216,0.08)', border: '1px solid rgba(0,195,216,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#00c3d8' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: goldFaint, border: `1px solid ${goldBorder}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: gold }}>
                   {isBit ? '⚡ BIT' : 'PayPal'}
                 </span>
               </div>
@@ -254,9 +268,9 @@ export function OrderConfirmedClient() {
           </div>
 
           {/* What's next */}
-          <div style={{ background: isPending ? 'rgba(255,190,50,0.04)' : 'rgba(0,195,216,0.04)', border: `1px solid ${isPending ? 'rgba(255,190,50,0.12)' : 'rgba(0,195,216,0.12)'}`, borderRadius: 12, padding: '18px 20px', marginBottom: 24 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: isPending ? '#FFBE32' : '#00c3d8', marginBottom: 12 }}>
-              {isHe ? 'מה קורה עכשיו?' : "What happens next"}
+          <div style={{ backgroundColor: sectionBg, border: `1px solid ${sectionBord}`, borderRadius: 12, padding: '18px 20px', marginBottom: 24 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: sectionLabel, marginBottom: 12 }}>
+              {isHe ? 'מה קורה עכשיו?' : 'What happens next'}
             </div>
             {(isPending ? [
               { n: 1, text: isHe ? <><strong style={{color:'#bbb'}}>אישור תשלום</strong> — נאמת את ההעברה שלך ב-BIT בתוך מספר שעות.</> : <><strong style={{color:'#bbb'}}>Payment verification</strong> — We&apos;ll confirm your BIT transfer within a few hours.</> },
@@ -268,15 +282,18 @@ export function OrderConfirmedClient() {
               { n: 3, text: isHe ? <><strong style={{color:'#bbb'}}>משלוח</strong> — תקבל אימייל עם פרטי מעקב כשהחבילה בדרך.</> : <><strong style={{color:'#bbb'}}>Shipped</strong> — You&apos;ll get a tracking email once your order is on the way.</> },
             ]).map(({ n, text }) => (
               <div key={n} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: n < 3 ? 10 : 0 }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: isPending ? 'rgba(255,190,50,0.15)' : 'rgba(0,195,216,0.15)', border: `1px solid ${isPending ? 'rgba(255,190,50,0.25)' : 'rgba(0,195,216,0.25)'}`, color: isPending ? '#FFBE32' : '#00c3d8', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: heroAccentBg, border: `1px solid ${heroAccentBord}`, color: heroIconColor, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
                 <div style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>{text}</div>
               </div>
             ))}
           </div>
 
-          {/* CTAs */}
+          {/* CTA */}
           <div style={{ display: 'flex', gap: 12 }}>
-            <a href={`/${locale}/discover`} style={{ flex: 1, textAlign: 'center', background: '#00c3d8', color: '#000', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', display: 'block' }}>
+            <a
+              href={`/${locale}/discover`}
+              style={{ flex: 1, textAlign: 'center', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', display: 'block', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
+            >
               {isHe ? 'המשך קנייה' : 'Continue Shopping'}
             </a>
           </div>

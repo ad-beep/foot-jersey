@@ -110,7 +110,7 @@ export default function ProfileClient({ allJerseys }: ProfileClientProps) {
   // Not signed in — show prompt
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--ink)' }}>
         <div className="text-center">
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
@@ -143,7 +143,7 @@ export default function ProfileClient({ allJerseys }: ProfileClientProps) {
   };
 
   return (
-    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
@@ -217,7 +217,7 @@ function Section({ title, subtitle, children, trailing }: {
   return (
     <div
       className="rounded-xl p-5 md:p-6 mb-6"
-      style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+      style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
@@ -276,7 +276,7 @@ function SizeVault() {
               className={cn(
                 'h-9 px-4 rounded-full text-sm font-medium transition-all duration-200',
                 adultSize === s
-                  ? 'bg-[var(--accent)] text-black'
+                  ? 'bg-[var(--gold)] text-black'
                   : 'bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white',
               )}
             >
@@ -297,7 +297,7 @@ function SizeVault() {
               className={cn(
                 'h-9 px-4 rounded-full text-sm font-medium transition-all duration-200',
                 kidsSize === s
-                  ? 'bg-[var(--accent)] text-black'
+                  ? 'bg-[var(--gold)] text-black'
                   : 'bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white',
               )}
             >
@@ -335,7 +335,7 @@ function LikedJerseys({ allJerseys }: { allJerseys: Jersey[] }) {
             <Link
               href={`/${locale}/favorites`}
               className="text-sm font-medium transition-colors hover:underline"
-              style={{ color: 'var(--accent)' }}
+              style={{ color: 'var(--gold)' }}
             >
               {isHe ? L.viewAll.he : L.viewAll.en} &rarr;
             </Link>
@@ -469,7 +469,7 @@ function OrderCard({ order }: { order: { id: string; items: { jerseyId: string; 
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant={statusVariant}>{statusLabel ? (isHe ? statusLabel.he : statusLabel.en) : order.status}</Badge>
-          <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>₪{order.total}</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>₪{order.total}</span>
           {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />}
         </div>
       </button>
@@ -565,7 +565,7 @@ function AddressesTab() {
               className="rounded-lg p-4 flex items-start gap-3"
               style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}
             >
-              <MapPin className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--accent)' }} />
+              <MapPin className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-semibold text-white">{addr.fullName}</p>
@@ -583,7 +583,7 @@ function AddressesTab() {
                     <Trash2 className="w-3 h-3" /> {isHe ? L.delete.he : L.delete.en}
                   </button>
                   {!addr.isDefault && (
-                    <button onClick={() => setDefault(addr.id)} className="text-xs font-medium transition-colors hover:text-[var(--accent)]" style={{ color: 'var(--text-muted)' }}>
+                    <button onClick={() => setDefault(addr.id)} className="text-xs font-medium transition-colors hover:text-[var(--gold)]" style={{ color: 'var(--text-muted)' }}>
                       {isHe ? L.setDefault.he : L.setDefault.en}
                     </button>
                   )}
@@ -617,7 +617,7 @@ function AddressForm({
   const [country, setCountry] = useState(initial?.country ?? (isHe ? 'ישראל' : 'Israel'));
   const [phone, setPhone] = useState(initial?.phone ?? '');
 
-  const inputClass = 'w-full bg-white/5 border border-[var(--border)] rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors duration-200 focus:border-[var(--accent)] placeholder:text-[var(--text-muted)]';
+  const inputClass = 'w-full bg-white/5 border border-[var(--border)] rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors duration-200 focus:border-[var(--gold)] placeholder:text-[var(--text-muted)]';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -684,7 +684,7 @@ function SettingsTab({ onSignOut }: { onSignOut: () => void }) {
               onClick={() => switchLocale('en')}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                locale === 'en' ? 'bg-[var(--accent)] text-black' : 'bg-white/5 text-[var(--text-muted)] hover:bg-white/10',
+                locale === 'en' ? 'bg-[var(--gold)] text-black' : 'bg-white/5 text-[var(--text-muted)] hover:bg-white/10',
               )}
             >
               English
@@ -693,7 +693,7 @@ function SettingsTab({ onSignOut }: { onSignOut: () => void }) {
               onClick={() => switchLocale('he')}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                locale === 'he' ? 'bg-[var(--accent)] text-black' : 'bg-white/5 text-[var(--text-muted)] hover:bg-white/10',
+                locale === 'he' ? 'bg-[var(--gold)] text-black' : 'bg-white/5 text-[var(--text-muted)] hover:bg-white/10',
               )}
             >
               עברית
@@ -711,7 +711,7 @@ function SettingsTab({ onSignOut }: { onSignOut: () => void }) {
             onClick={() => setNewsletter(!newsletter)}
             className={cn(
               'relative w-11 h-6 rounded-full transition-colors duration-200',
-              newsletter ? 'bg-[var(--accent)]' : 'bg-white/10',
+              newsletter ? 'bg-[var(--gold)]' : 'bg-white/10',
             )}
             role="switch"
             aria-checked={newsletter}

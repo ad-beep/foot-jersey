@@ -85,7 +85,7 @@ function SortDropdown({ value, onChange, isHe }: {
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors"
-        style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+        style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
       >
         {isHe ? current.he : current.en}
         <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 200ms' }} />
@@ -93,7 +93,7 @@ function SortDropdown({ value, onChange, isHe }: {
       {open && (
         <div
           className="absolute top-full mt-1 min-w-[180px] rounded-xl overflow-hidden z-20"
-          style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', [isHe ? 'left' : 'right']: 0 } as React.CSSProperties}
+          style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', [isHe ? 'left' : 'right']: 0 } as React.CSSProperties}
         >
           {SORT_OPTIONS.map((opt) => (
             <button
@@ -101,8 +101,8 @@ function SortDropdown({ value, onChange, isHe }: {
               onClick={() => { onChange(opt.key); setOpen(false); }}
               className="w-full text-start px-4 py-2.5 text-sm transition-colors"
               style={{
-                color: opt.key === value ? 'var(--accent)' : 'var(--text-secondary)',
-                backgroundColor: opt.key === value ? 'rgba(0,195,216,0.06)' : 'transparent',
+                color: opt.key === value ? 'var(--gold)' : 'var(--text-secondary)',
+                backgroundColor: opt.key === value ? 'rgba(200,162,75,0.08)' : 'transparent',
               }}
               onMouseEnter={(e) => { if (opt.key !== value) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.03)'; }}
               onMouseLeave={(e) => { if (opt.key !== value) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
@@ -187,13 +187,13 @@ export function SearchPageClient() {
   ];
 
   return (
-    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
         {/* Title */}
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
+          <h1 className="font-playfair text-2xl md:text-3xl font-bold text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
             {query
               ? (isHe ? `תוצאות חיפוש עבור "${query}"` : `Search results for "${query}"`)
               : (isHe ? 'חיפוש' : 'Search')}
@@ -246,7 +246,7 @@ export function SearchPageClient() {
               <button
                 onClick={() => router.push(`/${locale}/search?q=${encodeURIComponent(suggestion)}`)}
                 className="text-base transition-colors"
-                style={{ color: 'var(--accent)' }}
+                style={{ color: 'var(--gold)' }}
               >
                 {isHe ? `התכוונת ל"${suggestion}"?` : `Did you mean "${suggestion}"?`}
               </button>

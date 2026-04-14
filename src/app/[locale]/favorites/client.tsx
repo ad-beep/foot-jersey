@@ -67,13 +67,13 @@ export default function FavoritesClient({ allJerseys }: FavoritesClientProps) {
   ];
 
   return (
-    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">
+          <h1 className="font-playfair text-2xl md:text-3xl font-bold text-white">
             {isHe ? L.title.he : L.title.en}
           </h1>
           {hydrated && likedJerseys.length > 0 && (
