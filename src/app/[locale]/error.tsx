@@ -14,43 +14,57 @@ export default function Error({
 
   return (
     <div
-      style={{
-        minHeight: '60vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#0a0a0a',
-        padding: '40px 16px',
-        textAlign: 'center',
-      }}
+      className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center"
+      style={{ backgroundColor: 'var(--ink)' }}
     >
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#fff', marginBottom: 8 }}>500</h1>
-      <p style={{ fontSize: 16, color: '#666', marginBottom: 32 }}>
-        {isHe ? 'משהו השתבש. נסה שוב.' : 'Something went wrong. Please try again.'}
-      </p>
-      <button
-        onClick={reset}
+      {/* Giant faint number */}
+      <div
+        className="font-playfair font-bold select-none pointer-events-none absolute"
         style={{
-          background: '#00c3d8',
-          color: '#000',
-          fontSize: 14,
-          fontWeight: 700,
-          padding: '12px 24px',
-          borderRadius: 10,
-          border: 'none',
-          cursor: 'pointer',
-          marginBottom: 12,
+          fontSize: 'clamp(14rem, 38vw, 28rem)',
+          color: 'rgba(255,77,46,0.04)',
+          letterSpacing: '-0.06em',
+          lineHeight: 0.85,
         }}
+        aria-hidden="true"
       >
-        {isHe ? 'נסה שוב' : 'Try Again'}
-      </button>
-      <a
-        href={homeHref}
-        style={{ fontSize: 13, color: '#555', textDecoration: 'none' }}
-      >
-        {isHe ? 'חזור הביתה' : 'Go Home'}
-      </a>
+        500
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center gap-5">
+        <p className="section-kicker">{isHe ? 'שגיאה' : 'Error'}</p>
+
+        <h1
+          className="font-playfair font-bold text-white"
+          style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', letterSpacing: '-0.04em', lineHeight: 0.9 }}
+        >
+          {isHe ? 'משהו\nהשתבש.' : 'Something\nwent wrong.'}
+        </h1>
+
+        <p
+          className="font-mono text-[12px] uppercase tracking-[0.2em] max-w-[28ch]"
+          style={{ color: 'var(--muted)' }}
+        >
+          {isHe ? 'אירעה שגיאה בלתי צפויה. נסה שוב.' : 'An unexpected error occurred. Please try again.'}
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={reset}
+            className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
+            style={{ backgroundColor: 'var(--flare)', boxShadow: '0 0 28px rgba(255,77,46,0.35)' }}
+          >
+            {isHe ? 'נסה שוב' : 'Try Again'}
+          </button>
+          <a
+            href={homeHref}
+            className="px-6 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 hover:bg-white/[0.06]"
+            style={{ color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.1)' }}
+          >
+            {isHe ? 'דף הבית' : 'Go Home'}
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
