@@ -113,80 +113,56 @@ export function RetroSpotlight() {
             </div>
           </Reveal>
 
-          {/* Right: Visual stamp */}
+          {/* Right: Editorial year stack */}
           <Reveal delay={150}>
-            <div
-              className="relative rounded-2xl overflow-hidden flex items-center justify-center aspect-square max-w-sm mx-auto lg:mx-0"
-              style={{
-                backgroundColor: '#111',
-                border: '2px solid var(--gold)',
-                boxShadow: '0 0 80px rgba(200,162,75,0.12)',
-              }}
-            >
-              {/* Archive texture */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div
-                    className="font-playfair font-black italic"
-                    style={{
-                      fontSize: 'clamp(4rem, 12vw, 8rem)',
-                      color: 'rgba(200,162,75,0.15)',
-                      lineHeight: 0.8,
-                      letterSpacing: '-0.06em',
-                    }}
-                  >
-                    RETRO
-                  </div>
-                  <div
-                    className="font-playfair font-black italic"
-                    style={{
-                      fontSize: 'clamp(2.5rem, 8vw, 5rem)',
-                      color: 'rgba(200,162,75,0.12)',
-                      lineHeight: 0.8,
-                      letterSpacing: '-0.06em',
-                      marginTop: '-0.1em',
-                    }}
-                  >
-                    CLASSICS
-                  </div>
-                </div>
-              </div>
-
-              {/* Archive badge */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-                <div
-                  className="font-mono text-[9px] uppercase tracking-[0.3em]"
-                  style={{ color: 'var(--gold)' }}
-                >
-                  {isHe ? 'ארכיון' : 'Archive'}
-                </div>
-                <div
-                  className="font-playfair font-bold text-white"
-                  style={{ fontSize: '1.25rem', letterSpacing: '-0.02em' }}
-                >
-                  {isHe ? 'ערכות שעיצבו היסטוריה' : 'Kits that shaped history'}
-                </div>
-                <div
-                  className="w-8 h-px"
-                  style={{ backgroundColor: 'rgba(200,162,75,0.5)' }}
-                />
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: 'rgba(200,162,75,0.6)' }}>
-                  {isHe ? 'FootJersey · 2023' : 'FootJersey · Est. 2023'}
-                </div>
-              </div>
-
-              {/* Corner accents */}
+            <div className="relative flex flex-col gap-3 max-w-sm mx-auto lg:mx-0">
+              {/* Year tiles */}
               {[
-                'top-3 left-3',
-                'top-3 right-3 rotate-90',
-                'bottom-3 left-3 -rotate-90',
-                'bottom-3 right-3 rotate-180',
-              ].map((cls, i) => (
-                <div key={i} className={`absolute ${cls} w-4 h-4`}>
-                  <div className="w-4 h-0.5" style={{ backgroundColor: 'var(--gold)', opacity: 0.5 }} />
-                  <div className="w-0.5 h-4" style={{ backgroundColor: 'var(--gold)', opacity: 0.5 }} />
+                { year: "'90", label: isHe ? 'ברזיל · איטליה · גרמניה' : 'Brazil · Italy · Germany' },
+                { year: "'94", label: isHe ? 'ארה"ב · אגנדות אגדיות' : 'USA · Legendary squads' },
+                { year: "'98", label: isHe ? 'צרפת · צ\'מפיון של עולם' : 'France · World champions' },
+                { year: "'02", label: isHe ? 'קוריאה/יפן · הלב שבור' : 'Korea/Japan · Heartbreak kits' },
+                { year: "'06", label: isHe ? 'גרמניה · הקיץ האגדי' : 'Germany · The golden summer' },
+              ].map((tile, i) => (
+                <div
+                  key={tile.year}
+                  className="flex items-center gap-4 px-5 py-3 rounded-xl"
+                  style={{
+                    backgroundColor: '#111',
+                    border: '1px solid rgba(200,162,75,0.18)',
+                    opacity: 1 - i * 0.12,
+                    transform: `scale(${1 - i * 0.025})`,
+                    transformOrigin: 'left center',
+                  }}
+                >
+                  <span
+                    className="font-playfair font-bold italic shrink-0"
+                    style={{ fontSize: '2rem', color: 'var(--gold)', letterSpacing: '-0.03em', lineHeight: 1, minWidth: '3rem' }}
+                  >
+                    {tile.year}
+                  </span>
+                  <div
+                    className="w-px self-stretch shrink-0"
+                    style={{ backgroundColor: 'rgba(200,162,75,0.2)' }}
+                  />
+                  <span
+                    className="font-mono text-[10px] uppercase tracking-[0.15em]"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    {tile.label}
+                  </span>
                 </div>
               ))}
+              {/* 50+ badge */}
+              <div
+                className="mt-2 flex items-center gap-3 px-5 py-3 rounded-xl"
+                style={{ backgroundColor: 'rgba(200,162,75,0.08)', border: '1px solid rgba(200,162,75,0.3)' }}
+              >
+                <span className="font-playfair font-bold text-2xl" style={{ color: 'var(--gold)' }}>50+</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: 'rgba(200,162,75,0.7)' }}>
+                  {isHe ? 'ערכות קלאסיות זמינות' : 'Classic kits available'}
+                </span>
+              </div>
             </div>
           </Reveal>
         </div>

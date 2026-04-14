@@ -259,16 +259,40 @@ export function CategoryGrid() {
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 w-full">
         {/* Section header */}
         <Reveal>
-          <div className={`mb-10 ${isHe ? 'text-right' : ''}`} id="collections-section">
-            <p className="section-kicker mb-3">
-              {isHe ? '17 קולקציות' : '17 Collections'}
-            </p>
-            <h2
-              className="font-playfair font-bold text-white"
-              style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
+          <div
+            className={`relative mb-10 overflow-hidden ${isHe ? 'text-right' : ''}`}
+            id="collections-section"
+          >
+            {/* Oversized background numeral */}
+            <div
+              className="absolute pointer-events-none select-none"
+              style={{
+                fontFamily: 'Playfair Display, serif',
+                fontWeight: 900,
+                fontSize: 'clamp(8rem, 22vw, 18rem)',
+                color: 'rgba(200,162,75,0.055)',
+                letterSpacing: '-0.06em',
+                lineHeight: 0.85,
+                top: '-0.1em',
+                left: isHe ? 'auto' : '-0.04em',
+                right: isHe ? '-0.04em' : 'auto',
+                userSelect: 'none',
+              }}
+              aria-hidden="true"
             >
-              {isHe ? 'כל עולמות\nהכדורגל' : 'Every world\nof football'}
-            </h2>
+              17
+            </div>
+            <div className="relative">
+              <p className="section-kicker mb-3">
+                {isHe ? '17 קולקציות' : '17 Collections'}
+              </p>
+              <h2
+                className="font-playfair font-bold text-white whitespace-pre-line"
+                style={{ fontSize: 'clamp(2.2rem, 5.5vw, 4rem)', letterSpacing: '-0.04em', lineHeight: 0.95 }}
+              >
+                {isHe ? 'כל עולמות\nהכדורגל' : 'Every world\nof football'}
+              </h2>
+            </div>
           </div>
         </Reveal>
 

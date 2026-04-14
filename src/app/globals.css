@@ -120,6 +120,16 @@
 
   /* Gold shimmer text */
   .text-gold { color: var(--gold); }
+
+  /* Hero visual panel — mobile responsive height */
+  .hero-visual-panel {
+    min-height: max(44vw, 280px);
+  }
+  @media (min-width: 768px) {
+    .hero-visual-panel {
+      min-height: 0;
+    }
+  }
 }
 
 /* ── Animations ──────────────────────────────────────────────────────────── */
