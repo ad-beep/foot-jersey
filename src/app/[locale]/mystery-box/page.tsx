@@ -100,7 +100,7 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
             return (
               <Link
                 key={box.slug}
-                href={`/${locale}/category/mystery-boxes`}
+                href={`/${locale}/category/mystery-box`}
                 className="group flex flex-col p-6 rounded-xl transition-all duration-300 border border-[var(--border)] hover:border-[var(--flare)] hover:shadow-[0_0_30px_rgba(255,77,46,0.12)]"
                 style={{ backgroundColor: 'var(--steel)', textDecoration: 'none' }}
               >

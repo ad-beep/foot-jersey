@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AGGREGATE_RATING } from '@/data/reviews';
 import { Reveal } from '@/components/ui/reveal';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { SizeSelector } from '@/components/product/SizeSelector';
@@ -360,12 +361,12 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
             <div className={`flex items-center gap-2 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
               <div className="flex items-center gap-0.5">
                 {[1,2,3,4,5].map((i) => (
-                  <span key={i} className="text-xs" style={{ color: i <= 4 ? '#FFBE32' : 'rgba(255,190,50,0.35)' }}>★</span>
+                  <span key={i} className="text-xs" style={{ color: i <= Math.round(AGGREGATE_RATING.ratingValue) ? '#FFBE32' : 'rgba(255,190,50,0.35)' }}>★</span>
                 ))}
               </div>
-              <span className="font-mono text-xs font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>4.8</span>
+              <span className="font-mono text-xs font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>{AGGREGATE_RATING.ratingValue}</span>
               <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>
-                {isHe ? '(8 ביקורות)' : '(8 reviews)'}
+                {isHe ? `(${AGGREGATE_RATING.reviewCount} ביקורות)` : `(${AGGREGATE_RATING.reviewCount} reviews)`}
               </span>
             </div>
 
@@ -466,7 +467,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
                       <path d="M3 3a6 6 0 1 1 0 8" /><path d="M3 7H1" />
                     </svg>
                   ),
-                  en: '14-Day Returns', he: 'החזרות 14 יום',
+                  en: '30-Day Returns', he: 'החזרות 30 יום',
                 },
                 {
                   icon: (

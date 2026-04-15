@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { doc, onSnapshot, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
+import { writeAuditLog } from '@/lib/audit-log';
 import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2, PackageCheck, CheckCircle, XCircle } from 'lucide-react';
 import { calcOrderCost, type ProductInfo } from '@/lib/cost-utils';
 
@@ -106,7 +107,6 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
-  const [actionSuccess, setActionSuccess] = useState('');
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
@@ -148,6 +148,12 @@ export default function OrderDetailPage() {
   const handleDelete = useCallback(async () => {
     if (!order || actionLoading) return;
     setActionLoading(true);
+    const currentUser = getAuth().currentUser;
+    await writeAuditLog({
+      action: 'delete_order',
+      adminEmail: currentUser?.email ?? 'unknown',
+      details: { orderId: order.id, orderNumber: order.orderNumber, customerEmail: order.shippingInfo?.email, total: order.total },
+    });
     await deleteDoc(doc(db, 'orders', order.id));
     router.push('/admin/orders');
   }, [order, actionLoading, router]);

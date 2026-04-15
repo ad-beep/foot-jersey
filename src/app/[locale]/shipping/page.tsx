@@ -25,18 +25,18 @@ export default function ShippingPage({ params }: { params: { locale: string } })
   const steps = [
     {
       num: '01',
-      en: { title: 'You order',      desc: 'Place your order via WhatsApp — send us the jersey name, size, and your delivery address. We confirm within 2 hours.' },
-      he: { title: 'ביצוע הזמנה',    desc: 'בצע הזמנה דרך WhatsApp — שלח לנו את שם החולצה, המידה וכתובת המשלוח שלך. אנחנו מאשרים תוך שעתיים.' },
+      en: { title: 'Add to cart',    desc: 'Browse the store, pick your jersey, select your size and any customisation (name, number, patch), then add it to your cart.' },
+      he: { title: 'הוסף לסל',       desc: 'עיין בחנות, בחר את החולצה שלך, בחר מידה וכל התאמה אישית (שם, מספר, תג), ולאחר מכן הוסף לסל.' },
     },
     {
       num: '02',
-      en: { title: 'We source it',   desc: 'We confirm stock and hand-pick your specific jersey from our supplier. Quality checked before it ships.' },
-      he: { title: 'אנחנו מספקים',   desc: 'אנחנו מאשרים מלאי ובוחרים ידנית את החולצה הספציפית שלך מהספק. בדיקת איכות לפני המשלוח.' },
+      en: { title: 'Checkout',       desc: 'Enter your shipping address and pay securely with PayPal or BIT. Your order is confirmed instantly — no WhatsApp needed.' },
+      he: { title: 'תשלום',           desc: 'הזן את כתובת המשלוח ושלם בצורה מאובטחת עם PayPal או BIT. ההזמנה מאושרת מיד — ללא צורך ב-WhatsApp.' },
     },
     {
       num: '03',
-      en: { title: 'Ships to you',   desc: 'Your jersey ships directly to your door from our supplier. You\'ll receive a tracking number once dispatched.' },
-      he: { title: 'נשלח אליך',      desc: 'החולצה שלך נשלחת ישירות לדלת שלך מהספק. תקבל מספר מעקב ברגע שתישלח.' },
+      en: { title: 'We source it',   desc: 'We hand-pick your jersey from our supplier and quality-check it before it ships. You\'ll get a tracking number once dispatched.' },
+      he: { title: 'אנחנו מספקים',   desc: 'אנחנו בוחרים ידנית את החולצה שלך מהספק ובודקים את איכותה לפני המשלוח. תקבל מספר מעקב ברגע שתישלח.' },
     },
     {
       num: '04',

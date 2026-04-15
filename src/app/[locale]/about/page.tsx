@@ -200,7 +200,7 @@ export default function AboutPage({ params }: { params: { locale: string } }) {
             <div className="grid grid-cols-3 gap-6">
               {[
                 { num: '2023',  en: 'Founded',        he: 'שנת הייסוד' },
-                { num: '17',    en: 'Collections',    he: 'קולקציות' },
+                { num: '18',    en: 'Collections',    he: 'קולקציות' },
                 { num: '120+',  en: 'Orders shipped', he: 'הזמנות שנשלחו' },
               ].map((stat) => (
                 <div key={stat.num} className={`text-center ${isHe ? '' : ''}`}>
@@ -281,7 +281,7 @@ export default function AboutPage({ params }: { params: { locale: string } }) {
         <div style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--steel)' }}>
           <div className="max-w-[900px] mx-auto px-4 md:px-6 py-12">
             <p className={`section-kicker mb-6 ${isHe ? 'text-right' : ''}`}>
-              {isHe ? '17 קולקציות. קבוצה אחת.' : '17 Collections. One team.'}
+              {isHe ? '18 קולקציות. קבוצה אחת.' : '18 Collections. One team.'}
             </p>
             {/* Horizontal scroll filmstrip */}
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ direction: 'ltr' }}>
