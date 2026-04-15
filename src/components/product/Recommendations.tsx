@@ -67,9 +67,17 @@ export function Recommendations({ currentJersey, allJerseys }: RecommendationsPr
   return (
     <section className="mt-12 mb-8">
       <Reveal>
-        <h2 className="text-xl font-bold text-white mb-5 px-4 md:px-0">
-          {isHe ? 'אולי יעניין אותך גם' : 'You May Also Like'}
-        </h2>
+        <div className="px-4 md:px-0 mb-6">
+          <p className="section-kicker mb-2">
+            {isHe ? 'בחירות מותאמות' : 'Curated For You'}
+          </p>
+          <h2
+            className="font-playfair font-bold text-white"
+            style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.2rem)', letterSpacing: '-0.03em', lineHeight: 1.0 }}
+          >
+            {isHe ? 'אולי יעניין אותך גם' : 'You May Also Like'}
+          </h2>
+        </div>
       </Reveal>
       <div
         className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 px-4 md:px-0"

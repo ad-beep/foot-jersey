@@ -90,6 +90,38 @@ export default function LandingHero() {
             />
           ))}
 
+          {/* Jersey silhouette watermark */}
+          <div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+            style={{ opacity: 0.055 }}
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 200 220"
+              fill="none"
+              className="w-[72%] h-[72%] max-w-[320px]"
+              style={{ color: '#C8A24B' }}
+            >
+              {/* Jersey front silhouette */}
+              <path
+                d="M70 10 L50 0 L10 30 L30 50 L20 220 L180 220 L170 50 L190 30 L150 0 L130 10 C130 28 70 28 70 10 Z"
+                fill="currentColor"
+                fillOpacity="0.35"
+              />
+              {/* Collar */}
+              <path
+                d="M85 10 Q100 26 115 10"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                strokeOpacity="0.6"
+              />
+              {/* Sleeve seam lines */}
+              <line x1="30" y1="50" x2="55" y2="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+              <line x1="170" y1="50" x2="145" y2="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+            </svg>
+          </div>
+
           {/* Editorial centrepiece — massive "No.10" */}
           <div
             className="relative z-10 flex flex-col items-center justify-center select-none"
