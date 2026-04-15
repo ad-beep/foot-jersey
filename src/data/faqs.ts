@@ -21,8 +21,8 @@ export const FAQS: FaqEntry[] = [
       he: 'האם FootJersey חנות אמיתית? האם אפשר לסמוך עליה?',
     },
     answer: {
-      en: 'Yes, FootJersey is a real, operational online store serving customers across Israel. We use secure PayPal payment processing, offer a 30-day return policy, and replace damaged goods for free. Hundreds of football fans across Israel have ordered from us. You can reach us anytime on WhatsApp at +972-58-414-0508 and follow us on Instagram (@foot_jersey4) and TikTok (@foot.jerseys4) to see our products and customer posts.',
-      he: 'כן, FootJersey היא חנות אינטרנטית אמיתית ופעילה שמשרתת לקוחות בכל רחבי ישראל. אנחנו משתמשים ב-PayPal לתשלום מאובטח, מציעים מדיניות החזרה של 30 יום, ומחליפים מוצרים פגומים בחינם. מאות אוהדי כדורגל בכל ישראל כבר הזמינו אצלנו. תוכל ליצור איתנו קשר בכל עת ב-WhatsApp: 058-414-0508, ולעקוב אחרינו באינסטגרם (@foot_jersey4) ובטיקטוק (@foot.jerseys4).',
+      en: 'Yes, FootJersey is a real, operational online store serving customers across Israel. We use secure PayPal payment processing and replace damaged goods for free. Hundreds of football fans across Israel have ordered from us. You can reach us anytime on WhatsApp at +972-58-414-0508 and follow us on Instagram (@foot_jersey4) and TikTok (@foot.jerseys4) to see our products and customer posts.',
+      he: 'כן, FootJersey היא חנות אינטרנטית אמיתית ופעילה שמשרתת לקוחות בכל רחבי ישראל. אנחנו משתמשים ב-PayPal לתשלום מאובטח ומחליפים מוצרים פגומים בחינם. מאות אוהדי כדורגל בכל ישראל כבר הזמינו אצלנו. תוכל ליצור איתנו קשר בכל עת ב-WhatsApp: 058-414-0508, ולעקוב אחרינו באינסטגרם (@foot_jersey4) ובטיקטוק (@foot.jerseys4).',
     },
   },
   {
@@ -183,12 +183,12 @@ export const FAQS: FaqEntry[] = [
     id: 'return-policy',
     category: 'returns',
     question: {
-      en: 'What is your return policy?',
-      he: 'מה מדיניות ההחזרה שלכם?',
+      en: 'What is your replacement policy?',
+      he: 'מה מדיניות ההחלפה שלכם?',
     },
     answer: {
-      en: 'We offer a 30-day return window from the date of delivery. If you\'re not satisfied with your order for any reason, contact us on WhatsApp and we\'ll arrange a return. Damaged or incorrect items are replaced for free — no questions asked.',
-      he: 'אנחנו מציעים חלון החזרה של 30 יום מתאריך המשלוח. אם אינך מרוצה מהזמנתך מכל סיבה שהיא, צור איתנו קשר ב-WhatsApp ונסדר החזרה. פריטים פגומים או שגויים יוחלפו בחינם — ללא שאלות.',
+      en: 'We do not offer general returns. However, if your item arrives damaged, defective, or incorrect, we will send you a free replacement immediately — no questions asked. Simply send us a photo on WhatsApp with your order number.',
+      he: 'אנחנו לא מציעים החזרות כלליות. אם הפריט הגיע פגום, לקוי, או שגוי — נשלח לך החלפה חינמית מיידית, ללא שאלות. פשוט שלח לנו תמונה ב-WhatsApp עם מספר ההזמנה שלך.',
     },
   },
   {
@@ -287,8 +287,8 @@ export const FAQS: FaqEntry[] = [
       he: 'האם אפשר לבטל או לשנות את ההזמנה שלי?',
     },
     answer: {
-      en: 'You can cancel or modify your order within 24 hours of placing it. Contact us immediately via WhatsApp at +972-58-414-0508 with your order reference number. After 24 hours, the order may have already been processed for shipping and we\'ll handle it under our 30-day return policy.',
-      he: 'ניתן לבטל או לשנות את ההזמנה תוך 24 שעות מביצועה. צור איתנו קשר מיידית ב-WhatsApp: 058-414-0508 עם מספר ההזמנה שלך. לאחר 24 שעות, ייתכן שההזמנה כבר עובדה למשלוח ונטפל בה לפי מדיניות ההחזרה ל-30 יום.',
+      en: 'You can cancel or modify your order within 24 hours of placing it. Contact us immediately via WhatsApp at +972-58-414-0508 with your order reference number. After 24 hours, the order may have already been processed for shipping and cannot be changed.',
+      he: 'ניתן לבטל או לשנות את ההזמנה תוך 24 שעות מביצועה. צור איתנו קשר מיידית ב-WhatsApp: 058-414-0508 עם מספר ההזמנה שלך. לאחר 24 שעות, ייתכן שההזמנה כבר עובדה למשלוח ולא ניתן לשנותה.',
     },
   },
   {

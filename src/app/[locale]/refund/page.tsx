@@ -5,8 +5,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
   return {
-    title: isHe ? 'מדיניות החזרים — FootJersey' : 'Refund Policy — FootJersey',
-    description: isHe ? 'מדיניות ההחזרים וההחלפות של FootJersey' : 'FootJersey refund and exchange policy.',
+    title: isHe ? 'מדיניות מוצרים פגומים — FootJersey' : 'Damage Replacement Policy — FootJersey',
+    description: isHe ? 'מדיניות ההחלפה של FootJersey — החלפה חינמית למוצרים פגומים או שגויים.' : 'FootJersey replacement policy — free replacement for damaged or incorrect items.',
   };
 }
 
@@ -18,46 +18,38 @@ export default async function RefundPage({ params }: { params: { locale: string 
   const sections = isHe
     ? [
         {
-          title: 'חלון ההחזרה — 30 יום',
-          body: 'אנו מציעים חלון החזרה של 30 יום מתאריך קבלת ההזמנה. אם אינך מרוצה מהמוצר מכל סיבה שהיא, צור קשר בוואטסאפ ונסדר את ההחזרה בצורה מהירה.',
+          title: 'מה אנחנו מכסים',
+          body: 'אנחנו מחליפים מוצרים פגומים, שגויים, או שאינם תואמים להזמנה — בחינם, ללא שאלות. אין מדיניות החזרה כללית; ההחלפה מוגבלת למקרים של פגם או שגיאה בלבד.',
         },
         {
-          title: 'מוצרים פגומים — החלפה חינם',
-          body: 'אם קיבלת מוצר פגום, שגוי, או שאינו תואם להזמנה — נשלח לך החלפה חינמית מיידית. אין שאלות, אין עלויות נסתרות. פשוט שלח לנו תמונה ב-WhatsApp תוך 7 ימים מקבלת ההזמנה.',
+          title: 'כיצד לתבוע החלפה',
+          body: 'שלח לנו תמונה ברורה של המוצר הפגום ב-WhatsApp עם מספר ההזמנה שלך. נאשר את הבקשה ונשלח החלפה חינמית בהקדם. ללא טפסים, ללא עלויות נסתרות.',
         },
         {
           title: 'קופסאות הפתעה',
-          body: 'קופסאות הפתעה אינן ניתנות להחזרה או להחלפה, למעט במקרה שהחולצה שקיבלת פגומה. הסיבה: הסחורה נבחרת אקראית בכוונה כחלק מהחוויה.',
-        },
-        {
-          title: 'תהליך ההחזר',
-          body: 'לאחר אישור הבקשה, ההחזר יעובד תוך 5-7 ימי עסקים לאמצעי התשלום המקורי שלך — PayPal או BIT. אנחנו מטפלים בכל בקשה אישית.',
+          body: 'קופסאות הפתעה אינן ניתנות להחלפה, למעט במקרה שהחולצה שקיבלת פגומה. הבחירה האקראית היא חלק מהחוויה.',
         },
         {
           title: 'חולצות מותאמות אישית',
-          body: 'חולצות עם הדפסה אישית (שם, מספר, טלאי) אינן ניתנות להחזרה, למעט במקרה של פגם בייצור. ההדפסה מותאמת במיוחד עבורך.',
+          body: 'חולצות עם הדפסה אישית (שם, מספר, טלאי) אינן ניתנות להחלפה, למעט במקרה של פגם בייצור. ההדפסה מותאמת במיוחד עבורך.',
         },
       ]
     : [
         {
-          title: '30-Day Return Window',
-          body: "We offer a 30-day return window from the date you receive your order. If you're not satisfied for any reason, contact us on WhatsApp and we'll arrange the return quickly.",
+          title: 'What we cover',
+          body: 'We replace items that arrive damaged, defective, or incorrect — for free, no questions asked. There is no general return policy; replacements are limited to damage or fulfillment errors only.',
         },
         {
-          title: 'Damaged Items — Free Replacement',
-          body: "If you receive a damaged, defective, or incorrect item — we'll send you a free replacement immediately. No questions, no hidden costs. Simply send us a photo on WhatsApp within 7 days of receiving your order.",
+          title: 'How to claim a replacement',
+          body: 'Send us a clear photo of the damaged item on WhatsApp with your order number. We\'ll confirm the request and ship a free replacement as soon as possible. No forms, no hidden costs.',
         },
         {
           title: 'Mystery Boxes',
-          body: 'Mystery Boxes are non-refundable and non-exchangeable, except when the jersey received is damaged. The random selection is intentional and part of the experience.',
-        },
-        {
-          title: 'Refund Process',
-          body: 'After a request is approved, refunds are processed within 5–7 business days to your original payment method — PayPal or BIT. Every request is handled personally.',
+          body: 'Mystery Boxes are non-exchangeable, except when the jersey received is damaged. The random selection is intentional and part of the experience.',
         },
         {
           title: 'Customized Jerseys',
-          body: 'Jerseys with custom printing (name, number, patch) are non-returnable, except in the case of a manufacturing defect. The print is made specifically for you.',
+          body: 'Jerseys with custom printing (name, number, patch) are non-exchangeable, except in the case of a manufacturing defect. The print is made specifically for you.',
         },
       ];
 
@@ -84,7 +76,7 @@ export default async function RefundPage({ params }: { params: { locale: string 
           }}
           aria-hidden="true"
         >
-          {isHe ? 'החזרים' : 'Returns'}
+          {isHe ? 'החלפות' : 'Replacements'}
         </div>
 
         {/* Gold hairline */}
@@ -112,7 +104,7 @@ export default async function RefundPage({ params }: { params: { locale: string 
             className="font-playfair font-bold text-white mb-4"
             style={{ fontSize: 'clamp(2.4rem, 6vw, 4rem)', letterSpacing: '-0.04em', lineHeight: 0.95 }}
           >
-            {isHe ? 'מדיניות החזרים' : 'Refund Policy'}
+            {isHe ? 'מדיניות מוצרים פגומים' : 'Damage Replacement Policy'}
           </h1>
           <span
             className="inline-flex items-center gap-2 font-mono text-[11px] px-3 py-1.5 rounded-full"
@@ -199,18 +191,18 @@ export default async function RefundPage({ params }: { params: { locale: string 
           }}
         >
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] mb-3" style={{ color: 'var(--gold)' }}>
-            {isHe ? 'רוצה להחזיר?' : 'Want to return?'}
+            {isHe ? 'קיבלת מוצר פגום?' : 'Received a damaged item?'}
           </p>
           <p
             className="font-playfair font-bold text-white mb-1"
             style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.5rem)', letterSpacing: '-0.02em' }}
           >
-            {isHe ? 'דבר איתנו ישירות' : 'Talk to us directly'}
+            {isHe ? 'שלח תמונה — נשלח החלפה' : 'Send a photo — we ship a replacement'}
           </p>
           <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {isHe
-              ? 'שלח הודעה בוואטסאפ עם מספר ההזמנה שלך ונטפל בזה מיידית.'
-              : "Send a WhatsApp message with your order number and we'll handle it immediately."}
+              ? 'שלח לנו תמונה ב-WhatsApp עם מספר ההזמנה שלך ונטפל בהחלפה מיידית.'
+              : "Send us a photo on WhatsApp with your order number and we'll arrange a free replacement immediately."}
           </p>
           <a
             href="https://wa.me/972584140508"

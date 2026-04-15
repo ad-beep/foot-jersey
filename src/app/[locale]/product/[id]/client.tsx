@@ -467,7 +467,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
                       <path d="M3 3a6 6 0 1 1 0 8" /><path d="M3 7H1" />
                     </svg>
                   ),
-                  en: '30-Day Returns', he: 'החזרות 30 יום',
+                  en: 'Free Replacement on Damage', he: 'החלפה חינם על פגם',
                 },
                 {
                   icon: (

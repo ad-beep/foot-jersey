@@ -123,20 +123,20 @@ export const KIDS_SIZES = ['16', '18', '20', '22', '24', '26', '28'] as const;
 export const SHIPPING_POLICY = {
   deliveryTime: { min: 2, max: 4, unit: 'weeks' },
   freeShippingMinItems: 3,
-  returnWindowDays: 30,
+  returnWindowDays: 0,
   damagedGoodsReplacement: true,
   policy: {
     en: {
       delivery: 'Delivery within 2–4 weeks',
       freeShipping: 'Free shipping on 3+ jerseys',
-      returns: 'Returns accepted within 30 days',
+      returns: 'Free replacement for damaged goods',
       damaged: 'Free replacement for damaged goods',
       secure: 'Secure payment',
     },
     he: {
       delivery: 'משלוח תוך 2–4 שבועות',
       freeShipping: 'משלוח חינם על 3 חולצות ומעלה',
-      returns: 'החזרות עד 30 יום',
+      returns: 'החלפה חינם על מוצרים פגומים',
       damaged: 'החלפה חינם על מוצרים פגומים',
       secure: 'תשלום מאובטח',
     },

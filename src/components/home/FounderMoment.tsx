@@ -38,7 +38,7 @@ const FOUNDER = {
 
 We wanted something different — a store built by fans, for fans. Every jersey we carry is one we'd wear ourselves. Every policy we have is the one we'd want as customers.
 
-That's why we offer 30-day returns, free replacement for damaged goods, and real WhatsApp support — because we know what it feels like to spend your money and get disappointed.
+That's why we offer free replacement for damaged goods and real WhatsApp support — because we know what it feels like to spend your money and get disappointed.
 
 Thank you for trusting us.`,
     signature: 'The FootJersey Team',
@@ -50,7 +50,7 @@ Thank you for trusting us.`,
 
 רצינו משהו אחר — חנות שנבנתה על ידי אוהדים, עבור אוהדים. כל חולצה שאנחנו מוכרים היא כזו שהיינו לובשים בעצמנו. כל מדיניות שיש לנו היא זו שהיינו רוצים כלקוחות.
 
-לכן אנחנו מציעים החזרה של 30 יום, החלפה חינמית עבור מוצרים פגומים, ותמיכה אמיתית ב-WhatsApp — כי אנחנו יודעים איך זה מרגיש להוציא כסף ולהתאכזב.
+לכן אנחנו מציעים החלפה חינמית עבור מוצרים פגומים ותמיכה אמיתית ב-WhatsApp — כי אנחנו יודעים איך זה מרגיש להוציא כסף ולהתאכזב.
 
 תודה שאתם סומכים עלינו.`,
     signature: 'צוות FootJersey',

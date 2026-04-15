@@ -6,8 +6,8 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   return {
     title: isHe ? 'משלוח ומדיניות — FootJersey' : 'Shipping & Delivery — FootJersey',
     description: isHe
-      ? 'מידע על משלוח FootJersey לכל ישראל. זמני אספקה, עלויות, מדיניות החזרות.'
-      : 'FootJersey shipping info for all of Israel. Delivery times, costs, and return policy.',
+      ? 'מידע על משלוח FootJersey לכל ישראל. זמני אספקה, עלויות, ערבות על מוצרים פגומים.'
+      : 'FootJersey shipping info for all of Israel. Delivery times, costs, and damage replacement policy.',
     alternates: {
       canonical: `https://shopfootjersey.com/${params.locale}/shipping`,
       languages: {
@@ -97,7 +97,7 @@ export default function ShippingPage({ params }: { params: { locale: string } })
               { en: 'Delivery time',        he: 'זמן אספקה',       value: isHe ? '2–4 שבועות' : '2–4 Weeks',    accent: 'var(--gold)' },
               { en: 'Shipping cost',        he: 'עלות משלוח',      value: '₪15',                                  accent: 'var(--gold)' },
               { en: 'Free on',              he: 'חינם על',         value: isHe ? '3+ חולצות' : '3+ jerseys',    accent: '#1A5C44' },
-              { en: 'Returns',              he: 'החזרות',          value: isHe ? '30 יום' : '30 Days',           accent: '#1A5C44' },
+              { en: 'Damaged item?',        he: 'מוצר פגום?',      value: isHe ? 'החלפה חינם' : 'Free Replace', accent: '#1A5C44' },
             ].map((item) => (
               <div key={item.en} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--ink)', border: '1px solid var(--border)' }}>
                 <p className="font-mono text-[9px] uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
@@ -176,30 +176,30 @@ export default function ShippingPage({ params }: { params: { locale: string } })
         </div>
       </div>
 
-      {/* ── Returns policy ──────────────────────────────────────────────── */}
+      {/* ── Damage guarantee ────────────────────────────────────────────── */}
       <div style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--steel)' }}>
         <div className="max-w-[800px] mx-auto px-4 md:px-6 py-12">
           <div className={`grid md:grid-cols-2 gap-6 ${isHe ? 'text-right' : ''}`}>
             <div>
-              <p className="section-kicker mb-3">{isHe ? 'מדיניות החזרות' : 'Returns policy'}</p>
+              <p className="section-kicker mb-3">{isHe ? 'ערבות איכות' : 'Quality guarantee'}</p>
               <h2
                 className="font-playfair font-bold text-white mb-4"
                 style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', letterSpacing: '-0.02em' }}
               >
-                {isHe ? '30 יום. ללא שאלות.' : '30 days. No questions.'}
+                {isHe ? 'מוצר פגום? נחליף. חינם.' : 'Damaged item? We replace it. Free.'}
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
                 {isHe
-                  ? 'ניתן להחזיר כל חולצה לא מותאמת אישית תוך 30 יום מיום קבלת ההזמנה. פגמים ושגיאות מוחלפים בחינם, ללא שאלות.'
-                  : 'Any non-customized jersey can be returned within 30 days of delivery. Defects and errors are replaced free of charge, no questions asked.'}
+                  ? 'אם קיבלת מוצר פגום, שגוי, או שאינו תואם להזמנה — נשלח לך החלפה חינמית מיידית. שלח לנו תמונה ב-WhatsApp ונטפל בזה.'
+                  : 'If you receive a damaged, defective, or incorrect item — we send you a free replacement immediately. Just send us a photo on WhatsApp and we\'ll sort it.'}
               </p>
             </div>
             <div className="space-y-3">
               {[
-                { en: '✓ 30-day return window',               he: '✓ חלון החזרה של 30 יום' },
-                { en: '✓ Free replacement for damaged goods',  he: '✓ החלפה חינמית לחולצות פגומות' },
-                { en: '✓ Wrong item? We sort it immediately',  he: '✓ פריט שגוי? אנחנו מסדרים מיד' },
-                { en: '✗ Customized jerseys cannot be returned', he: '✗ חולצות מותאמות אישית לא ניתן להחזיר' },
+                { en: '✓ Free replacement for damaged goods',    he: '✓ החלפה חינמית לחולצות פגומות' },
+                { en: '✓ Wrong item? We sort it immediately',    he: '✓ פריט שגוי? אנחנו מסדרים מיד' },
+                { en: '✓ Just send a WhatsApp photo — no forms', he: '✓ רק תמונה ב-WhatsApp — ללא טפסים' },
+                { en: '✗ No general returns (damage only)',       he: '✗ אין החזרות כלליות (רק פגמים)' },
               ].map((item) => (
                 <p key={item.en} className="text-sm flex items-start gap-2" style={{ color: item.en.startsWith('✗') ? 'var(--muted)' : 'rgba(255,255,255,0.75)' }}>
                   {isHe ? item.he : item.en}

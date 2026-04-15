@@ -61,8 +61,8 @@ export default function AboutPage({ params }: { params: { locale: string } }) {
     },
     {
       num: '04',
-      en: { title: 'Stand Behind It',  desc: '30-day returns. Free replacement for damaged goods. No questions asked. We\'re here long after checkout — that\'s the promise.' },
-      he: { title: 'עומדים מאחורי זה', desc: '30 יום להחזרה. החלפה חינמית למוצרים פגומים. ללא שאלות. אנחנו כאן הרבה אחרי הצ\'קאאוט — זה ההבטחה.' },
+      en: { title: 'Stand Behind It',  desc: 'Damaged item? We replace it free, no questions asked. We\'re here long after checkout — that\'s the promise.' },
+      he: { title: 'עומדים מאחורי זה', desc: 'קיבלת מוצר פגום? נחליף בחינם, ללא שאלות. אנחנו כאן הרבה אחרי הצ\'קאאוט — זה ההבטחה.' },
     },
   ];
 
