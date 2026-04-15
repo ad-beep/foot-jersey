@@ -842,7 +842,7 @@ export function CartPageClient() {
               <Reveal>
                 <div
                   className="rounded-xl p-4 mb-6 flex items-center gap-3"
-                  style={{ backgroundColor: 'rgba(0,195,216,0.04)', border: '1px solid var(--border)' }}
+                  style={{ backgroundColor: 'rgba(200,162,75,0.04)', border: '1px solid rgba(200,162,75,0.15)' }}
                 >
                   <Truck className="w-5 h-5 shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <div className="flex-1">

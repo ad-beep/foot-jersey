@@ -6,7 +6,7 @@ type BadgeVariant = 'default' | 'accent' | 'cta' | 'success' | 'error';
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'bg-[rgba(255,255,255,0.1)] text-white',
-  accent:  'bg-[rgba(0,195,216,0.2)] text-[var(--accent)] border border-[rgba(0,195,216,0.3)]',
+  accent:  'bg-[rgba(200,162,75,0.15)] text-[var(--gold)] border border-[rgba(200,162,75,0.3)]',
   cta:     'bg-[rgba(255,140,0,0.2)] text-[var(--cta)]',
   success: 'bg-[rgba(0,200,83,0.2)] text-[var(--success)]',
   error:   'bg-[rgba(255,61,0,0.2)] text-[var(--error)]',

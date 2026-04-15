@@ -58,7 +58,7 @@ export function Dock() {
                 {active && (
                   <span
                     className="block w-4 h-0.5 rounded-full"
-                    style={{ backgroundColor: 'var(--accent)' }}
+                    style={{ backgroundColor: 'var(--gold)' }}
                   />
                 )}
               </div>
@@ -89,7 +89,7 @@ export function Dock() {
                 key={key}
                 onClick={() => setCartOpen(true)}
                 className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors duration-200 active:scale-95"
-                style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }}
+                style={{ color: active ? 'var(--gold)' : 'var(--text-muted)' }}
                 aria-label={label.en}
               >
                 {inner}
@@ -102,7 +102,7 @@ export function Dock() {
               key={key}
               href={href}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors duration-200 active:scale-95"
-              style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }}
+              style={{ color: active ? 'var(--gold)' : 'var(--text-muted)' }}
               aria-label={label.en}
               aria-current={active ? 'page' : undefined}
             >

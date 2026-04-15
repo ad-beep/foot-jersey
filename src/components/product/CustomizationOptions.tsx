@@ -134,7 +134,7 @@ export function CustomizationOptions({
                   {/* Toggle switch — visual only; tap target is the full button row */}
                   <div
                     className="w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0"
-                    style={{ backgroundColor: active ? 'var(--accent)' : 'rgba(255,255,255,0.1)' }}
+                    style={{ backgroundColor: active ? 'var(--gold)' : 'rgba(255,255,255,0.1)' }}
                   >
                     <div
                       className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200"
@@ -161,7 +161,7 @@ export function CustomizationOptions({
                         onBlur={() => setNameFocused(false)}
                         placeholder={isHe ? 'שם' : 'Name'}
                         maxLength={12}
-                        className="rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                        className="rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
                         style={{
                           ...inputStyle,
                           direction: isRtl ? 'rtl' : 'ltr',
@@ -187,7 +187,7 @@ export function CustomizationOptions({
                       }}
                       placeholder="#"
                       maxLength={2}
-                      className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                      className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
                       style={{
                         ...inputStyle,
                         borderColor: nameNumberError ? '#f87171' : undefined,
@@ -209,7 +209,7 @@ export function CustomizationOptions({
                     onBlur={() => setPatchFocused(false)}
                     placeholder={isHe ? "איזה פאצ' תרצה?" : 'Which patch would you like?'}
                     maxLength={30}
-                    className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
                     style={{
                       ...inputStyle,
                       direction: isRtl ? 'rtl' : 'ltr',

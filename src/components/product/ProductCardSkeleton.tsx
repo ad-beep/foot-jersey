@@ -12,7 +12,7 @@ export function ProductCardSkeleton({ className }: ProductCardSkeletonProps) {
     <div
       className={cn(
         'flex flex-col rounded-xl overflow-hidden',
-        'bg-[var(--bg-secondary)] border border-[var(--border)]',
+        'bg-[var(--steel)] border border-[var(--border)]',
         className,
       )}
     >

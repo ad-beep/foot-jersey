@@ -46,9 +46,9 @@ export function SizeSelector({
               aria-label={size}
               className="min-w-[48px] h-[48px] rounded-lg flex items-center justify-center text-sm font-semibold transition-all duration-200"
               style={{
-                backgroundColor: selected ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                backgroundColor: selected ? 'var(--gold)' : 'rgba(255,255,255,0.05)',
                 color: selected ? 'white' : 'var(--text-secondary)',
-                border: selected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                border: selected ? '1px solid var(--gold)' : '1px solid var(--border)',
               }}
             >
               {size}

@@ -45,7 +45,7 @@ export function useToast() {
 const barColors: Record<ToastVariant, string> = {
   success: 'var(--success)',
   error:   'var(--error)',
-  info:    'var(--accent)',
+  info:    'var(--gold)',
 };
 
 // ─── Single Toast ─────────────────────────────────────────

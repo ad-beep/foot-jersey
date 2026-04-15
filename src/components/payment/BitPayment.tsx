@@ -77,9 +77,9 @@ export function BitPayment({
       <div className="text-center space-y-3">
         <div
           className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
-          style={{ backgroundColor: 'rgba(0,195,216,0.12)' }}
+          style={{ backgroundColor: 'rgba(200,162,75,0.12)' }}
         >
-          <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--accent)' }} />
+          <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--gold)' }} />
         </div>
         <p className="text-sm text-white font-medium">
           {isHe ? 'ההזמנה התקבלה!' : 'Order Received!'}
@@ -100,9 +100,9 @@ export function BitPayment({
       {/* Owner Details - Send payment to */}
       <div
         className="rounded-xl p-4 space-y-2"
-        style={{ backgroundColor: 'rgba(0,195,216,0.06)', border: '1px solid rgba(0,195,216,0.2)' }}
+        style={{ backgroundColor: 'rgba(200,162,75,0.06)', border: '1px solid rgba(200,162,75,0.2)' }}
       >
-        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
+        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
           {isHe ? 'שלח תשלום אל' : 'Send Payment To'}
         </p>
         <div className="space-y-1.5">
@@ -127,9 +127,9 @@ export function BitPayment({
               className="p-2 rounded-lg transition-colors"
               style={{
                 backgroundColor: copied
-                  ? 'rgba(0,195,216,0.2)'
+                  ? 'rgba(200,162,75,0.2)'
                   : 'rgba(255,255,255,0.06)',
-                color: copied ? 'var(--accent)' : 'var(--text-muted)',
+                color: copied ? 'var(--gold)' : 'var(--text-muted)',
               }}
               title={isHe ? 'העתק' : 'Copy'}
             >
@@ -167,15 +167,15 @@ export function BitPayment({
         onClick={handleDeepLink}
         className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 flex items-center justify-center gap-2"
         style={{
-          backgroundColor: 'rgba(0,195,216,0.2)',
-          color: 'var(--accent)',
-          border: '1px solid var(--accent)',
+          backgroundColor: 'rgba(200,162,75,0.12)',
+          color: 'var(--gold)',
+          border: '1px solid rgba(200,162,75,0.35)',
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,195,216,0.3)';
+          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(200,162,75,0.22)';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,195,216,0.2)';
+          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(200,162,75,0.12)';
         }}
       >
         <Smartphone className="w-4 h-4" />
@@ -244,8 +244,8 @@ export function BitPayment({
           <div
             className="w-full rounded-lg px-3 py-2.5 text-sm font-bold text-white"
             style={{
-              backgroundColor: 'rgba(0,195,216,0.08)',
-              border: '1px solid rgba(0,195,216,0.3)',
+              backgroundColor: 'rgba(200,162,75,0.08)',
+              border: '1px solid rgba(200,162,75,0.3)',
               direction: 'ltr',
             }}
           >

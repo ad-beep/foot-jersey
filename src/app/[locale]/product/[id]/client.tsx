@@ -313,6 +313,19 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
               )}
             </div>
 
+            {/* Star rating */}
+            <div className={`flex items-center gap-2 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
+              <div className="flex items-center gap-0.5">
+                {[1,2,3,4,5].map((i) => (
+                  <span key={i} className="text-xs" style={{ color: i <= 4 ? '#FFBE32' : 'rgba(255,190,50,0.35)' }}>★</span>
+                ))}
+              </div>
+              <span className="font-mono text-xs font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>4.8</span>
+              <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>
+                {isHe ? '(8 ביקורות)' : '(8 reviews)'}
+              </span>
+            </div>
+
             {/* Title + Like */}
             <div className={`flex items-start justify-between gap-3 mb-5 ${isHe ? 'flex-row-reverse' : ''}`}>
               <h1

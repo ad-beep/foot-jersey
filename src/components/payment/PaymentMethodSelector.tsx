@@ -68,10 +68,10 @@ export function PaymentMethodSelector({
               className="relative p-4 rounded-xl transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: isSelected
-                  ? 'rgba(0,195,216,0.15)'
+                  ? 'rgba(200,162,75,0.12)'
                   : 'rgba(255,255,255,0.03)',
                 border: isSelected
-                  ? '2px solid var(--accent)'
+                  ? '2px solid var(--gold)'
                   : '1px solid var(--border)',
               }}
             >
@@ -90,12 +90,12 @@ export function PaymentMethodSelector({
                 <div className="flex items-start justify-between">
                   <Icon
                     className="w-5 h-5"
-                    style={{ color: isSelected ? 'var(--accent)' : 'var(--text-muted)' }}
+                    style={{ color: isSelected ? 'var(--gold)' : 'var(--text-muted)' }}
                   />
                   {isSelected && (
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--accent)' }}
+                      style={{ backgroundColor: 'var(--gold)' }}
                     >
                       <svg className="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 20 20">
                         <path
@@ -111,7 +111,7 @@ export function PaymentMethodSelector({
                 <div>
                   <p
                     className="text-sm font-semibold"
-                    style={{ color: isSelected ? 'var(--accent)' : 'white' }}
+                    style={{ color: isSelected ? 'var(--gold)' : 'white' }}
                   >
                     {isHe ? method.labelHe : method.labelEn}
                   </p>
@@ -131,9 +131,9 @@ export function PaymentMethodSelector({
       {/* Info box */}
       <div
         className="p-3 rounded-lg flex items-start gap-2"
-        style={{ backgroundColor: 'rgba(0,195,216,0.08)' }}
+        style={{ backgroundColor: 'rgba(200,162,75,0.06)', border: '1px solid rgba(200,162,75,0.15)' }}
       >
-        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gold)' }} />
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {isHe
             ? 'כל שיטות התשלום מאובטחות והנתונים שלך מוגנים'

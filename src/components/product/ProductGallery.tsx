@@ -53,7 +53,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
   const renderImage = (src: string, idx: number, priority: boolean, fill: boolean, thumbnail = false) => {
     if (!src || errors.has(idx)) {
       return (
-        <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'var(--steel)' }}>
           <Shirt className="w-16 h-16" style={{ color: 'var(--text-muted)' }} />
         </div>
       );
@@ -67,7 +67,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
     return (
       <>
         {!isLoaded && (
-          <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+          <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--steel)' }} />
         )}
         <Image
           src={imgSrc}
@@ -115,7 +115,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                 style={{
                   width: i === activeIndex ? 10 : 8,
                   height: i === activeIndex ? 10 : 8,
-                  backgroundColor: i === activeIndex ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
+                  backgroundColor: i === activeIndex ? 'var(--gold)' : 'rgba(255,255,255,0.2)',
                 }}
               />
             ))}
@@ -151,7 +151,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                   'border-2',
                 )}
                 style={{
-                  borderColor: i === activeIndex ? 'var(--accent)' : 'var(--border)',
+                  borderColor: i === activeIndex ? 'var(--gold)' : 'var(--border)',
                   opacity: i === activeIndex ? 1 : 0.6,
                 }}
                 aria-label={`View image ${i + 1}`}

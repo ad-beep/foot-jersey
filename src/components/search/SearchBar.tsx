@@ -312,7 +312,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
             className="w-full rounded-full py-2 text-sm focus:outline-none transition-all duration-200"
             style={{
               background: 'rgba(255,255,255,0.05)',
-              border: `1px solid ${focused ? 'var(--accent)' : 'var(--border)'}`,
+              border: `1px solid ${focused ? 'var(--gold)' : 'var(--border)'}`,
               color: 'var(--text-secondary)',
               paddingLeft: isRtl ? (query ? '36px' : '14px') : '40px',
               paddingRight: isRtl ? '40px' : (query ? '36px' : '14px'),
@@ -344,7 +344,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
           id="search-dropdown"
           className="absolute top-full mt-2 w-full min-w-[320px] rounded-xl overflow-hidden z-50"
           style={{
-            backgroundColor: 'var(--bg-secondary)',
+            backgroundColor: 'var(--steel)',
             border: '1px solid var(--border)',
             boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
             animation: 'searchDropIn 150ms ease-out',
@@ -362,7 +362,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
                   onClick={handleClearRecent}
                   className="text-xs transition-colors"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--accent)'; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
                 >
                   {isHe ? 'נקה' : 'Clear'}
@@ -405,7 +405,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
                       >
                         <div
                           className="shrink-0 w-12 h-16 rounded-lg overflow-hidden"
-                          style={{ backgroundColor: 'var(--bg-primary)' }}
+                          style={{ backgroundColor: 'var(--ink)' }}
                         >
                           <Image
                             src={jersey.imageUrl}
@@ -420,7 +420,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
                           <p className="text-sm text-white truncate">{displayName}</p>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{jersey.season}</p>
                         </div>
-                        <span className="text-sm font-semibold shrink-0" style={{ color: 'var(--accent)' }}>
+                        <span className="text-sm font-semibold shrink-0" style={{ color: 'var(--gold)' }}>
                           {CURRENCY}{jersey.price}
                         </span>
                       </button>
@@ -432,7 +432,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
                     <button
                       onClick={() => navigateToSearch()}
                       className="w-full px-3 py-3 text-sm font-medium text-start transition-colors"
-                      style={{ color: 'var(--accent)', borderTop: '1px solid var(--border)' }}
+                      style={{ color: 'var(--gold)', borderTop: '1px solid var(--border)' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.03)'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                     >
@@ -449,7 +449,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
                     <button
                       onClick={() => handleSuggestionClick(suggestion)}
                       className="text-sm mt-2 transition-colors"
-                      style={{ color: 'var(--accent)' }}
+                      style={{ color: 'var(--gold)' }}
                     >
                       {isHe ? `התכוונת ל"${suggestion}"?` : `Did you mean "${suggestion}"?`}
                     </button>

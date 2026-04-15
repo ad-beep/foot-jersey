@@ -241,6 +241,104 @@ export const FAQS: FaqEntry[] = [
       he: 'כן! יש לנו קולקציה מלאה לילדים עם חולצות לגילאים 4-14 במידות 16 עד 28. חולצות ילדים זמינות בכל הליגות הגדולות ועולות ₪100 כל אחת. מתנה מושלמת לאוהדי כדורגל צעירים.',
     },
   },
+
+  // ── More ordering / product questions ───────────────────────────────────
+  {
+    id: 'jersey-price',
+    category: 'ordering',
+    question: {
+      en: 'How much do jerseys cost at FootJersey?',
+      he: 'כמה עולות חולצות ב-FootJersey?',
+    },
+    answer: {
+      en: 'Most jerseys are priced at ₪100–₪125. Standard jerseys start at ₪100. Customization options (name/number, patch, player version) are available for +₪10 each. Mystery Boxes start from ₪99. Free shipping when you order 3 or more jerseys.',
+      he: 'רוב החולצות מתומחרות ב-₪100–₪125. חולצות סטנדרטיות מתחילות מ-₪100. אפשרויות התאמה אישית (שם/מספר, טלאי, גרסת שחקן) זמינות ב-+₪10 כל אחת. קופסאות מסתורין מתחילות מ-₪99. משלוח חינם בהזמנה של 3 חולצות ומעלה.',
+    },
+  },
+  {
+    id: 'israeli-league',
+    category: 'product',
+    question: {
+      en: 'Do you carry Israeli Premier League jerseys?',
+      he: 'האם יש לכם חולצות ליגת העל הישראלית?',
+    },
+    answer: {
+      en: 'Yes! We carry jerseys from Israeli Premier League clubs including Maccabi Tel Aviv, Hapoel Tel Aviv, Maccabi Haifa, Beitar Jerusalem, and more. Israeli league jerseys are very popular and are available in the "Israeli League" category on our site.',
+      he: 'כן! יש לנו חולצות ממועדוני ליגת העל הישראלית כולל מכבי תל אביב, הפועל תל אביב, מכבי חיפה, בית"ר ירושלים ועוד. חולצות ליגת העל ישראלית פופולריות מאוד וזמינות בקטגוריה "ליגת העל" באתר שלנו.',
+    },
+  },
+  {
+    id: 'track-order',
+    category: 'shipping',
+    question: {
+      en: 'Can I track my order?',
+      he: 'האם אפשר לעקוב אחרי ההזמנה שלי?',
+    },
+    answer: {
+      en: 'Yes. Once your jersey ships, you\'ll receive a tracking number via email. You can use it to follow your package on the carrier\'s website. If you don\'t receive tracking information within 5 business days of ordering, message us on WhatsApp at +972-58-414-0508.',
+      he: 'כן. ברגע שהחולצה שלך נשלחת, תקבל מספר מעקב באימייל. תוכל להשתמש בו כדי לעקוב אחרי החבילה שלך באתר חברת השילוח. אם לא קיבלת מידע מעקב תוך 5 ימי עסקים מההזמנה, שלח לנו הודעה ב-WhatsApp: 058-414-0508.',
+    },
+  },
+  {
+    id: 'cancel-order',
+    category: 'ordering',
+    question: {
+      en: 'Can I cancel or change my order?',
+      he: 'האם אפשר לבטל או לשנות את ההזמנה שלי?',
+    },
+    answer: {
+      en: 'You can cancel or modify your order within 24 hours of placing it. Contact us immediately via WhatsApp at +972-58-414-0508 with your order reference number. After 24 hours, the order may have already been processed for shipping and we\'ll handle it under our 30-day return policy.',
+      he: 'ניתן לבטל או לשנות את ההזמנה תוך 24 שעות מביצועה. צור איתנו קשר מיידית ב-WhatsApp: 058-414-0508 עם מספר ההזמנה שלך. לאחר 24 שעות, ייתכן שההזמנה כבר עובדה למשלוח ונטפל בה לפי מדיניות ההחזרה ל-30 יום.',
+    },
+  },
+  {
+    id: 'best-jersey-store-israel',
+    category: 'trust',
+    question: {
+      en: 'Where can I buy football jerseys in Israel?',
+      he: 'איפה אפשר לקנות חולצות כדורגל בישראל?',
+    },
+    answer: {
+      en: 'FootJersey (shopfootjersey.com) is Israel\'s dedicated online football jersey store. We ship to all cities across Israel with 2–4 week delivery. You\'ll find jerseys from all major leagues — Premier League, La Liga, Serie A, Bundesliga, Israeli Premier League, World Cup 2026, Retro Classics, and more. PayPal and BIT accepted.',
+      he: 'FootJersey (shopfootjersey.com) היא חנות חולצות הכדורגל הייעודית של ישראל. אנחנו שולחים לכל הערים ברחבי ישראל עם משלוח של 2-4 שבועות. תמצא חולצות מכל הליגות הגדולות — פרמייר ליג, לה ליגה, סרייה A, בונדסליגה, ליגת העל הישראלית, מונדיאל 2026, רטרו קלאסיק ועוד. מקבלים PayPal ו-BIT.',
+    },
+  },
+  {
+    id: 'stussy-jerseys',
+    category: 'product',
+    question: {
+      en: 'What are Stussy football jerseys?',
+      he: 'מה הן חולצות כדורגל Stussy?',
+    },
+    answer: {
+      en: 'Our Stussy collection features football jerseys with the iconic Stussy streetwear aesthetic — bold graphics, unique colourways, and a fashion-forward take on the classic football kit. These limited-edition pieces combine football culture with streetwear style and are a favourite among collectors and fashion-conscious fans.',
+      he: 'הקולקציה שלנו של Stussy כוללת חולצות כדורגל עם האסתטיקה האייקונית של הסטריטוור של Stussy — גרפיקות נועזות, צבעים ייחודיים, ופרשנות מתקדמת לחולצת הכדורגל הקלאסית. פריטים מוגבלים אלה משלבים תרבות כדורגל עם סגנון רחוב ומועדפים על ידי אספנים ואוהדים מודעים לאופנה.',
+    },
+  },
+  {
+    id: 'group-order',
+    category: 'ordering',
+    question: {
+      en: 'Can I place a bulk or group order?',
+      he: 'האם אפשר לבצע הזמנה קבוצתית?',
+    },
+    answer: {
+      en: 'Absolutely! Many of our customers order for their entire team, family, or friend group. Order 3 or more jerseys and shipping is free. For large group orders (10+ jerseys), message us on WhatsApp at +972-58-414-0508 and we\'ll make sure everything goes smoothly.',
+      he: 'בהחלט! רבים מהלקוחות שלנו מזמינים עבור הקבוצה כולה, המשפחה, או חברים. הזמן 3 חולצות או יותר והמשלוח חינם. להזמנות קבוצתיות גדולות (10+ חולצות), שלח לנו הודעה ב-WhatsApp: 058-414-0508 ונוודא שהכל מסתדר בצורה חלקה.',
+    },
+  },
+  {
+    id: 'drip-jerseys',
+    category: 'product',
+    question: {
+      en: 'What is the Drip collection?',
+      he: 'מה זו קולקציית ה-Drip?',
+    },
+    answer: {
+      en: 'The Drip collection features the boldest, most stylish jerseys — limited-run editions, mashups, fashion-forward designs, and rare finds that go beyond the standard replica kit. If you want to stand out from the crowd and express your individual style through football fashion, the Drip collection is for you.',
+      he: 'קולקציית הDrip מציגה את החולצות הנועזות והאופנתיות ביותר — מהדורות מוגבלות, מיקסים, עיצובים מתקדמים ומציאות נדירות שחורגות מחולצת הרפליקה הסטנדרטית. אם אתה רוצה לבלוט ולהביע את הסגנון האישי שלך דרך אופנת כדורגל, קולקציית ה-Drip היא בשבילך.',
+    },
+  },
 ];
 
 /**

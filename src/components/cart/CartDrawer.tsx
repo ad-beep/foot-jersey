@@ -40,7 +40,7 @@ function CartItemRow({ item }: { item: CartItem }) {
       <Link
         href={`/${locale}/product/${item.jerseyId}`}
         className="shrink-0 w-[72px] h-[90px] rounded-lg overflow-hidden"
-        style={{ backgroundColor: 'var(--bg-primary)' }}
+        style={{ backgroundColor: 'var(--ink)' }}
       >
         <Image
           src={item.jersey.imageUrl}
@@ -56,7 +56,7 @@ function CartItemRow({ item }: { item: CartItem }) {
       <div className="flex-1 min-w-0">
         <Link
           href={`/${locale}/product/${item.jerseyId}`}
-          className="text-sm font-semibold text-white line-clamp-2 hover:text-[var(--accent)] transition-colors"
+          className="text-sm font-semibold text-white line-clamp-2 hover:text-[var(--gold)] transition-colors"
         >
           {displayName}
         </Link>
@@ -66,7 +66,7 @@ function CartItemRow({ item }: { item: CartItem }) {
             {item.size}
           </span>
           {(item.customization.customName || item.customization.customNumber) && (
-            <span className="text-xs" style={{ color: 'var(--accent)' }}>
+            <span className="text-xs" style={{ color: 'var(--gold)' }}>
               {item.customization.customName} {item.customization.customNumber ? `#${item.customization.customNumber}` : ''}
             </span>
           )}
@@ -90,7 +90,7 @@ function CartItemRow({ item }: { item: CartItem }) {
 
         {/* Price + Qty row */}
         <div className="flex items-center justify-between mt-2">
-          <p className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
+          <p className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
             {CURRENCY}{lineTotal}
           </p>
 
@@ -125,10 +125,10 @@ function FreeShippingIndicator({ itemCount, isHe }: { itemCount: number; isHe: b
   const progress = Math.min(itemCount / threshold, 1);
 
   return (
-    <div className="px-6 py-3" style={{ backgroundColor: 'rgba(0,195,216,0.04)', borderBottom: '1px solid var(--border)' }}>
+    <div className="px-6 py-3" style={{ backgroundColor: 'rgba(200,162,75,0.04)', borderBottom: '1px solid var(--border)' }}>
       <div className="flex items-center gap-2 mb-2">
-        <Truck className="w-4 h-4 shrink-0" style={{ color: progress >= 1 ? 'var(--accent)' : 'var(--text-muted)' }} />
-        <p className="text-xs" style={{ color: progress >= 1 ? 'var(--accent)' : 'var(--text-secondary)' }}>
+        <Truck className="w-4 h-4 shrink-0" style={{ color: progress >= 1 ? 'var(--gold)' : 'var(--text-muted)' }} />
+        <p className="text-xs" style={{ color: progress >= 1 ? 'var(--gold)' : 'var(--text-secondary)' }}>
           {progress >= 1
             ? (isHe ? 'משלוח חינם!' : 'Free shipping!')
             : (isHe ? `הוסף עוד ${remaining} חולצ${remaining === 1 ? 'ה' : 'ות'} למשלוח חינם` : `Add ${remaining} more jersey${remaining === 1 ? '' : 's'} for free shipping`)}
@@ -139,7 +139,7 @@ function FreeShippingIndicator({ itemCount, isHe }: { itemCount: number; isHe: b
           className="h-full rounded-full transition-all duration-500"
           style={{
             width: `${progress * 100}%`,
-            backgroundColor: progress >= 1 ? 'var(--accent)' : 'var(--cta)',
+            backgroundColor: progress >= 1 ? 'var(--gold)' : 'var(--cta)',
           }}
         />
       </div>
@@ -198,7 +198,7 @@ export function CartDrawer({ dict: _dict }: CartDrawerProps) {
             className="fixed top-0 bottom-0 z-[70] w-full max-w-[420px] flex flex-col"
             style={{
               ...panelStyle,
-              backgroundColor: 'var(--bg-secondary)',
+              backgroundColor: 'var(--steel)',
               borderInlineStart: '1px solid var(--border)',
             }}
             initial={{ x: slideOut }}
@@ -215,14 +215,14 @@ export function CartDrawer({ dict: _dict }: CartDrawerProps) {
               style={{ borderBottom: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                <h2 className="font-montserrat font-bold text-white text-lg">
+                <ShoppingBag className="w-5 h-5" style={{ color: 'var(--gold)' }} />
+                <h2 className="font-playfair font-bold text-white text-lg">
                   {isHe ? 'עגלת קניות' : 'Your Cart'}
                 </h2>
                 {hasItems && (
                   <span
                     className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: 'rgba(0,195,216,0.12)', color: 'var(--accent)' }}
+                    style={{ backgroundColor: 'rgba(200,162,75,0.12)', color: 'var(--gold)' }}
                   >
                     {itemCount}
                   </span>
@@ -293,9 +293,9 @@ export function CartDrawer({ dict: _dict }: CartDrawerProps) {
                 <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
                   <div
                     className="w-16 h-16 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'var(--bg-elevated, rgba(255,255,255,0.04))' }}
+                    style={{ backgroundColor: 'rgba(200,162,75,0.08)', border: '1px solid rgba(200,162,75,0.15)' }}
                   >
-                    <ShoppingBag className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
+                    <ShoppingBag className="w-7 h-7" style={{ color: 'var(--gold)' }} />
                   </div>
                   <p className="font-semibold text-white">
                     {isHe ? 'העגלה ריקה' : 'Your cart is empty'}

@@ -153,14 +153,14 @@ export const ProductCard = React.memo(function ProductCard({
       {/* Image area */}
       <div className="relative aspect-[3/4] overflow-hidden">
         {isMysteryBox ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-secondary)]">
-            <Package className="w-16 h-16" style={{ color: 'var(--accent)' }} />
-            <span className="text-xs font-medium px-3 text-center leading-snug" style={{ color: 'var(--text-muted)' }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[var(--steel)] to-[#0F1814]">
+            <Package className="w-16 h-16" style={{ color: 'var(--gold)' }} />
+            <span className="text-xs font-medium px-3 text-center leading-snug" style={{ color: 'var(--muted)' }}>
               {isHe ? 'קופסת הפתעה' : 'Mystery Box'}
             </span>
           </div>
         ) : imgError ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-elevated)]">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'var(--steel)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/placeholder-jersey.svg"
@@ -171,7 +171,7 @@ export const ProductCard = React.memo(function ProductCard({
         ) : (
           <>
             {!imgLoaded && (
-              <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+              <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--steel)' }} />
             )}
             <Image
               src={jersey.imageUrl}
@@ -299,9 +299,15 @@ export const ProductCard = React.memo(function ProductCard({
             ? (isHe ? 'קופסת הפתעה' : 'Mystery Box')
             : `${jersey.season} · ${isHe ? typeLabel.he : typeLabel.en}`}
         </p>
-        <p className="font-mono text-base font-bold mt-1" style={{ color: 'var(--gold)' }}>
-          {CURRENCY}{jersey.price}
-        </p>
+        <div className="flex items-center justify-between mt-1">
+          <p className="font-mono text-base font-bold" style={{ color: 'var(--gold)' }}>
+            {CURRENCY}{jersey.price}
+          </p>
+          <div className="flex items-center gap-0.5">
+            <span className="text-[10px]" style={{ color: '#FFBE32' }}>★</span>
+            <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>4.8</span>
+          </div>
+        </div>
       </div>
     </Link>
   );
