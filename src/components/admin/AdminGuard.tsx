@@ -28,7 +28,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   if (!mounted || status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
-        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#C8A24B', borderTopColor: 'transparent' }} />
       </div>
     );
   }

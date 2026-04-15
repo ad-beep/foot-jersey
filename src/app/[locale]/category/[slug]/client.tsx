@@ -25,13 +25,14 @@ const EXCLUSIVE_TYPES: JerseyType[] = ['kids', 'drip', 'other_products'];
 
 const CATEGORY_NAMES: Record<string, { en: string; he: string }> = {
   // Leagues
-  england:       { en: 'Premier League', he: 'פרמייר ליג' },
-  spain:         { en: 'LaLiga',         he: 'לה ליגה' },
-  italy:         { en: 'Serie A',        he: 'סרייה A' },
-  germany:       { en: 'Bundesliga',     he: 'בונדסליגה' },
-  france:        { en: 'Ligue 1',        he: 'ליג 1' },
-  rest_of_world: { en: 'Rest of World',  he: 'שאר העולם' },
-  national_teams:{ en: 'International',  he: 'נבחרות' },
+  england:        { en: 'Premier League', he: 'פרמייר ליג' },
+  spain:          { en: 'LaLiga',         he: 'לה ליגה' },
+  italy:          { en: 'Serie A',        he: 'סרייה A' },
+  germany:        { en: 'Bundesliga',     he: 'בונדסליגה' },
+  france:         { en: 'Ligue 1',        he: 'ליג 1' },
+  rest_of_world:  { en: 'Rest of World',  he: 'שאר העולם' },
+  national_teams: { en: 'International',  he: 'נבחרות' },
+  israeli_league: { en: 'Israeli League', he: 'ליגת העל' },
   // Collections
   'season-2526':    { en: '25/26 Season',    he: 'עונת 25/26' },
   'retro':          { en: 'Retro',           he: 'רטרו' },
@@ -85,11 +86,22 @@ function filterByCategory(jerseys: Jersey[], slug: string): Jersey[] {
       if (slug === 'other-products') return jerseys.filter((j) => j.type === 'other_products');
       return jerseys.filter((j) => j.type === section.typeMatch);
     case 'tag':
-      return section.tagMatch
-        ? jerseys.filter((j) => j.tags.some((t) => t.includes(section.tagMatch!)))
-        : [];
+      // For stussy-edition, also catch jerseys whose type was promoted to 'stussy'
+      if (slug === 'stussy-edition') {
+        return jerseys.filter(
+          (j) => j.type === 'stussy' || j.tags.some((t) => t.toLowerCase().includes('stussy')),
+        );
+      }
+      // For long-sleeve, use the dedicated isLongSleeve field + tag fallback
+      if (slug === 'long-sleeve') {
+        return jerseys.filter(
+          (j) => j.isLongSleeve || j.tags.some((t) => t.includes('ארוך') || t === 'long_sleeve'),
+        );
+      }
+      if (!section.tagMatch) return [];
+      return jerseys.filter((j) => j.tags.some((t) => t.includes(section.tagMatch!)));
     case 'season':
-      return jerseys.filter((j) => j.type === 'regular' && (j.season.includes('2024') || j.season.includes('2025') || j.season.includes('2026')));
+      return jerseys.filter((j) => j.type === 'regular' && j.season.includes('25/26'));
     default:
       return [];
   }
@@ -510,7 +522,7 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
+          <h1 className="font-playfair text-3xl font-bold text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
             {categoryName}
           </h1>
           {!isMysteryBox && !loading && (
@@ -677,19 +689,16 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
                   ))}
                 </div>
 
-                {/* Infinite scroll sentinel + loading skeletons */}
-                {hasMore && (
-                  <div ref={sentinelRef} className="mt-4">
+                {/* Infinite scroll sentinel — always rendered so observer doesn't detach */}
+                <div ref={sentinelRef} className="mt-4">
+                  {hasMore && (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                       {Array.from({ length: 4 }, (_, i) => (
                         <ProductCardSkeleton key={i} />
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Sentinel for when all items are loaded */}
-                {!hasMore && <div ref={sentinelRef} />}
+                  )}
+                </div>
               </>
             )}
           </>

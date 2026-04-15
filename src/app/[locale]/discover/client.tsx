@@ -84,7 +84,7 @@ const labels = {
     drip: 'דריפ',
     otherProducts: 'מוצרים נוספים',
     stussyEdition: 'מהדורת סטוסי',
-    israeliLeague: 'ליגת העל',
+    israeliLeague: 'ליגת על',
     clearAll: 'נקה הכל',
     showingSuggested: (n: number) => `מציג ${n} חולצות מומלצות`,
     showingFiltered: (n: number) => `מציג ${n} חולצות`,
@@ -157,8 +157,8 @@ function computeFallbackScore(jersey: Jersey, minTime: number, maxTime: number):
 function getSuggestedJerseys(all: Jersey[], getScore: (id: string) => number): Jersey[] {
   if (all.length === 0) return [];
   const times = all.map((j) => new Date(j.createdAt).getTime());
-  const minTime = Math.min(...times);
-  const maxTime = Math.max(...times);
+  const minTime = times.reduce((a, b) => Math.min(a, b), Infinity);
+  const maxTime = times.reduce((a, b) => Math.max(a, b), -Infinity);
   const scored = all
     .map((j) => {
       const analyticsScore = getScore(j.id);
@@ -178,12 +178,12 @@ function leagueMatchesJersey(leagueId: string, j: Jersey): boolean {
 function collectionMatchesJersey(colId: string, j: Jersey): boolean {
   switch (colId) {
     case 'retro':          return j.type === 'retro';
-    case 'season-2526':    return j.type === 'regular' && (j.season.includes('24/25') || j.season.includes('25/26'));
+    case 'season-2526':    return j.type === 'regular' && j.season.includes('25/26');
     case 'special':        return j.type === 'special';
-    case 'stussy-edition': return j.tags.some((t) => t.toLowerCase().includes('stussy'));
+    case 'stussy-edition': return j.type === 'stussy' || j.tags.some((t) => t.toLowerCase().includes('stussy'));
     case 'world-cup':      return j.type === 'world_cup';
     case 'kids':           return j.type === 'kids';
-    case 'long-sleeve':    return j.tags.some((t) => t.includes('ארוך'));
+    case 'long-sleeve':    return j.isLongSleeve || j.tags.some((t) => t.includes('ארוך') || t === 'long_sleeve');
     case 'drip':           return j.type === 'drip';
     case 'other-products': return j.type === 'other_products';
     default:               return false;
@@ -662,7 +662,7 @@ export function DiscoverClient() {
             <div>
               <p
                 className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2"
-                style={{ color: 'rgba(15,100,50,0.8)' }}
+                style={{ color: 'rgba(200,162,75,0.5)' }}
               >
                 {t.collections}
               </p>
@@ -682,10 +682,10 @@ export function DiscoverClient() {
                       className="shrink-0 rounded-lg px-3.5 font-mono text-[11px] uppercase tracking-wide transition-all duration-200"
                       style={{
                         height: 34,
-                        backgroundColor: active ? 'rgba(15,80,46,0.25)' : 'rgba(255,255,255,0.04)',
-                        color: active ? '#3ebd82' : 'rgba(255,255,255,0.45)',
+                        backgroundColor: active ? 'rgba(200,162,75,0.12)' : 'rgba(255,255,255,0.04)',
+                        color: active ? 'var(--gold)' : 'rgba(255,255,255,0.45)',
                         border: active
-                          ? '1px solid rgba(30,140,80,0.5)'
+                          ? '1px solid rgba(200,162,75,0.45)'
                           : '1px solid rgba(255,255,255,0.07)',
                         fontWeight: active ? 600 : 400,
                       }}
@@ -818,17 +818,16 @@ export function DiscoverClient() {
               ))}
             </div>
 
-            {/* Infinite scroll sentinel + skeleton row */}
-            {hasMore && (
-              <div ref={sentinelRef} className="mt-4">
+            {/* Infinite scroll sentinel — always rendered so observer doesn't detach */}
+            <div ref={sentinelRef} className="mt-4">
+              {hasMore && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {Array.from({ length: 4 }, (_, i) => (
                     <ProductCardSkeleton key={i} />
                   ))}
                 </div>
-              </div>
-            )}
-            {!hasMore && <div ref={sentinelRef} />}
+              )}
+            </div>
           </>
         )}
       </div>

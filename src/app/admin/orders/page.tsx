@@ -17,13 +17,21 @@ interface OrderSummary {
   createdAt: Timestamp | null;
 }
 
-type Tab = 'all' | 'pending_bit' | 'processing' | 'shipped';
+function formatOrderDate(ts: Timestamp | null): string {
+  if (!ts) return '—';
+  const d = ts.toDate();
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' +
+    d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+type Tab = 'all' | 'pending_bit' | 'processing' | 'shipped' | 'completed';
 
 const TABS: { id: Tab; label: string; filter: (o: OrderSummary) => boolean }[] = [
   { id: 'all',         label: 'All Orders',    filter: () => true },
   { id: 'pending_bit', label: '⚡ Pending BIT', filter: (o) => o.status === 'pending_bit_approval' || o.status === 'bit_declined' },
   { id: 'processing',  label: 'Processing',    filter: (o) => o.status === 'processing' },
   { id: 'shipped',     label: 'Shipped',       filter: (o) => o.status === 'shipped' },
+  { id: 'completed',   label: 'Completed',     filter: (o) => o.status === 'completed' || o.status === 'delivered' },
 ];
 
 const STATUS_OPTIONS = [
@@ -79,7 +87,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#C8A24B' }} />
       </div>
     );
   }
@@ -98,13 +106,16 @@ export default function OrdersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or order ID…"
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/40"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white placeholder-gray-600 focus:outline-none"
+          style={{ '--tw-ring-shadow': 'none' } as React.CSSProperties}
+          onFocus={(e) => (e.target.style.borderColor = 'rgba(200,162,75,0.45)')}
+          onBlur={(e) => (e.target.style.borderColor = '')}
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white focus:outline-none focus:border-cyan-500/40"
+          className="px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white focus:outline-none"
         >
           {STATUS_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -122,9 +133,10 @@ export default function OrdersPage() {
               onClick={() => setTab(t.id)}
               className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 tab === t.id
-                  ? 'text-cyan-400 border-cyan-400'
+                  ? 'border-transparent'
                   : 'text-gray-500 border-transparent hover:text-gray-300'
               }`}
+            style={tab === t.id ? { color: '#C8A24B', borderBottomColor: '#C8A24B' } : {}}
             >
               {t.label}
               {count > 0 && (
@@ -173,8 +185,11 @@ export default function OrdersPage() {
                 <span className="text-sm font-semibold text-white flex-1 truncate">
                   {order.shippingInfo?.name || '—'}
                 </span>
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-600 hidden sm:inline">
                   {count} jersey{count !== 1 ? 's' : ''}
+                </span>
+                <span className="text-xs text-gray-600 font-mono hidden md:inline whitespace-nowrap">
+                  {formatOrderDate(order.createdAt)}
                 </span>
                 <span className="text-sm font-bold text-white min-w-[60px] text-right">
                   ₪{order.total}

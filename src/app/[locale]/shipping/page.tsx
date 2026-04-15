@@ -8,6 +8,13 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     description: isHe
       ? 'מידע על משלוח FootJersey לכל ישראל. זמני אספקה, עלויות, מדיניות החזרות.'
       : 'FootJersey shipping info for all of Israel. Delivery times, costs, and return policy.',
+    alternates: {
+      canonical: `https://shopfootjersey.com/${params.locale}/shipping`,
+      languages: {
+        en: 'https://shopfootjersey.com/en/shipping',
+        he: 'https://shopfootjersey.com/he/shipping',
+      },
+    },
   };
 }
 

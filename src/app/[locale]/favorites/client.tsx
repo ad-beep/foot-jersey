@@ -2,10 +2,11 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, User as UserIcon } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
 import { useFavoritesStore } from '@/stores/favorites-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductCardSkeleton } from '@/components/product/ProductCardSkeleton';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
@@ -31,11 +32,14 @@ const GROUPS: GroupDef[] = [
 
 // ─── Labels ──────────────────────────────────────────────────────
 const L = {
-  title:      { en: 'Liked Jerseys', he: 'חולצות שאהבתי' },
-  empty:      { en: 'No liked jerseys yet', he: 'אין חולצות שאהבת עדיין' },
-  emptySub:   { en: 'Explore our collection and like the jerseys you love', he: 'גלה את הקולקציה שלנו ותסמן חולצות שאהבת' },
-  explore:    { en: 'Explore Jerseys', he: 'גלה חולצות' },
-  home:       { en: 'Home', he: 'בית' },
+  title:        { en: 'Liked Jerseys',   he: 'חולצות שאהבתי' },
+  empty:        { en: 'No liked jerseys yet', he: 'אין חולצות שאהבת עדיין' },
+  emptySub:     { en: 'Explore our collection and like the jerseys you love', he: 'גלה את הקולקציה שלנו ותסמן חולצות שאהבת' },
+  explore:      { en: 'Explore Jerseys', he: 'גלה חולצות' },
+  home:         { en: 'Home',            he: 'בית' },
+  signInPrompt: { en: 'Sign in to see your liked jerseys', he: 'התחבר כדי לראות את החולצות שאהבת' },
+  signInSub:    { en: 'Your favorites are saved per account and synced across all your devices', he: 'המועדפים שלך נשמרים לחשבון ומסונכרנים בכל המכשירים' },
+  signIn:       { en: 'Sign In',         he: 'התחבר' },
 } as const;
 
 // ─── Props ───────────────────────────────────────────────────────
@@ -48,6 +52,7 @@ export default function FavoritesClient({ allJerseys }: FavoritesClientProps) {
   const { locale } = useLocale();
   const hydrated = useHydration();
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
+  const user = useAuthStore((s) => s.user);
   const isHe = locale === 'he';
 
   const likedJerseys = useMemo(
@@ -65,6 +70,33 @@ export default function FavoritesClient({ allJerseys }: FavoritesClientProps) {
     { label: isHe ? L.home.he : L.home.en, href: `/${locale}` },
     { label: isHe ? L.title.he : L.title.en },
   ];
+
+  // Auth guard — show sign-in prompt for unauthenticated users
+  if (hydrated && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--ink)' }}>
+        <div className="text-center max-w-sm">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+          >
+            <Heart className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
+          </div>
+          <h1 className="text-xl font-bold text-white mb-2">
+            {isHe ? L.signInPrompt.he : L.signInPrompt.en}
+          </h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+            {isHe ? L.signInSub.he : L.signInSub.en}
+          </p>
+          <Link href={`/${locale}/auth`}>
+            <Button variant="primary" size="lg">
+              {isHe ? L.signIn.he : L.signIn.en}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8 md:py-12" style={{ backgroundColor: 'var(--ink)' }}>
@@ -116,7 +148,7 @@ export default function FavoritesClient({ allJerseys }: FavoritesClientProps) {
           <section key={group.key} className="mb-10">
             <Reveal>
               <div className="mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-                <h2 className="text-lg font-semibold pb-3" style={{ color: 'var(--text-secondary)' }}>
+                <h2 className="font-playfair text-lg font-semibold pb-3" style={{ color: 'var(--text-secondary)' }}>
                   {isHe ? group.label.he : group.label.en} ({group.jerseys.length})
                 </h2>
               </div>

@@ -8,7 +8,6 @@ import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useCartStore } from '@/stores/cart-store';
-import { useAuthStore } from '@/stores/auth-store';
 import { useAnalyticsStore } from '@/stores/analytics-store';
 import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
@@ -53,8 +52,6 @@ export const ProductCard = React.memo(function ProductCard({
   const isFav          = useFavoritesStore((s) => s.isFavorite(jersey.id));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const addItem        = useCartStore((s) => s.addItem);
-  const savedSize      = useAuthStore((s) => s.user?.savedSize ?? null);
-  const savedKidsSize  = useAuthStore((s) => s.user?.savedKidsSize ?? null);
   const recordInteraction = useAnalyticsStore((s) => s.recordInteraction);
   const recordCartAdd  = useAnalyticsStore((s) => s.recordCartAdd);
   const { toast }      = useToast();
@@ -64,6 +61,14 @@ export const ProductCard = React.memo(function ProductCard({
   const [heartPulse, setHeartPulse] = useState(false);
   const [sizePickerOpen, setSizePickerOpen] = useState(false);
   const sizePickerRef = useRef<HTMLDivElement>(null);
+  const heartPulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (heartPulseTimerRef.current) clearTimeout(heartPulseTimerRef.current);
+    };
+  }, []);
 
   const isHe          = locale === 'he';
   const isMysteryBox  = jersey.category === 'mystery-box';
@@ -103,15 +108,17 @@ export const ProductCard = React.memo(function ProductCard({
   const handleFavorite = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Read state BEFORE toggling so toast shows the correct direction
+    const wasAlreadyFav = useFavoritesStore.getState().isFavorite(jersey.id);
     toggleFavorite(jersey.id);
     setHeartPulse(true);
-    setTimeout(() => setHeartPulse(false), 300);
+    if (heartPulseTimerRef.current) clearTimeout(heartPulseTimerRef.current);
+    heartPulseTimerRef.current = setTimeout(() => setHeartPulse(false), 300);
 
-    const wasFav = useFavoritesStore.getState().isFavorite(jersey.id);
     toast({
-      title: wasFav
-        ? (isHe ? 'נוסף למועדפים' : 'Added to favorites')
-        : (isHe ? 'הוסר מהמועדפים' : 'Removed from favorites'),
+      title: wasAlreadyFav
+        ? (isHe ? 'הוסר מהמועדפים' : 'Removed from favorites')
+        : (isHe ? 'נוסף למועדפים' : 'Added to favorites'),
       variant: 'info',
     });
 
@@ -182,10 +189,7 @@ export const ProductCard = React.memo(function ProductCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               onLoad={() => setImgLoaded(true)}
-              onError={() => {
-                console.warn('[img FAIL]', jersey.imageUrl);
-                setImgError(true);
-              }}
+              onError={() => setImgError(true)}
             />
           </>
         )}

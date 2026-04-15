@@ -213,7 +213,7 @@ export function Footer() {
         {/* Copyright */}
         <div className={`flex flex-wrap items-center justify-between gap-4 ${isHe ? 'flex-row-reverse' : ''}`}>
           <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            © 2026 FootJersey.{' '}
+            © {new Date().getFullYear()} FootJersey.{' '}
             {isHe ? 'כל הזכויות שמורות.' : 'All rights reserved.'}
           </p>
           <p className="font-mono text-[9px] uppercase tracking-[0.15em]" style={{ color: 'var(--muted)', opacity: 0.5 }}>

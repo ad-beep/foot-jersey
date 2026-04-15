@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       approvedAt: new Date().toISOString(),
     });
 
-    // Send approval email to customer
+    // Send approval email to customer — include full order details from Firestore
     const email = customerEmail || order?.shippingInfo?.email;
     writeAuditLog({ action: 'order.bit_approved', adminEmail: auth.email, details: { orderId, customerEmail: email } });
     if (email) {
@@ -48,6 +48,23 @@ export async function POST(request: NextRequest) {
         customerName,
         orderId,
         total: order?.total ?? 0,
+        subtotal: order?.subtotal,
+        shipping: order?.shipping ?? 0,
+        discountAmount: order?.discountAmount ?? 0,
+        discountCode: order?.discountCode ?? undefined,
+        items: Array.isArray(order?.items) ? order.items.map((item: Record<string, unknown>) => ({
+          teamName: String(item.teamName || ''),
+          size: String(item.size || ''),
+          quantity: Number(item.quantity) || 1,
+          totalPrice: Number(item.totalPrice) || 0,
+          customization: item.customization as Record<string, unknown> | undefined,
+        })) : undefined,
+        shippingAddress: order?.shippingInfo ? {
+          street: String(order.shippingInfo.street || ''),
+          city: String(order.shippingInfo.city || ''),
+          zip: String(order.shippingInfo.zip || ''),
+          country: String(order.shippingInfo.country || ''),
+        } : undefined,
       });
     }
 

@@ -16,6 +16,7 @@ const CATEGORY_NAMES: Record<string, { en: string; he: string }> = {
   france:         { en: 'Ligue 1',        he: 'ליג 1' },
   rest_of_world:  { en: 'Rest of World',  he: 'שאר העולם' },
   national_teams: { en: 'International',  he: 'נבחרות' },
+  israeli_league: { en: 'Israeli League', he: 'ליגת העל' },
 };
 
 function isKnownSlug(slug: string): boolean {

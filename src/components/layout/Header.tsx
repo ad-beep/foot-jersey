@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Search, Heart, ShoppingBag, Globe, X } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
@@ -34,8 +34,9 @@ interface HeaderProps {
 export function Header({ dict: _dict }: HeaderProps) {
   const { locale, isRtl, switchLocale } = useLocale();
   const pathname    = usePathname();
+  const router      = useRouter();
   const hydrated    = useHydration();
-  const cartCount   = useCartStore((s) => s.items.length);
+  const cartCount   = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const favCount    = useFavoritesStore((s) => s.favoriteIds.length);
   const setCartOpen = useCartStore((s) => s.setCartOpen);
   const authUser    = useAuthStore((s) => s.user);
@@ -51,7 +52,9 @@ export function Header({ dict: _dict }: HeaderProps) {
 
   const toggleLocale = () => switchLocale(locale === 'en' ? 'he' : 'en');
 
-  const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+  const isHomePage    = pathname === `/${locale}` || pathname === `/${locale}/`;
+  const isAboutPage   = pathname.startsWith(`/${locale}/about`);
+  const isFaqPage     = pathname.startsWith(`/${locale}/faq`);
 
   const handleCollectionsClick = useCallback(() => {
     if (isHomePage) {
@@ -61,8 +64,8 @@ export function Header({ dict: _dict }: HeaderProps) {
         return;
       }
     }
-    window.location.href = `/${locale}#collections-section`;
-  }, [locale, isHomePage]);
+    router.push(`/${locale}#collections-section`);
+  }, [locale, isHomePage, router]);
 
   // Derive first name from displayName
   const firstName = hydrated && authUser?.displayName
@@ -114,21 +117,29 @@ export function Header({ dict: _dict }: HeaderProps) {
           </button>
           <Link
             href={`/${locale}/about`}
-            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200"
-            style={{ color: 'var(--muted)' }}
+            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200 relative"
+            style={{ color: isAboutPage ? '#fff' : 'var(--muted)' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--muted)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = isAboutPage ? '#fff' : 'var(--muted)'; }}
+            aria-current={isAboutPage ? 'page' : undefined}
           >
             {locale === 'he' ? 'אודות' : 'About'}
+            {isAboutPage && (
+              <span className="absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full" style={{ backgroundColor: 'var(--gold)' }} />
+            )}
           </Link>
           <Link
             href={`/${locale}/faq`}
-            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200"
-            style={{ color: 'var(--muted)' }}
+            className="px-3 py-2 rounded-lg text-sm transition-colors duration-200 relative"
+            style={{ color: isFaqPage ? '#fff' : 'var(--muted)' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--muted)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = isFaqPage ? '#fff' : 'var(--muted)'; }}
+            aria-current={isFaqPage ? 'page' : undefined}
           >
             FAQ
+            {isFaqPage && (
+              <span className="absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full" style={{ backgroundColor: 'var(--gold)' }} />
+            )}
           </Link>
         </nav>
 

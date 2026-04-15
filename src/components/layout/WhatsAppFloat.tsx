@@ -3,7 +3,7 @@
 import { useLocale } from '@/hooks/useLocale';
 
 export function WhatsAppFloat() {
-  const { locale } = useLocale();
+  const { locale, isRtl } = useLocale();
   const isHe = locale === 'he';
 
   return (
@@ -11,13 +11,19 @@ export function WhatsAppFloat() {
       href="https://wa.me/972584140508"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-5 z-50 flex items-center gap-2.5 group"
+      // On mobile: clear the 64px Dock (bottom-20 = 80px) + extra gap.
+      // On desktop: standard bottom-6. Inline-end so RTL is automatically mirrored.
+      className="fixed bottom-20 md:bottom-6 z-50 flex items-center gap-2.5 group"
+      style={{
+        // Use logical property so the button appears on the correct side in both LTR and RTL
+        [isRtl ? 'left' : 'right']: '1.25rem',
+        filter: 'drop-shadow(0 4px 16px rgba(37,211,102,0.35))',
+      }}
       aria-label={isHe ? 'צור קשר בוואטסאפ' : 'Contact us on WhatsApp'}
-      style={{ filter: 'drop-shadow(0 4px 16px rgba(37,211,102,0.35))' }}
     >
-      {/* Tooltip label — appears on hover */}
+      {/* Tooltip label — appears on hover, flipped for RTL */}
       <span
-        className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-mono font-bold uppercase tracking-wide px-3 py-1.5 rounded-full whitespace-nowrap"
+        className={`hidden md:block opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-mono font-bold uppercase tracking-wide px-3 py-1.5 rounded-full whitespace-nowrap ${isRtl ? 'order-last' : ''}`}
         style={{ backgroundColor: '#25D366', color: '#000' }}
       >
         {isHe ? 'שאל אותנו' : 'Ask us'}

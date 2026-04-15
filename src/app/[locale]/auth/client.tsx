@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { updateProfile } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAuthStore } from '@/stores/auth-store';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
 import { useToast } from '@/components/ui/toast';
@@ -59,6 +56,7 @@ export default function AuthClient() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
@@ -95,20 +93,9 @@ export default function AuthClient() {
         await signInWithEmail(email, password);
         toast({ title: isHe ? 'התחברת בהצלחה' : 'Signed in successfully', variant: 'success' });
       } else {
-        await signUpWithEmail(email, password);
-        // Set display name on the newly created Firebase user
-        if (auth.currentUser && name.trim()) {
-          await updateProfile(auth.currentUser, { displayName: name.trim() });
-          // Update Firestore doc
-          try {
-            await updateDoc(doc(db, 'users', auth.currentUser.uid), { displayName: name.trim() });
-          } catch { /* Firestore may not be available in dev */ }
-          // Update local store
-          const currentUser = useAuthStore.getState().user;
-          if (currentUser) {
-            useAuthStore.getState().setUser({ ...currentUser, displayName: name.trim() });
-          }
-        }
+        // displayName is now set on Firebase Auth BEFORE onAuthStateChanged fires
+        // so the Firestore doc is created with the correct name from the start.
+        await signUpWithEmail(email, password, name.trim() || undefined);
         toast({ title: isHe ? 'החשבון נוצר בהצלחה' : 'Account created successfully', variant: 'success' });
       }
       router.push(`/${locale}/profile`);
@@ -121,6 +108,12 @@ export default function AuthClient() {
         msg = isHe ? 'כתובת האימייל כבר בשימוש' : 'Email already in use';
       } else if (code === 'auth/too-many-requests') {
         msg = isHe ? 'יותר מדי ניסיונות. נסה מאוחר יותר.' : 'Too many attempts. Try again later.';
+      } else if (code === 'auth/weak-password') {
+        msg = isHe ? 'הסיסמה חלשה מדי. בחר סיסמה חזקה יותר.' : 'Password is too weak. Choose a stronger password.';
+      } else if (code === 'auth/network-request-failed') {
+        msg = isHe ? 'בעיית חיבור לאינטרנט. בדוק את החיבור ונסה שוב.' : 'Network error. Check your connection and try again.';
+      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        msg = isHe ? 'הפעולה בוטלה.' : 'Action cancelled.';
       }
       toast({ title: msg, variant: 'error' });
     } finally {
@@ -134,8 +127,15 @@ export default function AuthClient() {
       await signInWithGoogle();
       toast({ title: isHe ? 'התחברת בהצלחה' : 'Signed in successfully', variant: 'success' });
       router.push(`/${locale}/profile`);
-    } catch {
-      toast({ title: isHe ? 'ההתחברות עם Google נכשלה' : 'Google sign-in failed', variant: 'error' });
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || '';
+      const isCancelled = code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
+      if (!isCancelled) {
+        const msg = code === 'auth/network-request-failed'
+          ? (isHe ? 'בעיית חיבור לאינטרנט.' : 'Network error. Check your connection.')
+          : (isHe ? 'ההתחברות עם Google נכשלה' : 'Google sign-in failed');
+        toast({ title: msg, variant: 'error' });
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -261,15 +261,27 @@ export default function AuthClient() {
                 </Link>
               )}
             </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
-              className={cn(inputClass, errors.password ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--gold)]')}
-              dir="ltr"
-              required
-              minLength={6}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
+                className={cn(inputClass, 'pr-11', errors.password ? 'border-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--gold)]')}
+                dir="ltr"
+                required
+                minLength={6}
+                autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                aria-label={showPassword ? (isHe ? 'הסתר סיסמה' : 'Hide password') : (isHe ? 'הצג סיסמה' : 'Show password')}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             {errors.password && <p className="text-xs mt-1" style={{ color: 'var(--error)' }}>{errors.password}</p>}
           </div>
 
@@ -284,7 +296,14 @@ export default function AuthClient() {
           {mode === 'signIn' ? (isHe ? L.noAccount.he : L.noAccount.en) : (isHe ? L.hasAccount.he : L.hasAccount.en)}{' '}
           <button
             type="button"
-            onClick={() => { setMode(mode === 'signIn' ? 'signUp' : 'signIn'); setErrors({}); }}
+            onClick={() => {
+              setMode(mode === 'signIn' ? 'signUp' : 'signIn');
+              setErrors({});
+              setName('');
+              setEmail('');
+              setPassword('');
+              setShowPassword(false);
+            }}
             className="font-semibold transition-colors hover:underline"
             style={{ color: 'var(--gold)' }}
           >

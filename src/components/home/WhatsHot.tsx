@@ -134,7 +134,7 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
         </p>
         <div className={`flex items-end justify-between gap-4 ${isHe ? 'flex-row-reverse' : ''}`}>
           <h2
-            className="font-playfair font-bold text-white"
+            className="font-playfair font-bold text-white whitespace-pre-line"
             style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
           >
             {isHe ? 'החולצות\nהכי מבוקשות' : 'Most\nWanted'}
@@ -159,38 +159,49 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
     </Reveal>
   );
 
-  const arrowBtn = (dir: 'left' | 'right') => (
-    <button
-      onClick={() => navigate(dir === 'left' ? -1 : 1)}
-      className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full items-center justify-center transition-all duration-200"
-      style={{
-        [dir === 'left' ? 'left' : 'right']: 8,
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        border: '1px solid var(--border)',
-        color: 'var(--muted)',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(200,162,75,0.12)';
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
-        (e.currentTarget as HTMLElement).style.color = 'var(--gold)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.06)';
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-        (e.currentTarget as HTMLElement).style.color = 'var(--muted)';
-      }}
-      aria-label={dir === 'left' ? 'Previous' : 'Next'}
-    >
-      {dir === 'left'
-        ? <ChevronLeft  className="w-5 h-5" />
-        : <ChevronRight className="w-5 h-5" />}
-    </button>
-  );
+  // In RTL, the visual left arrow means "next" and right means "previous"
+  const arrowBtn = (dir: 'left' | 'right') => {
+    const navDir: 1 | -1 = isHe
+      ? (dir === 'left' ? 1 : -1)
+      : (dir === 'left' ? -1 : 1);
+    const ariaLabel = isHe
+      ? (dir === 'left' ? 'הבא' : 'הקודם')
+      : (dir === 'left' ? 'Previous' : 'Next');
+
+    return (
+      <button
+        onClick={() => navigate(navDir)}
+        className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full items-center justify-center transition-all duration-200"
+        style={{
+          [dir === 'left' ? 'left' : 'right']: 8,
+          backgroundColor: 'rgba(255,255,255,0.06)',
+          border: '1px solid var(--border)',
+          color: 'var(--muted)',
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(200,162,75,0.12)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
+          (e.currentTarget as HTMLElement).style.color = 'var(--gold)';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.06)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+          (e.currentTarget as HTMLElement).style.color = 'var(--muted)';
+        }}
+        aria-label={ariaLabel}
+      >
+        {dir === 'left'
+          ? <ChevronLeft  className="w-5 h-5" />
+          : <ChevronRight className="w-5 h-5" />}
+      </button>
+    );
+  };
 
   if (total === 0) {
     return (
       <section
         id="whats-hot"
+        aria-label={isHe ? 'החולצות הכי מבוקשות' : 'Most Wanted Jerseys'}
         className="py-16 md:py-24"
         style={{ backgroundColor: 'var(--ink)', borderTop: '1px solid var(--border)' }}
       >
@@ -212,6 +223,7 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
     <section
       ref={sectionRef}
       id="whats-hot"
+      aria-label={isHe ? 'החולצות הכי מבוקשות' : 'Most Wanted Jerseys'}
       className="py-16 md:py-24"
       style={{ backgroundColor: 'var(--ink)', borderTop: '1px solid var(--border)' }}
     >
@@ -232,7 +244,7 @@ export function WhatsHot({ locale, hotJerseys }: WhatsHotProps) {
         {carouselReady && (
           <div
             className="relative overflow-hidden select-none"
-            style={{ height: isMobile ? 460 : 520 }}
+            style={{ height: isMobile ? 480 : 540 }}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             onTouchStart={onTouchStart}

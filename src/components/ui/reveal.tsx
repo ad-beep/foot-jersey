@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface RevealProps {
@@ -18,6 +18,13 @@ const offsets = {
 } as const;
 
 export function Reveal({ children, className, delay = 0, direction = 'up' }: RevealProps) {
+  const prefersReducedMotion = useReducedMotion();
+
+  // Skip animation entirely for users who prefer reduced motion
+  if (prefersReducedMotion) {
+    return <div className={cn(className)}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={cn(className)}

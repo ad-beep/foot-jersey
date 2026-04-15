@@ -1,25 +1,54 @@
 'use client';
 
 import { useState } from 'react';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
 import { Reveal } from '@/components/ui/reveal';
+
+type Status = 'idle' | 'loading' | 'success' | 'error' | 'invalid';
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
 
 export function Newsletter() {
   const { locale } = useLocale();
   const isHe = locale === 'he';
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [email, setEmail]   = useState('');
+  const [status, setStatus] = useState<Status>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    // TODO: wire up to email service (Mailchimp, Resend, etc.)
-    setSubmitted(true);
+    if (!isValidEmail(email)) {
+      setStatus('invalid');
+      return;
+    }
+    setStatus('loading');
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      // Check for duplicates before inserting
+      const existing = await getDocs(
+        query(collection(db, 'newsletterEmails'), where('email', '==', normalizedEmail))
+      );
+      if (existing.empty) {
+        await addDoc(collection(db, 'newsletterEmails'), {
+          email: normalizedEmail,
+          locale,
+          subscribedAt: serverTimestamp(),
+        });
+      }
+      setStatus('success');
+      setEmail('');
+    } catch {
+      setStatus('error');
+    }
   };
 
   return (
     <section
       className="py-16"
+      aria-label={isHe ? 'הרשמה לניוזלטר' : 'Newsletter signup'}
       style={{ backgroundColor: 'var(--steel)', borderTop: '1px solid var(--border)' }}
     >
       <div className="max-w-[700px] mx-auto px-4 md:px-6 text-center">
@@ -39,37 +68,67 @@ export function Newsletter() {
               : 'Get first access to new drops, retro restocks, and matchday discounts.'}
           </p>
 
-          {submitted ? (
+          {status === 'success' ? (
             <div
+              role="status"
               className="px-6 py-4 rounded-xl text-sm font-medium"
               style={{ backgroundColor: 'rgba(15,61,46,0.3)', color: '#86efac', border: '1px solid rgba(15,61,46,0.5)' }}
             >
-              {isHe ? '✓ נרשמת בהצלחה!' : '✓ You\'re in! Talk soon.'}
+              {isHe ? '✓ נרשמת בהצלחה!' : "✓ You're in! Talk soon."}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={isHe ? 'כתובת מייל שלך' : 'Your email address'}
-                required
-                className="flex-1 px-4 py-3 rounded-full text-sm text-white outline-none"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border)',
-                  direction: isHe ? 'rtl' : 'ltr',
-                }}
-              />
-              <button
-                type="submit"
-                className="px-5 py-3 rounded-full text-sm font-semibold text-white shrink-0 transition-all duration-200"
-                style={{ backgroundColor: 'var(--flare)', boxShadow: '0 0 20px var(--flare-glow)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare-hover)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare)'; }}
-              >
-                {isHe ? 'הצטרף' : 'Join'}
-              </button>
+            <form onSubmit={handleSubmit} className="flex flex-col items-center gap-3">
+              <div className="flex gap-3 w-full max-w-md">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (status === 'error' || status === 'invalid') setStatus('idle'); }}
+                  placeholder={isHe ? 'כתובת מייל שלך' : 'Your email address'}
+                  required
+                  disabled={status === 'loading'}
+                  className="flex-1 px-4 py-3 rounded-full text-sm text-white outline-none disabled:opacity-60"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: (status === 'error' || status === 'invalid') ? '1px solid var(--flare)' : '1px solid var(--border)',
+                    direction: isHe ? 'rtl' : 'ltr',
+                    transition: 'border-color 0.2s',
+                  }}
+                  aria-invalid={status === 'error' || status === 'invalid'}
+                  aria-describedby={status === 'error' || status === 'invalid' ? 'newsletter-error' : undefined}
+                />
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="px-5 py-3 rounded-full text-sm font-semibold text-white shrink-0 transition-all duration-200 disabled:opacity-60"
+                  style={{ backgroundColor: 'var(--flare)', boxShadow: '0 0 20px var(--flare-glow)' }}
+                  onMouseEnter={(e) => { if (status !== 'loading') (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare-hover)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare)'; }}
+                >
+                  {status === 'loading'
+                    ? (isHe ? '...' : '...')
+                    : (isHe ? 'הצטרף' : 'Join')}
+                </button>
+              </div>
+              {status === 'invalid' && (
+                <p
+                  id="newsletter-error"
+                  role="alert"
+                  className="text-xs"
+                  style={{ color: 'var(--flare)' }}
+                >
+                  {isHe ? 'אנא הזן כתובת אימייל תקינה.' : 'Please enter a valid email address.'}
+                </p>
+              )}
+              {status === 'error' && (
+                <p
+                  id="newsletter-error"
+                  role="alert"
+                  className="text-xs"
+                  style={{ color: 'var(--flare)' }}
+                >
+                  {isHe ? 'משהו השתבש. נסה שוב.' : 'Something went wrong. Please try again.'}
+                </p>
+              )}
             </form>
           )}
         </Reveal>

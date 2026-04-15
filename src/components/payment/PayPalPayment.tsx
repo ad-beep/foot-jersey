@@ -51,7 +51,7 @@ export function PayPalPayment({
   const isCapturing = useRef(false);
 
   const handleCreateOrder = useCallback(
-    async (data: any, actions: any) => {
+    async () => {
       try {
         const response = await fetch('/api/paypal/create-order', {
           method: 'POST',
@@ -84,7 +84,7 @@ export function PayPalPayment({
   );
 
   const handleApprove = useCallback(
-    async (data: any, actions: any) => {
+    async (data: { orderID: string }) => {
       // Guard: if a capture is already in flight, ignore this call entirely.
       // Using a ref (not state) so this check is synchronous and doesn't
       // cause a re-render that would reinitialize the PayPal SDK.
@@ -121,8 +121,8 @@ export function PayPalPayment({
   );
 
   const handleError = useCallback(
-    (err: any) => {
-      const message = err.message || 'PayPal payment failed';
+    (err: Record<string, unknown>) => {
+      const message = (err.message as string) || 'PayPal payment failed';
       setErrorMessage(message);
       onError(message);
     },

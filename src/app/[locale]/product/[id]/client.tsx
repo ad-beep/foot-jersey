@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Heart, ShoppingCart, ChevronDown, SearchX } from 'lucide-react';
+import Link from 'next/link';
+import { Heart, ShoppingCart, ChevronDown, SearchX, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
@@ -45,6 +46,7 @@ const LEAGUE_NAMES: Record<string, { en: string; he: string }> = {
   france:         { en: 'Ligue 1',        he: 'ליג 1' },
   rest_of_world:  { en: 'Rest of World',  he: 'שאר העולם' },
   national_teams: { en: 'International',  he: 'נבחרות' },
+  israeli_league: { en: 'Israeli League', he: 'ליגת העל' },
 };
 
 const DEFAULT_CUSTOMIZATION: CartCustomization = {
@@ -135,6 +137,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   // ── State ────────────────────────────────────────────────────────────────
   const [allJerseys, setAllJerseys] = useState<Jersey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [selectedSize, setSelectedSize] = useState<Size | null>(null);
   const [customization, setCustomization] = useState<CartCustomization>(DEFAULT_CUSTOMIZATION);
   const [shakeSize, setShakeSize] = useState(false);
@@ -162,9 +165,12 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   // ── Fetch ────────────────────────────────────────────────────────────────
   useEffect(() => {
     fetch('/api/products')
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((json) => setAllJerseys(json.data ?? []))
-      .catch(() => {})
+      .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -229,16 +235,17 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   }, [jersey, selectedSize, customization, nameNumberOpen, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
 
   const handleToggleFavorite = useCallback(() => {
+    // Read state BEFORE toggling so we know which direction we're going
+    const wasAlreadyFav = useFavoritesStore.getState().isFavorite(productId);
     toggleFavorite(productId);
     recordInteraction(productId, 'like');
     setHeartPulse(true);
     if (heartPulseTimeoutRef.current) clearTimeout(heartPulseTimeoutRef.current);
     heartPulseTimeoutRef.current = setTimeout(() => setHeartPulse(false), 300);
-    const wasFav = useFavoritesStore.getState().isFavorite(productId);
     toast({
-      title: wasFav
-        ? (isHe ? 'נוסף למועדפים' : 'Added to favorites')
-        : (isHe ? 'הוסר מהמועדפים' : 'Removed from favorites'),
+      title: wasAlreadyFav
+        ? (isHe ? 'הוסר מהמועדפים' : 'Removed from favorites')
+        : (isHe ? 'נוסף למועדפים' : 'Added to favorites'),
       variant: 'info',
     });
   }, [productId, toggleFavorite, recordInteraction, toast, isHe]);
@@ -246,16 +253,52 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) return <ProductSkeleton />;
 
-  // ── Not found ────────────────────────────────────────────────────────────
-  if (!jersey) {
+  // ── Fetch error ──────────────────────────────────────────────────────────
+  if (fetchError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5" style={{ backgroundColor: 'var(--ink)' }}>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 px-4" style={{ backgroundColor: 'var(--ink)' }}>
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}>
           <SearchX className="w-7 h-7" style={{ color: 'var(--muted)' }} />
         </div>
-        <p className="font-playfair font-bold text-xl text-white">
+        <p className="font-playfair font-bold text-xl text-white text-center">
+          {isHe ? 'שגיאה בטעינת המוצר' : 'Failed to load product'}
+        </p>
+        <p className="text-sm text-center" style={{ color: 'var(--muted)' }}>
+          {isHe ? 'אנא רענן את הדף ונסה שוב' : 'Please refresh the page and try again'}
+        </p>
+        <Link
+          href={`/${locale}`}
+          className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-white"
+          style={{ color: 'var(--gold)' }}
+        >
+          <ArrowLeft className="w-4 h-4" style={{ transform: isHe ? 'scaleX(-1)' : undefined }} />
+          {isHe ? 'חזרה לדף הבית' : 'Back to Home'}
+        </Link>
+      </div>
+    );
+  }
+
+  // ── Not found ────────────────────────────────────────────────────────────
+  if (!jersey) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 px-4" style={{ backgroundColor: 'var(--ink)' }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}>
+          <SearchX className="w-7 h-7" style={{ color: 'var(--muted)' }} />
+        </div>
+        <p className="font-playfair font-bold text-xl text-white text-center">
           {isHe ? 'החולצה לא נמצאה' : 'Jersey not found'}
         </p>
+        <p className="text-sm text-center" style={{ color: 'var(--muted)' }}>
+          {isHe ? 'ייתכן שהמוצר הוסר או שהקישור שגוי' : 'The product may have been removed or the link is incorrect'}
+        </p>
+        <Link
+          href={`/${locale}`}
+          className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-white"
+          style={{ color: 'var(--gold)' }}
+        >
+          <ArrowLeft className="w-4 h-4" style={{ transform: isHe ? 'scaleX(-1)' : undefined }} />
+          {isHe ? 'חזרה לדף הבית' : 'Back to Home'}
+        </Link>
       </div>
     );
   }
@@ -423,7 +466,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
                       <path d="M3 3a6 6 0 1 1 0 8" /><path d="M3 7H1" />
                     </svg>
                   ),
-                  en: '30-Day Returns', he: 'החזרות 30 יום',
+                  en: '14-Day Returns', he: 'החזרות 14 יום',
                 },
                 {
                   icon: (

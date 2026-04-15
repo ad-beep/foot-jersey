@@ -23,6 +23,7 @@ export default function DiscountsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [confirmDeleteCode, setConfirmDeleteCode] = useState<string | null>(null);
 
   // Form state
   const [code, setCode] = useState('');
@@ -140,7 +141,7 @@ export default function DiscountsPage() {
   }
 
   async function handleDelete(d: Discount) {
-    if (!window.confirm(`Delete code "${d.code}"?`)) return;
+    setConfirmDeleteCode(null);
     try {
       const currentUser = getAuth().currentUser;
       const idToken = currentUser ? await currentUser.getIdToken() : null;
@@ -321,13 +322,30 @@ export default function DiscountsPage() {
                             <ToggleRight className="w-4 h-4" />
                           )}
                         </button>
-                        <button
-                          onClick={() => handleDelete(d)}
-                          className="p-1.5 rounded-md hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {confirmDeleteCode === d.code ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDelete(d)}
+                              className="px-2 py-1 rounded-md bg-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/30 transition-colors"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteCode(null)}
+                              className="px-2 py-1 rounded-md bg-white/5 text-gray-400 text-xs font-bold hover:bg-white/10 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteCode(d.code)}
+                            className="p-1.5 rounded-md hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

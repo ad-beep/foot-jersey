@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { doc, onSnapshot, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
-import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2, PackageCheck, CheckCircle, XCircle } from 'lucide-react';
 import { calcOrderCost, type ProductInfo } from '@/lib/cost-utils';
 
 interface OrderItem {
@@ -57,6 +57,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   bit_declined:         { label: 'Declined',       color: 'bg-red-500/10 text-red-400 border-red-500/20' },
   processing:           { label: 'Processing',     color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
   shipped:              { label: 'Shipped',        color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+  delivered:            { label: 'Delivered',      color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
   completed:            { label: 'Completed',      color: 'bg-green-500/10 text-green-400 border-green-500/20' },
 };
 
@@ -105,6 +106,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
@@ -275,6 +277,28 @@ export default function OrderDetailPage() {
           >
             {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
             Mark as Shipped
+          </button>
+        )}
+
+        {order.status === 'shipped' && (
+          <button
+            onClick={() => handleStatus('delivered')}
+            disabled={actionLoading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20 text-sm font-semibold hover:bg-teal-500/20 disabled:opacity-50 transition-colors"
+          >
+            {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PackageCheck className="w-3.5 h-3.5" />}
+            Mark as Delivered
+          </button>
+        )}
+
+        {order.status === 'delivered' && (
+          <button
+            onClick={() => handleStatus('completed')}
+            disabled={actionLoading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 text-sm font-semibold hover:bg-green-500/20 disabled:opacity-50 transition-colors"
+          >
+            {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+            Mark as Completed
           </button>
         )}
 

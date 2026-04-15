@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import Image from 'next/image';
-import { Shirt } from 'lucide-react';
+import { Shirt, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProductGalleryProps {
@@ -19,11 +19,12 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
   const imgs = images.length > 0 ? images : [''];
 
-  // Sync active index from scroll position
+  // Sync active index from scroll position — normalize for RTL browsers
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    // Math.abs handles negative scrollLeft in RTL mode (Firefox/Safari)
+    const idx = Math.round(Math.abs(el.scrollLeft) / el.clientWidth);
     setActiveIndex(Math.min(idx, imgs.length - 1));
   }, [imgs.length]);
 
@@ -47,7 +48,9 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
   const goTo = useCallback((idx: number) => {
     setActiveIndex(idx);
-    scrollRef.current?.scrollTo({ left: idx * (scrollRef.current.clientWidth ?? 0), behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
   }, []);
 
   const renderImage = (src: string, idx: number, priority: boolean, fill: boolean, thumbnail = false) => {

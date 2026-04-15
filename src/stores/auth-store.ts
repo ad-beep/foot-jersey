@@ -39,6 +39,7 @@ interface AuthStore {
   user: UserProfile | null;
   setUser: (user: UserProfile) => void;
   clearUser: () => void;
+  updateDisplayName: (displayName: string) => void;
   setSavedSize: (size: Size) => void;
   setSavedKidsSize: (size: KidsSize) => void;
   setNewsletter: (enabled: boolean) => void;
@@ -56,6 +57,11 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user: UserProfile) => set({ user }),
 
       clearUser: () => set({ user: null }),
+
+      updateDisplayName: (displayName: string) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, displayName } : null,
+        })),
 
       setSavedSize: (size: Size) =>
         set((state) => ({
@@ -136,6 +142,29 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'fj-auth',
+      // Only persist the minimal user identity fields needed to avoid a
+      // loading flash on hydration.
+      // SECURITY: shippingAddresses and orderHistory are intentionally excluded
+      // from localStorage — they are always loaded fresh from Firestore via
+      // onAuthStateChanged so they never leak to the browser storage layer.
+      partialize: (state) =>
+        state.user
+          ? {
+              user: {
+                uid: state.user.uid,
+                email: state.user.email,
+                displayName: state.user.displayName,
+                photoURL: state.user.photoURL,
+                savedSize: state.user.savedSize,
+                savedKidsSize: state.user.savedKidsSize,
+                newsletter: state.user.newsletter,
+                // shippingAddresses and orderHistory are NOT persisted to
+                // localStorage — they are fetched from Firestore on auth init.
+                shippingAddresses: [],
+                orderHistory: [],
+              },
+            }
+          : { user: null },
     }
   )
 );

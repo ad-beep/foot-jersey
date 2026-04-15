@@ -4,12 +4,9 @@ import { isValidLocale, getDirection } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { DEFAULT_LOCALE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { organizationSchema } from '@/lib/schema';
-// Footer is below-fold on every page — lazy-load to trim initial JS
-const Footer = dynamic(
-  () => import('@/components/layout/Footer').then(m => ({ default: m.Footer })),
-  { ssr: false },
-);
+// WhatsApp + StickyMobileCTA are purely interactive — fine to skip SSR
 const WhatsAppFloat = dynamic(
   () => import('@/components/layout/WhatsAppFloat').then(m => ({ default: m.WhatsAppFloat })),
   { ssr: false },

@@ -39,12 +39,20 @@ const Icons = {
       <path d="M7 9V6a3 3 0 0 1 6 0v3" />
     </svg>
   ),
+  /** Credit/payment card — used for BIT to distinguish from PayPal lock */
+  card: (
+    <svg viewBox="0 0 20 20" fill="none" className="w-3.5 h-3.5 shrink-0" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="4" width="18" height="13" rx="2" />
+      <path d="M1 8h18" />
+      <path d="M5 13h3" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 const ITEMS = {
   en: [
     { icon: Icons.lock,    label: 'PayPal Protected' },
-    { icon: Icons.lock,    label: 'BIT Accepted' },
+    { icon: Icons.card,    label: 'BIT Accepted' },
     { icon: Icons.truck,   label: 'Ships All of Israel' },
     { icon: Icons.refresh, label: '30-Day Returns' },
     { icon: Icons.star,    label: `${AGGREGATE_RATING.ratingValue}★ · ${AGGREGATE_RATING.reviewCount}+ Reviews` },
@@ -54,7 +62,7 @@ const ITEMS = {
   ],
   he: [
     { icon: Icons.lock,    label: 'PayPal מאובטח' },
-    { icon: Icons.lock,    label: 'BIT מתקבל' },
+    { icon: Icons.card,    label: 'BIT מתקבל' },
     { icon: Icons.truck,   label: 'משלוח לכל ישראל' },
     { icon: Icons.refresh, label: 'החזרה 30 יום' },
     { icon: Icons.star,    label: `${AGGREGATE_RATING.ratingValue}★ · ${AGGREGATE_RATING.reviewCount}+ ביקורות` },

@@ -37,10 +37,11 @@ export function RetroSpotlight() {
   return (
     <section
       className="chalk-band py-16 md:py-24"
+      aria-label={isHe ? 'רטרו קלאסיק' : 'Retro Classics'}
       style={{ borderTop: '1px solid #e0ddd6', borderBottom: '1px solid #e0ddd6' }}
     >
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${isHe ? 'direction-rtl' : ''}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center`}>
 
           {/* Left: Content */}
           <Reveal>
@@ -92,7 +93,7 @@ export function RetroSpotlight() {
               </div>
 
               <Link
-                href={`/${locale}/category/retro`}
+                href={`/${locale}/discover?collections=retro`}
                 className={`group inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-sm font-semibold text-white transition-all duration-300 ${isHe ? 'flex-row-reverse' : ''}`}
                 style={{
                   backgroundColor: '#111',

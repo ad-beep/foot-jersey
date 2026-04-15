@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Jersey } from '@/types';
+import { getJerseyName } from '@/lib/utils';
 
 interface SearchResult {
   jersey: Jersey;
@@ -31,21 +32,28 @@ function normalizeText(text: string): string {
 function searchJerseys(jerseys: Jersey[], query: string): SearchResult[] {
   if (!query || query.trim().length < 2) return [];
 
-  const terms = query.trim().split(/\s+/).filter(t => t.length >= 2).map(normalizeText);
+  const terms = query.trim().split(/\s+/).filter((t) => t.length >= 2).map(normalizeText);
   if (terms.length === 0) return [];
 
   const results: SearchResult[] = [];
 
   for (const jersey of jerseys) {
+    // Include both EN and HE names for bilingual matching
+    const nameEn = getJerseyName(jersey, 'en');
+    const nameHe = jersey.teamName;
+
     const searchableFields = [
-      jersey.teamName,
+      nameEn,
+      nameHe,
       jersey.tags.join(' '),
       jersey.category,
       jersey.league,
       jersey.internationalTeam || '',
       jersey.season,
       jersey.type,
-    ].map(normalizeText).join(' ');
+    ]
+      .map(normalizeText)
+      .join(' ');
 
     const matchedTerms: string[] = [];
     let allMatch = true;
@@ -63,14 +71,16 @@ function searchJerseys(jerseys: Jersey[], query: string): SearchResult[] {
       // Score: more matched terms = higher base score
       let score = matchedTerms.length * 10;
 
-      // Bonus for matches in teamName (higher weight)
-      const teamNameNormalized = normalizeText(jersey.teamName);
+      // Bonus for matches in team name fields (higher weight)
+      const nameEnNorm = normalizeText(nameEn);
+      const nameHeNorm = normalizeText(nameHe);
       for (const term of matchedTerms) {
-        if (teamNameNormalized.includes(term)) score += 5;
+        if (nameEnNorm.includes(term) || nameHeNorm.includes(term)) score += 5;
       }
 
       // Bonus for exact team name match
-      if (teamNameNormalized === query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')) {
+      const queryNorm = normalizeText(query.trim());
+      if (nameEnNorm === queryNorm || nameHeNorm === queryNorm) {
         score += 50;
       }
 
@@ -96,9 +106,9 @@ export function useSearch(jerseys: Jersey[]): UseSearchReturn {
     } catch {}
   }, []);
 
-  // Debounce
+  // Debounce — only show loading indicator when there is a non-empty query
   useEffect(() => {
-    setIsSearching(true);
+    if (query.trim().length >= 2) setIsSearching(true);
     timerRef.current = setTimeout(() => {
       setDebouncedQuery(query);
       setIsSearching(false);
@@ -108,22 +118,26 @@ export function useSearch(jerseys: Jersey[]): UseSearchReturn {
 
   const results = useMemo(
     () => searchJerseys(jerseys, debouncedQuery),
-    [jerseys, debouncedQuery]
+    [jerseys, debouncedQuery],
   );
 
   const addRecentSearch = useCallback((q: string) => {
     const trimmed = q.trim();
     if (!trimmed || trimmed.length < 2) return;
-    setRecentSearches(prev => {
-      const updated = [trimmed, ...prev.filter(s => s !== trimmed)].slice(0, 10);
-      try { localStorage.setItem('fj-recent-searches', JSON.stringify(updated)); } catch {}
+    setRecentSearches((prev) => {
+      const updated = [trimmed, ...prev.filter((s) => s !== trimmed)].slice(0, 10);
+      try {
+        localStorage.setItem('fj-recent-searches', JSON.stringify(updated));
+      } catch {}
       return updated;
     });
   }, []);
 
   const clearRecentSearches = useCallback(() => {
     setRecentSearches([]);
-    try { localStorage.removeItem('fj-recent-searches'); } catch {}
+    try {
+      localStorage.removeItem('fj-recent-searches');
+    } catch {}
   }, []);
 
   return { query, setQuery, results, isSearching, recentSearches, clearRecentSearches, addRecentSearch };

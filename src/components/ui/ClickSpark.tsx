@@ -11,7 +11,7 @@ interface Spark {
 
 const DURATION = 400;
 const SPARK_COUNT = 8;
-const COLOR = '#00C3D8';
+const COLOR = '#C8A24B'; // brand gold — matches design system
 
 export default function ClickSpark({ children }: { children: React.ReactNode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -44,7 +44,7 @@ export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
       {/* 3. What's Hot — featured products */}
       <WhatsHot locale={locale} hotJerseys={hotJerseys} />
 
-      {/* 4. Collections grid — 17 categories */}
+      {/* 4. Collections grid — category bento */}
       <div id="collections-section">
         <CategoryGrid />
       </div>

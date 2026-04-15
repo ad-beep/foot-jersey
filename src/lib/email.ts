@@ -52,6 +52,12 @@ interface SendBitPendingOptions {
   customerName: string;
   orderId: string;
   total: number;
+  subtotal?: number;
+  shipping?: number;
+  discountAmount?: number;
+  discountCode?: string;
+  items?: OrderItem[];
+  shippingAddress?: { street: string; city: string; zip: string; country: string };
 }
 
 // ─── Shared HTML wrapper ──────────────────────────────────────────────────────
@@ -65,36 +71,36 @@ function wrapEmail(content: string, title: string): string {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e5e5e5; }
-    a { color: #00c3d8; text-decoration: none; }
+    a { color: #C8A24B; text-decoration: none; }
     .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
     .card { background: #141414; border: 1px solid #1f1f1f; border-radius: 16px; overflow: hidden; }
-    .header { background: linear-gradient(135deg, #111 0%, #1a1a1a 100%); padding: 32px; border-bottom: 1px solid #1f1f1f; text-align: center; }
-    .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
-    .logo span { color: #00c3d8; }
+    .header { background: linear-gradient(135deg, #0d0d0f 0%, #141416 100%); padding: 32px; border-bottom: 1px solid #1f1f1f; text-align: center; }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; font-family: Georgia, 'Times New Roman', serif; }
+    .logo span { color: #C8A24B; }
     .body { padding: 32px; }
-    .title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; font-family: Georgia, 'Times New Roman', serif; }
     .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
-    .order-id { font-family: monospace; font-size: 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 8px 12px; color: #00c3d8; display: inline-block; margin-bottom: 24px; }
+    .order-id { font-family: monospace; font-size: 12px; background: #1a1a1a; border: 1px solid rgba(200,162,75,0.25); border-radius: 8px; padding: 8px 12px; color: #C8A24B; display: inline-block; margin-bottom: 24px; }
     .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
     .items-table th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #666; padding: 8px 0; border-bottom: 1px solid #1f1f1f; }
     .items-table td { padding: 12px 0; border-bottom: 1px solid #111; font-size: 14px; color: #ccc; vertical-align: top; }
-    .items-table td:last-child { text-align: right; color: #fff; font-weight: 600; }
+    .items-table td:last-child { text-align: right; color: #fff; font-weight: 600; font-family: monospace; }
     .item-name { color: #fff; font-weight: 600; margin-bottom: 2px; }
     .item-meta { font-size: 12px; color: #666; }
-    .item-custom { font-size: 12px; color: #00c3d8; margin-top: 2px; }
+    .item-custom { font-size: 12px; color: #C8A24B; margin-top: 2px; }
     .totals { background: #0f0f0f; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
     .total-row { display: flex; justify-content: space-between; font-size: 14px; color: #888; padding: 4px 0; }
-    .total-row.final { font-size: 18px; font-weight: 700; color: #fff; padding-top: 12px; margin-top: 8px; border-top: 1px solid #1f1f1f; }
-    .total-row.accent { color: #00c3d8; }
+    .total-row.final { font-size: 18px; font-weight: 700; color: #fff; padding-top: 12px; margin-top: 8px; border-top: 1px solid #1f1f1f; font-family: monospace; }
+    .total-row.accent { color: #C8A24B; }
     .address-box { background: #0f0f0f; border-radius: 12px; padding: 16px; margin-bottom: 24px; font-size: 14px; color: #888; line-height: 1.6; }
     .address-box h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #555; margin-bottom: 8px; }
     .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; }
     .status-pending { background: rgba(255,190,50,0.1); color: #FFBE32; border: 1px solid rgba(255,190,50,0.2); }
-    .status-success { background: rgba(0,195,216,0.1); color: #00c3d8; border: 1px solid rgba(0,195,216,0.2); }
+    .status-success { background: rgba(200,162,75,0.12); color: #C8A24B; border: 1px solid rgba(200,162,75,0.25); }
     .info-box { border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; font-size: 14px; line-height: 1.6; }
     .info-box.warning { background: rgba(255,190,50,0.06); border: 1px solid rgba(255,190,50,0.15); color: #c9a227; }
-    .info-box.success { background: rgba(0,195,216,0.06); border: 1px solid rgba(0,195,216,0.15); color: #7dd3d8; }
-    .cta-button { display: block; text-align: center; background: #00c3d8; color: #000 !important; font-size: 14px; font-weight: 700; padding: 14px 28px; border-radius: 12px; margin: 24px 0; }
+    .info-box.success { background: rgba(200,162,75,0.06); border: 1px solid rgba(200,162,75,0.18); color: #b8923e; }
+    .cta-button { display: block; text-align: center; background: #FF4D2E; color: #fff !important; font-size: 14px; font-weight: 700; padding: 14px 28px; border-radius: 12px; margin: 24px 0; }
     .footer { padding: 24px 32px; border-top: 1px solid #1a1a1a; text-align: center; }
     .footer p { font-size: 12px; color: #444; line-height: 1.6; }
   </style>
@@ -124,13 +130,14 @@ function renderItems(items: OrderItem[]): string {
     if (item.customization?.hasPatch) customParts.push('Patch');
     if (item.customization?.hasPants) customParts.push('Pants');
 
+    const lineTotal = item.totalPrice * item.quantity;
     return `<tr>
       <td>
         <div class="item-name">${item.teamName}</div>
-        <div class="item-meta">Size ${item.size} × ${item.quantity}</div>
+        <div class="item-meta">Size ${item.size} × ${item.quantity}${item.quantity > 1 ? ` (₪${item.totalPrice} each)` : ''}</div>
         ${customParts.length > 0 ? `<div class="item-custom">${customParts.join(' · ')}</div>` : ''}
       </td>
-      <td>₪${item.totalPrice}</td>
+      <td>₪${lineTotal}</td>
     </tr>`;
   }).join('');
 }
@@ -209,6 +216,35 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
 
 // ─── BIT Pending Email (sent immediately on BIT order) ────────────────────────
 export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<void> {
+  const itemsHtml = opts.items?.length ? `
+      <table class="items-table">
+        <thead><tr><th>Item</th><th style="text-align:right">Price</th></tr></thead>
+        <tbody>${renderItems(opts.items)}</tbody>
+      </table>` : '';
+
+  const discountRow = opts.discountAmount && opts.discountAmount > 0
+    ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
+    : '';
+
+  const totalsHtml = opts.subtotal !== undefined ? `
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span>₪${opts.subtotal}</span></div>
+        <div class="total-row"><span>Shipping</span><span>${opts.shipping === 0 ? 'FREE 🎉' : '₪' + (opts.shipping ?? 0)}</span></div>
+        ${discountRow}
+        <div class="total-row final"><span>Order Total</span><span>₪${opts.total}</span></div>
+      </div>` : `
+      <div class="totals">
+        <div class="total-row final"><span>Order Total</span><span>₪${opts.total}</span></div>
+      </div>`;
+
+  const addressHtml = opts.shippingAddress ? `
+      <div class="address-box">
+        <h4>Shipping To</h4>
+        <p>${opts.customerName}<br>
+        ${opts.shippingAddress.street}, ${opts.shippingAddress.city}<br>
+        ${opts.shippingAddress.zip}, ${opts.shippingAddress.country}</p>
+      </div>` : '';
+
   const content = `
     <div class="body">
       <div style="margin-bottom:16px;">
@@ -219,15 +255,15 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
 
+      ${itemsHtml}
+      ${totalsHtml}
+      ${addressHtml}
+
       <div class="info-box warning">
         <strong>What happens next?</strong><br><br>
         1. We verify your BIT transfer manually (usually within a few hours).<br>
         2. Once confirmed, you'll receive a <strong>second email</strong> confirming your order is being prepared.<br>
         3. Your jerseys will be shipped within 2–4 weeks after confirmation.
-      </div>
-
-      <div class="totals">
-        <div class="total-row final"><span>Order Total</span><span>₪${opts.total}</span></div>
       </div>
 
       <p style="font-size:13px;color:#666;margin-bottom:24px;">

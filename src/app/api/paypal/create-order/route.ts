@@ -29,6 +29,29 @@ async function getPayPalAccessToken() {
   return data.access_token;
 }
 
+// Map common country names → ISO 3166-1 alpha-2 codes for PayPal
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  israel: 'IL', 'ישראל': 'IL',
+  'united states': 'US', usa: 'US',
+  'united kingdom': 'GB', uk: 'GB', england: 'GB',
+  germany: 'DE', 'גרמניה': 'DE',
+  france: 'FR', 'צרפת': 'FR',
+  spain: 'ES', 'ספרד': 'ES',
+  italy: 'IT', 'איטליה': 'IT',
+  netherlands: 'NL', 'הולנד': 'NL',
+  canada: 'CA', 'קנדה': 'CA',
+  australia: 'AU', 'אוסטרליה': 'AU',
+  brazil: 'BR', 'ברזיל': 'BR',
+  argentina: 'AR', 'ארגנטינה': 'AR',
+};
+
+function resolveCountryCode(countryInput: string | undefined): string {
+  if (!countryInput) return 'IL';
+  const cleaned = countryInput.trim();
+  if (/^[A-Z]{2}$/.test(cleaned)) return cleaned; // already a 2-letter code
+  return COUNTRY_NAME_TO_CODE[cleaned.toLowerCase()] ?? 'IL';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -36,7 +59,15 @@ export async function POST(request: NextRequest) {
 
     const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
 
-    if (!parsedAmount || typeof parsedAmount !== 'number' || isNaN(parsedAmount) || parsedAmount <= 0) {
+    // Sanity-check: must be a positive number within a reasonable cart range.
+    // Minimum ₪1 (single item discount edge case), maximum ₪50,000 (bulk order cap).
+    if (
+      !parsedAmount ||
+      typeof parsedAmount !== 'number' ||
+      isNaN(parsedAmount) ||
+      parsedAmount <= 0 ||
+      parsedAmount > 50000
+    ) {
       return NextResponse.json(
         { error: 'Invalid amount provided' },
         { status: 400 }
@@ -69,7 +100,7 @@ export async function POST(request: NextRequest) {
                   address_line_1: shippingAddress.street || '',
                   admin_area_2: shippingAddress.city || '',
                   postal_code: shippingAddress.zip || '',
-                  country_code: 'IL',
+                  country_code: resolveCountryCode(shippingAddress.country),
                 },
               },
             }),

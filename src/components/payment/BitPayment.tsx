@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Copy, Smartphone, CheckCircle2, User, Phone, Banknote } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Copy, Smartphone, CheckCircle2, User, Phone, Banknote, Clock, AlertTriangle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+
+const BIT_EXPIRY_SECONDS = 15 * 60; // 15 minutes
 
 interface BitPaymentProps {
   amount: number;
@@ -30,7 +32,31 @@ export function BitPayment({
   const [senderName, setSenderName] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [secondsLeft, setSecondsLeft] = useState(BIT_EXPIRY_SECONDS);
+  const [expired, setExpired] = useState(false);
   const submittingRef = useRef(false);
+
+  // Countdown timer — 15 minutes to complete the Bit transfer
+  useEffect(() => {
+    if (confirmed || expired) return;
+    const interval = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          clearInterval(interval);
+          setExpired(true);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [confirmed, expired]);
+
+  const formatTime = useCallback((s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }, []);
 
   // Owner details
   const ownerPhone = '058-414-0508';
@@ -48,7 +74,8 @@ export function BitPayment({
   };
 
   const handleDeepLink = () => {
-    window.location.href = bitDeepLink;
+    // Open in new tab so the user keeps the confirmation form open
+    window.open(bitDeepLink, '_blank', 'noopener,noreferrer');
   };
 
   const validateSenderFields = (): boolean => {
@@ -64,6 +91,8 @@ export function BitPayment({
     if (submittingRef.current || loading) return;
     if (!validateSenderFields()) return;
     submittingRef.current = true;
+    // Mark confirmed only after validation passes — the parent will redirect
+    // on success or drop loading=false on error (useEffect above resets the ref).
     setConfirmed(true);
     onConfirm({
       senderName: senderName.trim(),
@@ -71,6 +100,23 @@ export function BitPayment({
       amountPaid: String(amount),
     });
   };
+
+  // When the parent's loading flag drops back to false WHILE we are in a
+  // "confirmed + submitting" state, the order save failed (redirect never happened).
+  // Reset so the user can correct details and retry.
+  // We only care about transitions from true→false when submittingRef is set,
+  // so we track the previous value of `loading` to avoid spurious resets.
+  const prevLoadingRef = useRef(loading);
+  useEffect(() => {
+    const wasLoading = prevLoadingRef.current;
+    prevLoadingRef.current = loading;
+    // Only reset when loading transitions from true → false after we submitted
+    if (wasLoading && !loading && submittingRef.current) {
+      submittingRef.current = false;
+      setConfirmed(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   if (confirmed) {
     return (
@@ -93,10 +139,66 @@ export function BitPayment({
     );
   }
 
+  if (expired) {
+    return (
+      <div className="text-center space-y-4">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
+          style={{ backgroundColor: 'rgba(255,77,46,0.12)' }}
+        >
+          <AlertTriangle className="w-6 h-6" style={{ color: '#FF4D2E' }} />
+        </div>
+        <p className="text-sm text-white font-medium">
+          {isHe ? 'פג תוקף הזמן' : 'Session Expired'}
+        </p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          {isHe
+            ? '15 הדקות להעברה עברו. אנא התחל מחדש.'
+            : 'The 15-minute window has passed. Please start again.'}
+        </p>
+        <button
+          onClick={() => {
+            setExpired(false);
+            setSecondsLeft(BIT_EXPIRY_SECONDS);
+            setSenderName('');
+            setSenderPhone('');
+            setErrors({});
+          }}
+          className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid var(--border)' }}
+        >
+          {isHe ? 'התחל מחדש' : 'Start Again'}
+        </button>
+      </div>
+    );
+  }
+
   const inputClass = 'w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-all duration-200';
 
   return (
     <div className="space-y-4">
+      {/* Countdown Timer */}
+      <div
+        className="flex items-center justify-between px-3 py-2 rounded-lg"
+        style={{
+          backgroundColor: secondsLeft < 120 ? 'rgba(255,77,46,0.08)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${secondsLeft < 120 ? 'rgba(255,77,46,0.3)' : 'var(--border)'}`,
+        }}
+      >
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5" style={{ color: secondsLeft < 120 ? '#FF4D2E' : 'var(--text-muted)' }} />
+          <span className="text-xs" style={{ color: secondsLeft < 120 ? '#FF4D2E' : 'var(--text-muted)' }}>
+            {isHe ? 'זמן שנותר להעברה' : 'Time remaining to transfer'}
+          </span>
+        </div>
+        <span
+          className="font-mono text-sm font-bold"
+          style={{ color: secondsLeft < 120 ? '#FF4D2E' : 'white' }}
+        >
+          {formatTime(secondsLeft)}
+        </span>
+      </div>
+
       {/* Owner Details - Send payment to */}
       <div
         className="rounded-xl p-4 space-y-2"
@@ -146,15 +248,15 @@ export function BitPayment({
       <div className="flex flex-col items-center gap-3">
         <div
           className="p-3 rounded-xl"
-          style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+          style={{ backgroundColor: '#ffffff' }}
         >
           <QRCodeSVG
             value={qrValue}
             size={130}
             level="H"
-            includeMargin
-            fgColor="#ffffff"
-            bgColor="transparent"
+            includeMargin={false}
+            fgColor="#000000"
+            bgColor="#ffffff"
           />
         </div>
         <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
@@ -258,10 +360,10 @@ export function BitPayment({
       <button
         onClick={handleConfirm}
         disabled={loading}
-        className="w-full py-3 rounded-xl font-bold text-base text-white transition-all duration-200 disabled:opacity-60"
-        style={{ backgroundColor: 'var(--cta)' }}
+        className="w-full py-3 rounded-xl font-bold text-base transition-all duration-200 disabled:opacity-60"
+        style={{ backgroundColor: 'var(--gold)', color: '#0A0A0B' }}
         onMouseEnter={(e) => {
-          if (!loading) (e.currentTarget as HTMLElement).style.opacity = '0.9';
+          if (!loading) (e.currentTarget as HTMLElement).style.opacity = '0.88';
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLElement).style.opacity = '1';

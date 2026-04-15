@@ -68,7 +68,7 @@ function ReviewCard({ review, locale }: { review: ReturnType<typeof getSortedRev
             {review.verified && (
               <span
                 className="font-mono text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded"
-                style={{ backgroundColor: 'rgba(15,61,46,0.5)', color: '#1A5C44', border: '1px solid rgba(15,61,46,0.4)' }}
+                style={{ backgroundColor: 'rgba(15,61,46,0.35)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}
               >
                 {isHe ? '✓ מאומת' : '✓ Verified'}
               </span>
@@ -76,7 +76,7 @@ function ReviewCard({ review, locale }: { review: ReturnType<typeof getSortedRev
           </div>
         </div>
         <p
-          className="ml-auto text-[10px] italic truncate max-w-[100px]"
+          className="ms-auto text-[10px] italic truncate max-w-[100px]"
           style={{ color: 'var(--muted)', direction: 'ltr' }}
         >
           {review.jersey}
@@ -96,6 +96,7 @@ export function LockerRoom() {
   return (
     <section
       className="overflow-hidden"
+      aria-label={isHe ? 'חוות דעת לקוחות' : 'Customer Reviews'}
       style={{ borderTop: '1px solid var(--border)' }}
     >
       {/* ── Featured pullquote — chalk band ──────────────────────────── */}
@@ -208,8 +209,12 @@ export function LockerRoom() {
                 </svg>
                 @foot.jerseys4
               </a>
-              <span className="font-mono text-[10px] uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
-                {isHe ? '🔒 PayPal + BIT' : '🔒 Secure · PayPal + BIT'}
+              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                <svg viewBox="0 0 16 16" className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="7" width="10" height="8" rx="1.5" />
+                  <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+                </svg>
+                {isHe ? 'PayPal + BIT מאובטח' : 'Secure · PayPal + BIT'}
               </span>
             </div>
           </Reveal>

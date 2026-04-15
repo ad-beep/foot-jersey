@@ -21,6 +21,18 @@ export default function LandingHero() {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        setQuery('');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [searchOpen]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim();
@@ -275,7 +287,11 @@ export default function LandingHero() {
               </button>
 
               <button
-                onClick={() => router.push(`/${locale}/discover`)}
+                onClick={() => {
+                  const el = document.getElementById('collections-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  else router.push(`/${locale}/#collections-section`);
+                }}
                 className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-medium text-sm transition-all duration-200 hover:bg-white/[0.07]"
                 style={{ color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.13)' }}
               >
@@ -303,11 +319,11 @@ export default function LandingHero() {
                     <path d="M8 1l1.9 3.9L14 5.6l-3 2.9.7 4.1L8 10.4l-3.7 2.2.7-4.1-3-2.9 4.1-.7z" />
                   </svg>
                 ))}
-                <span className="font-mono text-[11px] ml-1.5" style={{ color: 'var(--gold)' }}>4.8</span>
+                <span className="font-mono text-[11px] ms-1.5" style={{ color: 'var(--gold)' }}>4.8</span>
               </div>
               <span style={{ width: 1, height: 12, backgroundColor: 'var(--border)', display: 'inline-block' }} />
               <span className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>
-                {isHe ? '95+ לקוחות מרוצים' : '95+ happy customers'}
+                {isHe ? '120+ לקוחות מרוצים' : '120+ happy customers'}
               </span>
               <span style={{ width: 1, height: 12, backgroundColor: 'var(--border)', display: 'inline-block' }} />
               <span className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>PayPal · BIT</span>
@@ -330,7 +346,8 @@ export default function LandingHero() {
             direction: 'ltr',
           }}
         >
-          {[1, 2, 3].map((n) => (
+          {/* Two identical copies → seamless loop (tickerScroll moves -50%) */}
+          {[0, 1].map((n) => (
             <span
               key={n}
               className="font-mono uppercase shrink-0"
@@ -345,6 +362,9 @@ export default function LandingHero() {
       {/* ── Search overlay ────────────────────────────────────────────────── */}
       {searchOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={isHe ? 'חיפוש' : 'Search'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(10,10,11,0.93)', backdropFilter: 'blur(24px)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setSearchOpen(false); }}

@@ -147,7 +147,7 @@ export function OrderConfirmedClient() {
           Foot<span style={{ color: gold }}>Jersey</span>
         </a>
         <a href={`/${locale}/discover`} style={{ fontSize: 13, color: '#555', textDecoration: 'none' }}>
-          {isHe ? '← המשך קנייה' : '← Continue Shopping'}
+          {isHe ? '→ המשך קנייה' : '← Continue Shopping'}
         </a>
       </div>
 
@@ -218,7 +218,7 @@ export function OrderConfirmedClient() {
                       <div style={{ fontSize: 12, color: gold, marginTop: 2 }}>{customParts.join(' · ')}</div>
                     )}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>₪{item.totalPrice}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>₪{item.totalPrice * item.quantity}</div>
                 </div>
               );
             })}
@@ -227,20 +227,20 @@ export function OrderConfirmedClient() {
           {/* Totals */}
           <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#666', padding: '4px 0' }}>
-              <span>{isHe ? 'סכום ביניים' : 'Subtotal'}</span><span>₪{order.subtotal}</span>
+              <span>{isHe ? 'סכום ביניים' : 'Subtotal'}</span><span style={{ fontFamily: 'monospace' }}>₪{order.subtotal}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#666', padding: '4px 0' }}>
               <span>{isHe ? 'משלוח' : 'Shipping'}</span>
-              <span>{order.shipping === 0 ? (isHe ? 'חינם 🎉' : 'FREE 🎉') : `₪${order.shipping}`}</span>
+              <span style={{ fontFamily: 'monospace' }}>{order.shipping === 0 ? (isHe ? 'חינם 🎉' : 'FREE 🎉') : `₪${order.shipping}`}</span>
             </div>
             {order.discountAmount && order.discountAmount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: gold, padding: '4px 0' }}>
                 <span>{isHe ? 'הנחה' : 'Discount'} {order.discountCode ? `(${order.discountCode})` : ''}</span>
-                <span>-₪{order.discountAmount}</span>
+                <span style={{ fontFamily: 'monospace' }}>-₪{order.discountAmount}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700, color: '#fff', padding: '12px 0 4px', marginTop: 8, borderTop: '1px solid #1e1e1e' }}>
-              <span>{isHe ? 'סה"כ ששולם' : 'Total Paid'}</span><span>₪{order.total}</span>
+              <span>{isHe ? 'סה"כ ששולם' : 'Total Paid'}</span><span style={{ fontFamily: 'monospace' }}>₪{order.total}</span>
             </div>
           </div>
 

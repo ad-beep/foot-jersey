@@ -224,7 +224,7 @@ const COLLECTION_SLUG_MAP: Record<string, string> = {
   'retro': 'retro',
   'season-2526': 'season-2526',
   'special': 'special',
-  'world-cup-2026': 'world-cup',
+  'world-cup-2026': 'world-cup-2026',
   'kids': 'kids',
   'long-sleeve': 'long-sleeve',
   'drip': 'drip',
@@ -285,6 +285,7 @@ export function CategoryGrid() {
   return (
     <section
       className="py-16 md:py-24"
+      aria-label={isHe ? `${CATEGORIES.length} קולקציות` : `${CATEGORIES.length} Collections`}
       style={{ backgroundColor: 'var(--ink)', borderTop: '1px solid var(--border)' }}
     >
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 w-full">
@@ -311,11 +312,11 @@ export function CategoryGrid() {
               }}
               aria-hidden="true"
             >
-              17
+              {CATEGORIES.length}
             </div>
             <div className="relative">
               <p className="section-kicker mb-3">
-                {isHe ? '17 קולקציות' : '17 Collections'}
+                {isHe ? `${CATEGORIES.length} קולקציות` : `${CATEGORIES.length} Collections`}
               </p>
               <h2
                 className="font-playfair font-bold text-white whitespace-pre-line"

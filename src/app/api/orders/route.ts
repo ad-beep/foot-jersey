@@ -418,6 +418,39 @@ export async function POST(request: NextRequest) {
           if (codeInvalid) {
             throw new Error('Discount code is no longer valid. Please remove it and try again.');
           }
+
+          // ── Server-side discount amount validation ───────────────────
+          // Recompute the discount amount from the sheet data and verify it
+          // matches what the client sent. Prevents discount amount manipulation.
+          const discountType = row[1]; // 'percentage' or 'fixed'
+          const discountValue = parseFloat(row[2]) || 0;
+          const minOrder = parseFloat(row[3]) || 0;
+
+          // Compute subtotal the same way the price-check block above did
+          const serverComputedSubtotal = body.items.reduce(
+            (sum, item) => sum + item.totalPrice * item.quantity,
+            0
+          );
+
+          if (minOrder > 0 && serverComputedSubtotal < minOrder) {
+            throw new Error('Discount code minimum order requirement not met.');
+          }
+
+          let serverDiscountAmount: number;
+          if (discountType === 'percentage') {
+            serverDiscountAmount = Math.floor((serverComputedSubtotal * discountValue) / 100);
+          } else {
+            serverDiscountAmount = discountValue;
+          }
+          serverDiscountAmount = Math.min(serverDiscountAmount, serverComputedSubtotal);
+
+          const clientDiscountAmount = body.discountAmount || 0;
+          if (Math.abs(clientDiscountAmount - serverDiscountAmount) > 1) {
+            console.warn(
+              `Discount amount mismatch: client sent ${clientDiscountAmount}, server computed ${serverDiscountAmount} for code ${body.discountCode}`
+            );
+            throw new Error('Discount amount mismatch. Please refresh and try again.');
+          }
         }
       } catch (discountCheckErr) {
         // Re-throw so outer catch can refund if payment was already captured.

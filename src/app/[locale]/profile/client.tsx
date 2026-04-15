@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { User as UserIcon, LogOut, Trash2, ChevronDown, ChevronUp, MapPin, Pencil, Plus } from 'lucide-react';
+import { doc, setDoc, collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/auth-store';
 import type { ShippingAddress } from '@/stores/auth-store';
@@ -19,6 +22,15 @@ import { Reveal } from '@/components/ui/reveal';
 import { ProductCard } from '@/components/product/ProductCard';
 import { cn } from '@/lib/utils';
 import type { Jersey, Size, KidsSize } from '@/types';
+
+/** Persist a partial update to the user's Firestore document. Silently ignores errors. */
+async function persistUserField(uid: string, fields: Record<string, unknown>) {
+  try {
+    await setDoc(doc(db, 'users', uid), fields, { merge: true });
+  } catch (e) {
+    console.error('Firestore persist error:', e);
+  }
+}
 
 // ─── Labels ──────────────────────────────────────────────────────
 const L = {
@@ -155,8 +167,7 @@ export default function ProfileClient({ allJerseys }: ProfileClientProps) {
             style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '2px solid var(--border)' }}
           >
             {user.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+              <Image src={user.photoURL} alt={user.displayName || 'Profile'} width={80} height={80} className="w-full h-full object-cover" unoptimized />
             ) : (
               <UserIcon className="w-8 h-8 md:w-10 md:h-10" style={{ color: 'var(--text-muted)' }} />
             )}
@@ -167,7 +178,10 @@ export default function ProfileClient({ allJerseys }: ProfileClientProps) {
             </h1>
             <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{user.email}</p>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {isHe ? L.memberSince.he : L.memberSince.en} 2024
+              {isHe ? L.memberSince.he : L.memberSince.en}{' '}
+              {auth.currentUser?.metadata?.creationTime
+                ? new Date(auth.currentUser.metadata.creationTime).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-GB', { month: 'short', year: 'numeric' })
+                : '—'}
             </p>
           </div>
         </div>
@@ -256,10 +270,20 @@ function SizeVault() {
 
   const [adultSize, setAdultSize] = useState<Size | null>(user?.savedSize ?? null);
   const [kidsSize, setKidsSize] = useState<KidsSize | null>(user?.savedKidsSize ?? null);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (adultSize) setSavedSize(adultSize);
     if (kidsSize) setSavedKidsSize(kidsSize);
+    // Persist to Firestore so preference survives re-login
+    if (user?.uid) {
+      setSaving(true);
+      await persistUserField(user.uid, {
+        ...(adultSize ? { savedSize: adultSize } : {}),
+        ...(kidsSize ? { savedKidsSize: kidsSize } : {}),
+      });
+      setSaving(false);
+    }
     toast({ title: isHe ? L.saved.he : L.saved.en, variant: 'success' });
   };
 
@@ -307,7 +331,7 @@ function SizeVault() {
         </div>
       </div>
 
-      <Button variant="primary" size="sm" onClick={handleSave}>
+      <Button variant="primary" size="sm" onClick={handleSave} loading={saving}>
         {isHe ? L.save.he : L.save.en}
       </Button>
     </Section>
@@ -402,20 +426,57 @@ function RecommendedSection({ allJerseys }: { allJerseys: Jersey[] }) {
 // ═════════════════════════════════════════════════════════════════
 // TAB 2: ORDERS
 // ═════════════════════════════════════════════════════════════════
+
+interface FirestoreOrderItem {
+  jerseyId: string;
+  teamName: string;
+  imageUrl: string;
+  size: string;
+  quantity: number;
+  totalPrice: number;
+  customization?: Record<string, unknown>;
+}
+
+interface FirestoreOrder {
+  id: string;
+  orderNumber?: number;
+  items: FirestoreOrderItem[];
+  total: number;
+  status: string;
+  paymentMethod: string;
+  createdAt: Timestamp | null;
+}
+
 function OrdersTab() {
   const { locale } = useLocale();
   const isHe = locale === 'he';
-  const orders = useAuthStore((s) => s.user?.orderHistory ?? []);
+  const user = useAuthStore((s) => s.user);
+  const [orders, setOrders] = useState<FirestoreOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
-  const statusBadge = (status: string) => {
-    const variant = status === 'delivered' ? 'success' : status === 'cancelled' ? 'error' : status === 'shipped' ? 'accent' : 'default';
-    const label = L[status as keyof typeof L] as { en: string; he: string } | undefined;
-    return <Badge variant={variant}>{label ? (isHe ? label.he : label.en) : status}</Badge>;
-  };
+  useEffect(() => {
+    if (!user?.email) { setLoadingOrders(false); return; }
+    getDocs(
+      query(
+        collection(db, 'orders'),
+        where('shippingInfo.email', '==', user.email),
+        orderBy('createdAt', 'desc'),
+      )
+    )
+      .then((snap) => {
+        setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreOrder)));
+      })
+      .catch((err) => console.error('Failed to load orders:', err))
+      .finally(() => setLoadingOrders(false));
+  }, [user?.email]);
 
-  if (orders.length === 0) {
-    return (
-      <Section title={isHe ? L.orderHistory.he : L.orderHistory.en}>
+  return (
+    <Section title={isHe ? L.orderHistory.he : L.orderHistory.en}>
+      {loadingOrders ? (
+        <div className="flex justify-center py-10">
+          <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+        </div>
+      ) : orders.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
             {isHe ? L.noOrders.he : L.noOrders.en}
@@ -424,28 +485,34 @@ function OrdersTab() {
             <Button variant="secondary" size="sm">{isHe ? L.explore.he : L.explore.en}</Button>
           </Link>
         </div>
-      </Section>
-    );
-  }
-
-  return (
-    <Section title={isHe ? L.orderHistory.he : L.orderHistory.en}>
-      <div className="space-y-3">
-        {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
-        ))}
-      </div>
+      ) : (
+        <div className="space-y-3">
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} />
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
 
-function OrderCard({ order }: { order: { id: string; items: { jerseyId: string; jersey: Jersey; size: string; quantity: number; totalPrice: number }[]; total: number; createdAt: number; status: string } }) {
+function OrderCard({ order }: { order: FirestoreOrder }) {
   const { locale } = useLocale();
   const isHe = locale === 'he';
   const [expanded, setExpanded] = useState(false);
 
-  const statusVariant = order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'error' : order.status === 'shipped' ? 'accent' : 'default';
+  const statusVariant =
+    order.status === 'delivered' ? 'success' :
+    order.status === 'cancelled' ? 'error' :
+    order.status === 'shipped' ? 'accent' : 'default';
+
   const statusLabel = L[order.status as keyof typeof L] as { en: string; he: string } | undefined;
+
+  const dateStr = order.createdAt
+    ? order.createdAt.toDate().toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US')
+    : '—';
+
+  const displayId = order.orderNumber ? `#${order.orderNumber}` : `#${order.id.slice(-6)}`;
 
   return (
     <div
@@ -456,16 +523,11 @@ function OrderCard({ order }: { order: { id: string; items: { jerseyId: string; 
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between gap-3"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="text-start min-w-0">
-            <p className="text-sm font-semibold text-white">
-              #{order.id.slice(-6)}
-            </p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {new Date(order.createdAt).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US')}
-              {' · '}{order.items.length} {isHe ? L.items.he : L.items.en}
-            </p>
-          </div>
+        <div className="text-start min-w-0">
+          <p className="text-sm font-semibold text-white">{displayId}</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {dateStr}{' · '}{order.items.length} {isHe ? L.items.he : L.items.en}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant={statusVariant}>{statusLabel ? (isHe ? statusLabel.he : statusLabel.en) : order.status}</Badge>
@@ -478,7 +540,7 @@ function OrderCard({ order }: { order: { id: string; items: { jerseyId: string; 
         <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
           {order.items.map((item, i) => (
             <div key={i} className="flex items-center justify-between text-sm">
-              <span className="text-white">{item.jersey.teamName}</span>
+              <span className="text-white">{item.teamName}</span>
               <span style={{ color: 'var(--text-muted)' }}>
                 {item.size} &times; {item.quantity} · ₪{item.totalPrice}
               </span>
@@ -497,6 +559,7 @@ function AddressesTab() {
   const { locale } = useLocale();
   const { toast } = useToast();
   const isHe = locale === 'he';
+  const uid = useAuthStore((s) => s.user?.uid);
   const addresses = useAuthStore((s) => s.user?.shippingAddresses ?? []);
   const addAddress = useAuthStore((s) => s.addShippingAddress);
   const removeAddress = useAuthStore((s) => s.removeShippingAddress);
@@ -506,13 +569,22 @@ function AddressesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const handleSave = (data: Omit<ShippingAddress, 'id'>) => {
+  /** After any mutation, sync the whole addresses array to Firestore. */
+  const syncAddresses = async (updatedAddresses: ShippingAddress[]) => {
+    if (uid) await persistUserField(uid, { shippingAddresses: updatedAddresses });
+  };
+
+  const handleSave = async (data: Omit<ShippingAddress, 'id'>) => {
     if (editingId) {
       updateAddress(editingId, data);
       setEditingId(null);
+      const updated = useAuthStore.getState().user?.shippingAddresses ?? [];
+      await syncAddresses(updated);
       toast({ title: isHe ? 'הכתובת עודכנה' : 'Address updated', variant: 'success' });
     } else {
       addAddress(data);
+      const updated = useAuthStore.getState().user?.shippingAddresses ?? [];
+      await syncAddresses(updated);
       toast({ title: isHe ? 'הכתובת נוספה' : 'Address added', variant: 'success' });
     }
     setShowForm(false);
@@ -523,10 +595,18 @@ function AddressesTab() {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm(isHe ? 'בטוח שברצונך למחוק כתובת זו?' : 'Delete this address?')) return;
     removeAddress(id);
+    const updated = useAuthStore.getState().user?.shippingAddresses ?? [];
+    await syncAddresses(updated);
     toast({ title: isHe ? 'הכתובת נמחקה' : 'Address deleted', variant: 'info' });
+  };
+
+  const handleSetDefault = async (id: string) => {
+    setDefault(id);
+    const updated = useAuthStore.getState().user?.shippingAddresses ?? [];
+    await syncAddresses(updated);
   };
 
   const editingAddress = editingId ? addresses.find((a) => a.id === editingId) : undefined;
@@ -668,8 +748,17 @@ function AddressForm({
 function SettingsTab({ onSignOut }: { onSignOut: () => void }) {
   const { locale, switchLocale } = useLocale();
   const isHe = locale === 'he';
-  const newsletter = useAuthStore((s) => s.user?.newsletter ?? false);
+  const user = useAuthStore((s) => s.user);
+  const newsletter = user?.newsletter ?? false;
   const setNewsletter = useAuthStore((s) => s.setNewsletter);
+
+  const handleNewsletterToggle = async () => {
+    const next = !newsletter;
+    setNewsletter(next);
+    if (user?.uid) {
+      await persistUserField(user.uid, { newsletter: next });
+    }
+  };
 
   return (
     <Section title={isHe ? L.settings.he : L.settings.en}>
@@ -708,7 +797,7 @@ function SettingsTab({ onSignOut }: { onSignOut: () => void }) {
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{isHe ? L.newsletterSub.he : L.newsletterSub.en}</p>
           </div>
           <button
-            onClick={() => setNewsletter(!newsletter)}
+            onClick={handleNewsletterToggle}
             className={cn(
               'relative w-11 h-6 rounded-full transition-colors duration-200',
               newsletter ? 'bg-[var(--gold)]' : 'bg-white/10',

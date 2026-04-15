@@ -70,7 +70,7 @@ export const COLLECTIONS: CollectionData[] = [
   },
   {
     slug: 'world-cup-2026',
-    categorySlug: 'world-cup-2026',
+    categorySlug: 'world-cup',
     accent: '#1A5C44',
     bgFrom: 'rgba(15,61,46,0.08)',
     en: {

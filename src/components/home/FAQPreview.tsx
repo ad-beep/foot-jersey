@@ -97,10 +97,11 @@ export function FAQPreview() {
               <div className="flex flex-col gap-3">
                 <Link
                   href={`/${locale}/faq`}
-                  className="inline-flex items-center gap-2 text-sm font-medium transition-colors"
+                  className={`inline-flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80 ${isHe ? 'flex-row-reverse' : ''}`}
                   style={{ color: 'var(--gold)' }}
                 >
-                  {isHe ? '← ראה את כל השאלות' : 'See all questions →'}
+                  <span>{isHe ? 'ראה את כל השאלות' : 'See all questions'}</span>
+                  <span aria-hidden="true">{isHe ? '←' : '→'}</span>
                 </Link>
                 <a
                   href="https://wa.me/972584140508"

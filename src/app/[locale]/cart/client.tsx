@@ -201,7 +201,9 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const freeShipping = itemCount >= SHIPPING_POLICY.freeShippingMinItems;
   const shippingCost = freeShipping ? 0 : PRICES.shippingFlat;
   const discountAmount = discountApplied?.amount ?? 0;
-  const finalTotal = subtotal + shippingCost - discountAmount;
+  // Guard against negative totals (e.g. large discount on free-shipping order)
+  // and round to avoid floating-point display artifacts (e.g. 119.99999)
+  const finalTotal = Math.max(0, Math.round((subtotal + shippingCost - discountAmount) * 100) / 100);
 
   const applyDiscount = async () => {
     if (!discountCode.trim()) return;
@@ -247,7 +249,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     if (!form.city.trim()) e.city = isHe ? 'עיר היא שדה חובה' : 'City is required';
     if (!form.street.trim()) e.street = isHe ? 'רחוב הוא שדה חובה' : 'Street is required';
     if (!form.zip.trim()) e.zip = isHe ? 'מיקוד הוא שדה חובה' : 'Zip code is required';
-    else if (!/^[a-zA-Z0-9]{3,10}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד לא תקין' : 'Invalid postal code';
+    else if (!/^[a-zA-Z0-9][a-zA-Z0-9\- ]{1,11}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד לא תקין' : 'Invalid postal code';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -312,6 +314,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
 
   const handlePaymentSuccess = useCallback(
     async (paymentIntentId?: string, paypalOrderId?: string) => {
+      setSubmitting(true);
       try {
         const result = await saveOrder({ paymentIntentId, paypalOrderId, method: paymentMethod });
         const orderId = result?.orderId;
@@ -375,7 +378,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     <div>
       <div className="flex items-center gap-2 mb-6">
         <CreditCard className="w-5 h-5" style={{ color: 'var(--gold)' }} />
-        <h2 className="text-lg font-bold text-white">
+        <h2 className="text-lg font-bold text-white font-playfair">
           {isHe ? 'פרטי הזמנה' : 'Checkout'}
         </h2>
       </div>
@@ -813,7 +816,7 @@ export function CartPageClient() {
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
+          <h1 className="text-2xl md:text-3xl font-bold text-white font-playfair" style={{ letterSpacing: '-0.02em' }}>
             {isHe ? 'עגלת קניות' : 'Shopping Cart'}
             {hasItems && (
               <span className="text-base font-normal ms-2" style={{ color: 'var(--text-muted)' }}>
@@ -882,7 +885,7 @@ export function CartPageClient() {
                 <div className="space-y-3">
                   <AnimatePresence mode="popLayout">
                     {items.map((item) => (
-                      <CartItemCard key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}`} item={item} />
+                      <CartItemCard key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}-${item.customization?.hasPatch ? '1' : '0'}-${item.customization?.hasPants ? '1' : '0'}-${item.customization?.isPlayerVersion ? '1' : '0'}`} item={item} />
                     ))}
                   </AnimatePresence>
                 </div>

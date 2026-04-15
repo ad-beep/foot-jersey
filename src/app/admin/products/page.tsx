@@ -292,7 +292,7 @@ export default function AddProductPage() {
       setTimeout(() => {
         setNameHe('');
         setNameEn('');
-        setSeason('24/25');
+        setSeason(CURRENT_SEASON);
         setTag('regular');
         setLeague('england');
         setIsLongSleeve(false);

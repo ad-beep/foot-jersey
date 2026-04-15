@@ -3,6 +3,7 @@
 import { useLocale } from '@/hooks/useLocale';
 import { Reveal } from '@/components/ui/reveal';
 import { RefreshCw, Truck, MessageCircle, Shield } from 'lucide-react';
+import { AGGREGATE_RATING } from '@/data/reviews';
 
 const GUARANTEES = [
   {
@@ -64,16 +65,14 @@ export function FounderMoment() {
   return (
     <section
       id="about-us"
+      aria-label={isHe ? 'הסיפור שלנו' : 'About FootJersey'}
       className="py-16 md:py-24 chalk-band"
     >
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
 
         {/* Section label */}
         <Reveal>
-          <p
-            className={`section-kicker mb-10 ${isHe ? 'text-right' : ''}`}
-            style={{ color: '#6B6B6F' }}
-          >
+          <p className={`section-kicker mb-10 ${isHe ? 'text-right' : ''}`}>
             {isHe ? 'הסיפור שלנו' : 'Why FootJersey'}
           </p>
         </Reveal>
@@ -84,7 +83,7 @@ export function FounderMoment() {
           <Reveal>
             <div className={isHe ? 'text-right' : ''}>
               <h2
-                className="font-playfair font-bold mb-8"
+                className="font-playfair font-bold mb-8 whitespace-pre-line"
                 style={{
                   fontSize: 'clamp(2rem, 4vw, 3rem)',
                   letterSpacing: '-0.03em',
@@ -125,9 +124,9 @@ export function FounderMoment() {
             <Reveal delay={100}>
               <div className={`grid grid-cols-3 gap-4 mb-8 ${isHe ? 'text-right' : ''}`}>
                 {[
-                  { num: '120+', en: 'Orders delivered', he: 'הזמנות שנשלחו' },
-                  { num: '4.8★', en: 'Avg. rating',     he: 'דירוג ממוצע' },
-                  { num: '17',   en: 'Collections',     he: 'קולקציות' },
+                  { num: '120+',                                         en: 'Orders delivered', he: 'הזמנות שנשלחו' },
+                  { num: `${AGGREGATE_RATING.ratingValue}★`,             en: 'Avg. rating',     he: 'דירוג ממוצע' },
+                  { num: '18',                                           en: 'Collections',     he: 'קולקציות' },
                 ].map((stat) => (
                   <div key={stat.num} className="text-center">
                     <div

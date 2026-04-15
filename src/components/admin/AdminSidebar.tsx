@@ -9,9 +9,9 @@ import { auth } from '@/lib/firebase';
 
 const NAV = [
   { href: '/admin',           label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/admin/products',  label: 'Add Product', icon: PackagePlus },
-  { href: '/admin/discounts', label: 'Discounts',   icon: Ticket },
   { href: '/admin/orders',    label: 'Orders',      icon: ClipboardList },
+  { href: '/admin/products',  label: 'Products',    icon: PackagePlus },
+  { href: '/admin/discounts', label: 'Discounts',   icon: Ticket },
   { href: '/admin/audit',     label: 'Audit Log',   icon: ShieldCheck },
 ];
 
@@ -46,13 +46,13 @@ export function AdminSidebar() {
       <div className="px-3 py-4 border-b border-white/10 flex items-center gap-2 min-h-[57px]">
         {!collapsed && (
           <Link href="/admin" className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" style={{ boxShadow: '0 0 8px #00C3D8' }} />
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#C8A24B', boxShadow: '0 0 8px rgba(200,162,75,0.7)' }} />
             <span className="font-bold text-white text-sm tracking-tight truncate">FootJersey Admin</span>
           </Link>
         )}
         {collapsed && (
           <Link href="/admin" className="mx-auto">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 block" style={{ boxShadow: '0 0 8px #00C3D8' }} />
+            <span className="w-2 h-2 rounded-full block" style={{ background: '#C8A24B', boxShadow: '0 0 8px rgba(200,162,75,0.7)' }} />
           </Link>
         )}
         <button
@@ -75,9 +75,10 @@ export function AdminSidebar() {
               title={collapsed ? label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-cyan-500/10 text-cyan-400'
+                  ? 'text-white hover:bg-white/5'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               } ${collapsed ? 'justify-center' : ''}`}
+            style={active ? { color: '#C8A24B', background: 'rgba(200,162,75,0.08)' } : {}}
             >
               <Icon className="w-4 h-4 shrink-0" />
               {!collapsed && <span>{label}</span>}
@@ -109,10 +110,11 @@ export function AdminSidebar() {
               key={href}
               href={href}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[56px] text-[10px] font-medium transition-colors ${
-                active ? 'text-cyan-400' : 'text-gray-500 hover:text-white'
+                active ? '' : 'text-gray-500 hover:text-white'
               }`}
+            style={active ? { color: '#C8A24B' } : {}}
             >
-              <Icon className={`w-5 h-5 ${active ? 'text-cyan-400' : ''}`} />
+              <Icon className={`w-5 h-5`} />
               <span>{label}</span>
             </Link>
           );
