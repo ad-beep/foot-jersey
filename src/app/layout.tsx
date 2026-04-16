@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     url: 'https://shopfootjersey.com',
     images: [
       {
-        url: 'https://shopfootjersey.com/og-default.jpg',
+        url: 'https://shopfootjersey.com/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'FootJersey — Premium Football Jerseys',
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     title: 'FootJersey — Premium Football Jerseys | Israel',
     description:
       'Shop premium football jerseys from every league worldwide. Fast delivery across Israel.',
-    images: ['https://shopfootjersey.com/og-default.jpg'],
+    images: ['https://shopfootjersey.com/opengraph-image'],
   },
   robots: {
     index: true,

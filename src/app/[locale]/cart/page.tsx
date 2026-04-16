@@ -15,6 +15,7 @@ export async function generateMetadata({
 
   return {
     title: `${dict.cart.title} | ${SITE_NAME}`,
+    robots: { index: false, follow: false },
   };
 }
 

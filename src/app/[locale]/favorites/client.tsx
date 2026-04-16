@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { Heart, User as UserIcon } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { useHydration } from '@/hooks/useHydration';
 import { useFavoritesStore } from '@/stores/favorites-store';

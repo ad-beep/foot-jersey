@@ -6,6 +6,7 @@ import { OrderConfirmedClient } from './client';
 
 export const metadata: Metadata = {
   title: `Order Confirmed | ${SITE_NAME}`,
+  robots: { index: false, follow: false },
 };
 
 export default function OrderConfirmedPage() {

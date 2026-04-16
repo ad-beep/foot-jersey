@@ -11,7 +11,7 @@ const CATEGORIES = {
   shipping: { en: 'Shipping',          he: 'משלוח' },
   payment:  { en: 'Payment',           he: 'תשלום' },
   product:  { en: 'Products',          he: 'מוצרים' },
-  returns:  { en: 'Returns',           he: 'החזרות' },
+  returns:  { en: 'Replacement',        he: 'החלפות' },
 };
 
 type CategoryKey = keyof typeof CATEGORIES;

@@ -4,7 +4,10 @@ import { fetchJerseys } from '@/lib/google-sheets';
 import type { Jersey } from '@/types';
 import FavoritesClient from './client';
 
-export const metadata: Metadata = { title: `Liked Jerseys | ${SITE_NAME}` };
+export const metadata: Metadata = {
+  title: `Liked Jerseys | ${SITE_NAME}`,
+  robots: { index: false, follow: false },
+};
 
 export default async function FavoritesPage() {
   let allJerseys: Jersey[] = [];

@@ -11,6 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   return {
     title: `${searchParams.q ? `Search: ${searchParams.q}` : 'Search'} | ${SITE_NAME}`,
+    robots: { index: false, follow: true },
   };
 }
 

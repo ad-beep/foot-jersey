@@ -1,6 +1,21 @@
 User-agent: *
 Allow: /
 
+# Private user pages — not for indexing
+Disallow: /en/profile
+Disallow: /he/profile
+Disallow: /en/cart
+Disallow: /he/cart
+Disallow: /en/favorites
+Disallow: /he/favorites
+Disallow: /en/order-confirmed
+Disallow: /he/order-confirmed
+Disallow: /en/auth
+Disallow: /he/auth
+Disallow: /en/forgot-password
+Disallow: /he/forgot-password
+Disallow: /admin
+
 # AI Search Crawlers — explicitly allowed for AI visibility
 User-agent: GPTBot
 Allow: /

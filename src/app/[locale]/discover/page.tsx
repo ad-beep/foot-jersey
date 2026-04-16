@@ -13,7 +13,17 @@ export async function generateMetadata({
   const description = isHe
     ? 'גלה את כל קולקציית חולצות הכדורגל שלנו — כל הליגות, כל הקולקציות.'
     : 'Browse our full football jersey collection — every league, every season, every style.';
-  return { title, description };
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://shopfootjersey.com/${params.locale}/discover`,
+      languages: {
+        en: 'https://shopfootjersey.com/en/discover',
+        he: 'https://shopfootjersey.com/he/discover',
+      },
+    },
+  };
 }
 
 export default function DiscoverPage() {
