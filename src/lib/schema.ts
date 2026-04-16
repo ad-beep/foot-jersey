@@ -69,7 +69,7 @@ export function organizationSchema() {
             '@type': 'SearchAction',
             target: {
               '@type': 'EntryPoint',
-              urlTemplate: `${SITE_URL}/en/search?q={search_term_string}`,
+              urlTemplate: `${SITE_URL}/en/discover?q={search_term_string}`,
             },
             'query-input': 'required name=search_term_string',
           },
@@ -177,10 +177,9 @@ export function productSchema(p: ProductSchemaInput) {
       },
       hasMerchantReturnPolicy: {
         '@type': 'MerchantReturnPolicy',
-        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-        merchantReturnDays: 30,
-        returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/FreeReturn',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+        merchantReturnDays: 0,
+        applicableCountry: 'IL',
       },
     },
   };

@@ -681,7 +681,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               ) : (
                 <>
                   <Package className="w-5 h-5" />
-                  {isHe ? 'המשך לעמוד תשלום' : 'Go to Payment Page'}
+                  {isHe ? 'המשך לתשלום' : 'Proceed to Payment'}
                 </>
               )}
             </button>
