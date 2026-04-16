@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { fetchJerseyById, fetchJerseys } from '@/lib/google-sheets';
+import { fetchJerseys } from '@/lib/google-sheets';
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 import { getImageUrl } from '@/lib/utils';
 import { productSchema, breadcrumbSchema } from '@/lib/schema';
@@ -14,7 +14,8 @@ export async function generateMetadata({
 }: {
   params: { locale: string; id: string };
 }): Promise<Metadata> {
-  const jersey = await fetchJerseyById(params.id);
+  const jerseys = await fetchJerseys();
+  const jersey = jerseys.find((j) => j.id === params.id) ?? null;
   if (!jersey) return { title: 'Not Found' };
 
   const leagueNames: Record<string, string> = {
@@ -80,10 +81,10 @@ export default async function ProductPage({
 }: {
   params: { locale: string; id: string };
 }) {
-  const [jersey, allJerseys] = await Promise.all([
-    fetchJerseyById(params.id),
-    fetchJerseys(),
-  ]);
+  // Fetch all jerseys once — the in-memory cache means subsequent calls are free.
+  // Then derive the target jersey from the list to avoid a second fetch.
+  const allJerseys = await fetchJerseys();
+  const jersey = allJerseys.find((j) => j.id === params.id) ?? null;
   if (!jersey) notFound();
 
   const locale = params.locale;

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -7,6 +8,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     description: isHe
       ? 'מצא את המידה הנכונה לחולצת הכדורגל שלך. טבלאות מידות למבוגרים וילדים.'
       : 'Find your perfect football jersey size. Adult and kids size charts for all jerseys.',
+    alternates: {
+      canonical: `${SITE_URL}/en/size-guide`,
+      languages: { en: `${SITE_URL}/en/size-guide`, he: `${SITE_URL}/he/size-guide` },
+    },
   };
 }
 

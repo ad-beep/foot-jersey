@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { localBusinessSchema } from '@/lib/schema';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -8,6 +9,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     description: isHe
       ? 'פנה אל FootJersey דרך WhatsApp, אינסטגרם, או טיקטוק. תגובה תוך שעתיים.'
       : 'Contact FootJersey via WhatsApp, Instagram, or TikTok. Response within 2 hours.',
+    alternates: {
+      canonical: `${SITE_URL}/en/contact`,
+      languages: { en: `${SITE_URL}/en/contact`, he: `${SITE_URL}/he/contact` },
+    },
   };
 }
 

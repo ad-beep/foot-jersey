@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { reviewSchema } from '@/lib/schema';
 import { REVIEWS, AGGREGATE_RATING, getSortedReviews } from '@/data/reviews';
+import { SITE_URL } from '@/lib/constants';
 import type { Locale } from '@/types';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
@@ -13,6 +14,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     description: isHe
       ? `קרא ביקורות אמיתיות של לקוחות FootJersey. דירוג ממוצע ${AGGREGATE_RATING.ratingValue}/5 מתוך ${AGGREGATE_RATING.reviewCount}+ ביקורות.`
       : `Read real FootJersey customer reviews. Average rating ${AGGREGATE_RATING.ratingValue}/5 from ${AGGREGATE_RATING.reviewCount}+ reviews.`,
+    alternates: {
+      canonical: `${SITE_URL}/en/reviews`,
+      languages: { en: `${SITE_URL}/en/reviews`, he: `${SITE_URL}/he/reviews` },
+    },
   };
 }
 

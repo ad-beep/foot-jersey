@@ -1,5 +1,5 @@
 import { isValidLocale } from '@/i18n/config';
-import { DEFAULT_LOCALE } from '@/lib/constants';
+import { DEFAULT_LOCALE, SITE_URL } from '@/lib/constants';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
@@ -7,6 +7,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   return {
     title: isHe ? 'תנאי שימוש — FootJersey' : 'Terms of Service — FootJersey',
     description: isHe ? 'תנאי השימוש של FootJersey' : 'FootJersey terms of service.',
+    alternates: {
+      canonical: `${SITE_URL}/en/terms`,
+      languages: { en: `${SITE_URL}/en/terms`, he: `${SITE_URL}/he/terms` },
+    },
   };
 }
 

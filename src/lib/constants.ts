@@ -113,7 +113,7 @@ export const SHEET_RANGE = 'A:J';
 
 // ─── Site ────────────────────────────────────────────────────
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'FootJersey';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://footjersey.com';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shopfootjersey.com';
 
 // ─── Available Sizes ─────────────────────────────────────────
 export const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'] as const;

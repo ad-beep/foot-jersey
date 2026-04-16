@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -8,6 +9,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     description: isHe
       ? 'הזמן Mystery Box של FootJersey וקבל חולצת כדורגל מפתיעה! רטרו, מונדיאל, מהדורה מיוחדת ועוד. מתחיל מ-₪99.'
       : 'Order a FootJersey Mystery Box and receive a surprise football jersey! Retro, World Cup, Special Edition and more. From ₪99.',
+    alternates: {
+      canonical: `${SITE_URL}/en/mystery-box`,
+      languages: { en: `${SITE_URL}/en/mystery-box`, he: `${SITE_URL}/he/mystery-box` },
+    },
   };
 }
 
