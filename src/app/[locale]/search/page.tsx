@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { SITE_NAME } from '@/lib/constants';
+import { fetchJerseys } from '@/lib/google-sheets';
+import type { Jersey } from '@/types';
 import { SearchPageClient } from './client';
 
 export async function generateMetadata({
@@ -15,10 +17,17 @@ export async function generateMetadata({
   };
 }
 
-export default function SearchPage() {
+export default async function SearchPage() {
+  let initialJerseys: Jersey[] = [];
+  try {
+    initialJerseys = await fetchJerseys();
+  } catch {
+    initialJerseys = [];
+  }
+
   return (
     <Suspense>
-      <SearchPageClient />
+      <SearchPageClient initialJerseys={initialJerseys} />
     </Suspense>
   );
 }

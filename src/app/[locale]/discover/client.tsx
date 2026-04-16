@@ -227,7 +227,7 @@ const SORT_SHORT: Record<string, { en: string; he: string }> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function DiscoverClient() {
+export function DiscoverClient({ initialJerseys }: { initialJerseys: Jersey[] }) {
   const { locale, isRtl } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -239,8 +239,8 @@ export function DiscoverClient() {
   const [searchFocused, setSearchFocused] = useState(false);
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [allJerseys, setAllJerseys] = useState<Jersey[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allJerseys] = useState<Jersey[]>(initialJerseys);
+  const [loading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [transitioning, setTransitioning] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -268,15 +268,6 @@ export function DiscoverClient() {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 200);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // ── Fetch ──────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetch('/api/products')
-      .then((r) => r.json())
-      .then((json) => setAllJerseys(json.data ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
 
   // ── Are filters active? ────────────────────────────────────────────────────
   const hasFilters =

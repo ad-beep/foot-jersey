@@ -2,8 +2,9 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { isValidLocale } from '@/i18n/config';
-import { CATEGORIES, SPECIAL_SECTIONS, DEFAULT_LOCALE, SITE_NAME } from '@/lib/constants';
-import type { Locale } from '@/types';
+import { CATEGORIES, SPECIAL_SECTIONS, DEFAULT_LOCALE, SITE_NAME, SITE_URL } from '@/lib/constants';
+import { fetchJerseys, fetchJerseysByLeague } from '@/lib/google-sheets';
+import type { Locale, Jersey } from '@/types';
 import { CategoryPageClient } from './client';
 
 export const revalidate = 300;
@@ -54,19 +55,40 @@ export async function generateMetadata({
   return {
     title: `${name} | ${SITE_NAME}`,
     description,
+    alternates: {
+      canonical: `${SITE_URL}/en/category/${slug}`,
+      languages: {
+        en: `${SITE_URL}/en/category/${slug}`,
+        he: `${SITE_URL}/he/category/${slug}`,
+      },
+    },
   };
 }
 
-export default function CategoryPage({
+function isLeagueSlug(slug: string): boolean {
+  return CATEGORIES.some((c) => c.slug === slug);
+}
+
+export default async function CategoryPage({
   params,
 }: {
   params: { locale: string; slug: string };
 }) {
   if (!isKnownSlug(params.slug)) notFound();
 
+  const { slug } = params;
+  let initialJerseys: Jersey[] = [];
+  try {
+    initialJerseys = isLeagueSlug(slug)
+      ? await fetchJerseysByLeague(slug)
+      : await fetchJerseys();
+  } catch {
+    initialJerseys = [];
+  }
+
   return (
     <Suspense>
-      <CategoryPageClient slug={params.slug} />
+      <CategoryPageClient slug={slug} initialJerseys={initialJerseys} />
     </Suspense>
   );
 }

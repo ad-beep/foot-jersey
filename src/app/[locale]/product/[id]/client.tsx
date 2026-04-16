@@ -19,7 +19,6 @@ import { ProductGallery } from '@/components/product/ProductGallery';
 import { SizeSelector } from '@/components/product/SizeSelector';
 import { CustomizationOptions } from '@/components/product/CustomizationOptions';
 import { Recommendations } from '@/components/product/Recommendations';
-import { ProductSkeleton } from '@/components/product/ProductSkeleton';
 import { getJerseyName, calculateCustomizationPrice } from '@/lib/utils';
 import { CURRENCY, CATEGORIES, SPECIAL_SECTIONS, SHIPPING_POLICY } from '@/lib/constants';
 import type { Jersey, Size, CartCustomization, JerseyType } from '@/types';
@@ -120,9 +119,11 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
 
 interface ProductPageClientProps {
   productId: string;
+  initialJersey: Jersey;
+  initialJerseys: Jersey[];
 }
 
-export function ProductPageClient({ productId }: ProductPageClientProps) {
+export function ProductPageClient({ productId, initialJersey, initialJerseys }: ProductPageClientProps) {
   const { locale, isRtl } = useLocale();
   const hydrated = useHydration();
   const addItem = useCartStore((s) => s.addItem);
@@ -136,9 +137,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
   const isHe = locale === 'he';
 
   // ── State ────────────────────────────────────────────────────────────────
-  const [allJerseys, setAllJerseys] = useState<Jersey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
+  const [allJerseys] = useState<Jersey[]>(initialJerseys);
   const [selectedSize, setSelectedSize] = useState<Size | null>(null);
   const [customization, setCustomization] = useState<CartCustomization>(DEFAULT_CUSTOMIZATION);
   const [shakeSize, setShakeSize] = useState(false);
@@ -163,19 +162,7 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
     };
   }, []);
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetch('/api/products')
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => setAllJerseys(json.data ?? []))
-      .catch(() => setFetchError(true))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const jersey = useMemo(() => allJerseys.find((j) => j.id === productId) ?? null, [allJerseys, productId]);
+  const jersey = useMemo(() => allJerseys.find((j) => j.id === productId) ?? initialJersey, [allJerseys, productId, initialJersey]);
 
   // ── Analytics: track view on mount ──────────────────────────────────────
   useEffect(() => {
@@ -250,34 +237,6 @@ export function ProductPageClient({ productId }: ProductPageClientProps) {
       variant: 'info',
     });
   }, [productId, toggleFavorite, recordInteraction, toast, isHe]);
-
-  // ── Loading ──────────────────────────────────────────────────────────────
-  if (loading) return <ProductSkeleton />;
-
-  // ── Fetch error ──────────────────────────────────────────────────────────
-  if (fetchError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 px-4" style={{ backgroundColor: 'var(--ink)' }}>
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}>
-          <SearchX className="w-7 h-7" style={{ color: 'var(--muted)' }} />
-        </div>
-        <p className="font-playfair font-bold text-xl text-white text-center">
-          {isHe ? 'שגיאה בטעינת המוצר' : 'Failed to load product'}
-        </p>
-        <p className="text-sm text-center" style={{ color: 'var(--muted)' }}>
-          {isHe ? 'אנא רענן את הדף ונסה שוב' : 'Please refresh the page and try again'}
-        </p>
-        <Link
-          href={`/${locale}`}
-          className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-white"
-          style={{ color: 'var(--gold)' }}
-        >
-          <ArrowLeft className="w-4 h-4" style={{ transform: isHe ? 'scaleX(-1)' : undefined }} />
-          {isHe ? 'חזרה לדף הבית' : 'Back to Home'}
-        </Link>
-      </div>
-    );
-  }
 
   // ── Not found ────────────────────────────────────────────────────────────
   if (!jersey) {

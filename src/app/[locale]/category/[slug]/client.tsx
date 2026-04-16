@@ -345,9 +345,10 @@ function MysteryBoxPage({ isHe, isRtl }: { isHe: boolean; isRtl: boolean }) {
 
 interface CategoryPageClientProps {
   slug: string;
+  initialJerseys: Jersey[];
 }
 
-export function CategoryPageClient({ slug }: CategoryPageClientProps) {
+export function CategoryPageClient({ slug, initialJerseys }: CategoryPageClientProps) {
   const { locale, isRtl } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -356,8 +357,8 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
   const isLeague = isLeagueSlug(slug);
 
   // ─── State ──────────────────────────────────────────────────────────────
-  const [allJerseys, setAllJerseys] = useState<Jersey[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allJerseys] = useState<Jersey[]>(initialJerseys);
+  const [loading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -379,17 +380,6 @@ export function CategoryPageClient({ slug }: CategoryPageClientProps) {
     setSelectedTeam(team);
     setSortBy(sort);
   }, [searchParams]);
-
-  // ─── Fetch jerseys ─────────────────────────────────────────────────────
-  useEffect(() => {
-    // For league pages, request only that league from the API to reduce payload
-    const endpoint = isLeagueSlug(slug) ? `/api/products?league=${slug}` : '/api/products';
-    fetch(endpoint)
-      .then((r) => r.json())
-      .then((json) => setAllJerseys(json.data ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [slug]);
 
   // ─── Filter pipeline ───────────────────────────────────────────────────
   const categoryJerseys = useMemo(

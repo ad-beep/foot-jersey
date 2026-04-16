@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { fetchJerseyById } from '@/lib/google-sheets';
+import { fetchJerseyById, fetchJerseys } from '@/lib/google-sheets';
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 import { getImageUrl } from '@/lib/utils';
 import { productSchema, breadcrumbSchema } from '@/lib/schema';
@@ -38,7 +38,7 @@ export async function generateMetadata({
   const description = isHe
     ? `קנו את חולצת ${jersey.teamName} ${jersey.season} מהדורת ${jerseyTypeLabel === 'Retro Classic' ? 'רטרו' : jerseyTypeLabel === 'Special Edition' ? 'מיוחדת' : 'רשמית'} — ${leagueName}. כל המידות ₪${jersey.price}+. משלוח לישראל. הדפסת שם ומספר.`
     : `Buy the ${jersey.teamName} ${jersey.season} ${jerseyTypeLabel.toLowerCase()} football jersey from ${leagueName}. Available in all sizes from ₪${jersey.price}. Fast shipping to Israel. Custom name & number printing available.`;
-  const imageUrl = jersey.imageUrl ? `${SITE_URL}${getImageUrl(jersey.imageUrl)}` : `${SITE_URL}/og-image.jpg`;
+  const imageUrl = jersey.imageUrl ? `${SITE_URL}${getImageUrl(jersey.imageUrl)}` : `${SITE_URL}/opengraph-image`;
 
   return {
     title: `${title} | ${SITE_NAME}`,
@@ -80,7 +80,10 @@ export default async function ProductPage({
 }: {
   params: { locale: string; id: string };
 }) {
-  const jersey = await fetchJerseyById(params.id);
+  const [jersey, allJerseys] = await Promise.all([
+    fetchJerseyById(params.id),
+    fetchJerseys(),
+  ]);
   if (!jersey) notFound();
 
   const locale = params.locale;
@@ -119,7 +122,7 @@ export default async function ProductPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
-      <ProductPageClient productId={params.id} />
+      <ProductPageClient productId={params.id} initialJersey={jersey} initialJerseys={allJerseys} />
     </>
   );
 }

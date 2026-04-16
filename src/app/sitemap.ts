@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── Core navigation pages ────────────────────────────────────────────────
   const coreEntries = makeEntries(
-    ['/discover', '/search'],
+    ['/discover'],
     { freq: 'daily', priority: 0.9 },
   );
 

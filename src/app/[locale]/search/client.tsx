@@ -122,27 +122,18 @@ const PAGE_SIZE = 20;
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function SearchPageClient() {
+export function SearchPageClient({ initialJerseys }: { initialJerseys: Jersey[] }) {
   const { locale } = useLocale();
   const isHe = locale === 'he';
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') ?? '';
 
-  const [allJerseys, setAllJerseys] = useState<Jersey[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allJerseys] = useState<Jersey[]>(initialJerseys);
+  const [loading] = useState(false);
   const [sort, setSort] = useState<SortKey>('relevance');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Fetch jerseys
-  useEffect(() => {
-    fetch('/api/products')
-      .then((r) => r.json())
-      .then((json) => setAllJerseys(json.data ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
 
   // Save query to recent searches
   useEffect(() => {
