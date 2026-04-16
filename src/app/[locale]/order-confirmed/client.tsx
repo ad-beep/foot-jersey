@@ -4,9 +4,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
+import { SITE_NAME } from '@/lib/constants';
 import { Loader2, CheckCircle2, Clock, ShoppingBag } from 'lucide-react';
 
 interface OrderItem {
@@ -143,12 +145,12 @@ export function OrderConfirmedClient() {
 
       {/* Nav */}
       <div style={{ maxWidth: 680, margin: '0 auto 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <a href={`/${locale}`} style={{ fontSize: 20, fontWeight: 800, color: '#fff', textDecoration: 'none', fontFamily: 'Playfair Display, Georgia, serif' }}>
+        <Link href={`/${locale}`} style={{ fontSize: 20, fontWeight: 800, color: '#fff', textDecoration: 'none', fontFamily: 'Playfair Display, Georgia, serif' }}>
           Foot<span style={{ color: gold }}>Jersey</span>
-        </a>
-        <a href={`/${locale}/discover`} style={{ fontSize: 13, color: '#555', textDecoration: 'none' }}>
+        </Link>
+        <Link href={`/${locale}/discover`} style={{ fontSize: 13, color: '#555', textDecoration: 'none' }}>
           {isHe ? '→ המשך קנייה' : '← Continue Shopping'}
-        </a>
+        </Link>
       </div>
 
       {/* Card */}
@@ -290,19 +292,19 @@ export function OrderConfirmedClient() {
 
           {/* CTA */}
           <div style={{ display: 'flex', gap: 12 }}>
-            <a
+            <Link
               href={`/${locale}/discover`}
               style={{ flex: 1, textAlign: 'center', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', display: 'block', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
             >
               {isHe ? 'המשך קנייה' : 'Continue Shopping'}
-            </a>
+            </Link>
           </div>
 
         </div>
       </div>
 
       <div style={{ textAlign: 'center', fontSize: 12, color: '#333', marginTop: 24, paddingBottom: 8 }}>
-        FootJersey · <a href={`/${locale}`} style={{ color: '#444', textDecoration: 'none' }}>shopfootjersey.com</a>
+        <Link href={`/${locale}`} style={{ color: '#444', textDecoration: 'none' }}>{SITE_NAME}</Link>
       </div>
     </div>
   );

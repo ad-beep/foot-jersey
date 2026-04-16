@@ -187,27 +187,29 @@ export function LockerRoom() {
                 href="https://www.instagram.com/foot_jersey4"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={isHe ? 'עקוב אחרינו באינסטגרם @foot_jersey4' : 'Follow us on Instagram @foot_jersey4'}
                 className="flex items-center gap-2 text-sm transition-opacity hover:opacity-80"
                 style={{ color: 'var(--muted)' }}
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect width={20} height={20} x={2} y={2} rx={5} />
                   <circle cx={12} cy={12} r={5} />
                   <circle cx={17.5} cy={6.5} r={1.5} fill="currentColor" stroke="none" />
                 </svg>
-                @foot_jersey4
+                <span aria-hidden="true">@foot_jersey4</span>
               </a>
               <a
                 href="https://www.tiktok.com/@foot.jerseys4"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={isHe ? 'עקוב אחרינו בטיקטוק @foot.jerseys4' : 'Follow us on TikTok @foot.jerseys4'}
                 className="flex items-center gap-2 text-sm transition-opacity hover:opacity-80"
                 style={{ color: 'var(--muted)' }}
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden="true">
                   <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.53a8.25 8.25 0 0 0 4.83 1.56V6.64a4.84 4.84 0 0 1-1.07.05Z" />
                 </svg>
-                @foot.jerseys4
+                <span aria-hidden="true">@foot.jerseys4</span>
               </a>
               <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
                 <svg viewBox="0 0 16 16" className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

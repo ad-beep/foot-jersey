@@ -220,15 +220,20 @@ export function Header({ dict: _dict }: HeaderProps) {
             href={`/${locale}/favorites`}
             className={iconBtn}
             style={{ color: 'var(--text-muted)' }}
-            aria-label="Favorites"
+            aria-label={
+              hydrated && favCount > 0
+                ? locale === 'he' ? `מועדפים (${favCount})` : `Favorites (${favCount})`
+                : locale === 'he' ? 'מועדפים' : 'Favorites'
+            }
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
           >
-            <Heart className="w-5 h-5" />
+            <Heart className="w-5 h-5" aria-hidden="true" />
             {hydrated && favCount > 0 && (
               <span
                 className="absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-black"
                 style={{ backgroundColor: 'var(--gold)' }}
+                aria-hidden="true"
               >
                 {favCount > 9 ? '9+' : favCount}
               </span>
@@ -240,15 +245,20 @@ export function Header({ dict: _dict }: HeaderProps) {
             className={iconBtn}
             style={{ color: 'var(--text-muted)' }}
             onClick={() => setCartOpen(true)}
-            aria-label="Open cart"
+            aria-label={
+              hydrated && cartCount > 0
+                ? locale === 'he' ? `סל קניות (${cartCount} פריטים)` : `Open cart (${cartCount} item${cartCount === 1 ? '' : 's'})`
+                : locale === 'he' ? 'פתח סל קניות' : 'Open cart'
+            }
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
           >
-            <ShoppingBag className="w-5 h-5" />
+            <ShoppingBag className="w-5 h-5" aria-hidden="true" />
             {hydrated && cartCount > 0 && (
               <span
                 className="absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-black"
                 style={{ backgroundColor: 'var(--cta)' }}
+                aria-hidden="true"
               >
                 {cartCount > 9 ? '9+' : cartCount}
               </span>

@@ -216,6 +216,7 @@ export function BitPayment({
               type="text"
               value={ownerPhone}
               readOnly
+              aria-label={isHe ? 'מספר טלפון לתשלום Bit' : 'Bit payment phone number'}
               className="flex-1 px-3 py-2 rounded-lg text-sm"
               style={{
                 backgroundColor: 'rgba(255,255,255,0.04)',
@@ -233,9 +234,11 @@ export function BitPayment({
                   : 'rgba(255,255,255,0.06)',
                 color: copied ? 'var(--gold)' : 'var(--text-muted)',
               }}
-              title={isHe ? 'העתק' : 'Copy'}
+              aria-label={copied
+                ? (isHe ? 'הועתק!' : 'Copied!')
+                : (isHe ? 'העתק מספר טלפון' : 'Copy phone number')}
             >
-              <Copy className="w-4 h-4" />
+              <Copy className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
           <p className="text-base font-bold text-white">

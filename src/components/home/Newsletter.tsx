@@ -79,7 +79,11 @@ export function Newsletter() {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col items-center gap-3">
               <div className="flex gap-3 w-full max-w-md">
+                <label htmlFor="newsletter-email" className="sr-only">
+                  {isHe ? 'כתובת מייל' : 'Email address'}
+                </label>
                 <input
+                  id="newsletter-email"
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); if (status === 'error' || status === 'invalid') setStatus('idle'); }}
@@ -99,14 +103,18 @@ export function Newsletter() {
                 <button
                   type="submit"
                   disabled={status === 'loading'}
+                  aria-label={status === 'loading' ? (isHe ? 'שולח...' : 'Submitting…') : undefined}
                   className="px-5 py-3 rounded-full text-sm font-semibold text-white shrink-0 transition-all duration-200 disabled:opacity-60"
                   style={{ backgroundColor: 'var(--flare)', boxShadow: '0 0 20px var(--flare-glow)' }}
                   onMouseEnter={(e) => { if (status !== 'loading') (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare-hover)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--flare)'; }}
                 >
-                  {status === 'loading'
-                    ? (isHe ? '...' : '...')
-                    : (isHe ? 'הצטרף' : 'Join')}
+                  {status === 'loading' ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                      {isHe ? 'שולח' : 'Joining'}
+                    </span>
+                  ) : (isHe ? 'הצטרף' : 'Join')}
                 </button>
               </div>
               {status === 'invalid' && (

@@ -19,7 +19,7 @@ export function Dock() {
   const { locale }  = useLocale();
   const pathname    = usePathname();
   const hydrated    = useHydration();
-  const cartCount   = useCartStore((s) => s.items.length);
+  const cartCount   = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const setCartOpen = useCartStore((s) => s.setCartOpen);
   const authUser    = useAuthStore((s) => s.user);
 
@@ -70,6 +70,7 @@ export function Dock() {
                   <span
                     className="absolute -top-1.5 -right-2 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
                     style={{ backgroundColor: 'var(--cta)' }}
+                    aria-hidden="true"
                   >
                     {count > 9 ? '9+' : count}
                   </span>
@@ -83,6 +84,8 @@ export function Dock() {
             </>
           );
 
+          const ariaLabel = locale === 'he' ? label.he : label.en;
+
           if (isCart) {
             return (
               <button
@@ -90,7 +93,9 @@ export function Dock() {
                 onClick={() => setCartOpen(true)}
                 className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors duration-200 active:scale-95"
                 style={{ color: active ? 'var(--gold)' : 'var(--text-muted)' }}
-                aria-label={label.en}
+                aria-label={count > 0
+                  ? locale === 'he' ? `${ariaLabel} (${count})` : `${ariaLabel} (${count})`
+                  : ariaLabel}
               >
                 {inner}
               </button>
@@ -103,7 +108,7 @@ export function Dock() {
               href={href}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors duration-200 active:scale-95"
               style={{ color: active ? 'var(--gold)' : 'var(--text-muted)' }}
-              aria-label={label.en}
+              aria-label={ariaLabel}
               aria-current={active ? 'page' : undefined}
             >
               {inner}

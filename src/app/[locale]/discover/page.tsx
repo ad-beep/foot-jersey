@@ -1,9 +1,11 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { SITE_NAME } from '@/lib/constants';
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
 import { fetchJerseys } from '@/lib/google-sheets';
 import type { Jersey } from '@/types';
 import { DiscoverClient } from './client';
+
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,
@@ -19,10 +21,10 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://shopfootjersey.com/${params.locale}/discover`,
+      canonical: `${SITE_URL}/${params.locale}/discover`,
       languages: {
-        en: 'https://shopfootjersey.com/en/discover',
-        he: 'https://shopfootjersey.com/he/discover',
+        en: `${SITE_URL}/en/discover`,
+        he: `${SITE_URL}/he/discover`,
       },
     },
   };

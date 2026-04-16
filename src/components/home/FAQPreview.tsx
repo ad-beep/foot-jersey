@@ -8,27 +8,33 @@ import { Reveal } from '@/components/ui/reveal';
 import { getHomepageFaqs } from '@/data/faqs';
 
 function AccordionItem({
+  id,
   question,
   answer,
   isOpen,
   onToggle,
   isRtl,
 }: {
+  id: string;
   question: string;
   answer: string;
   isOpen: boolean;
   onToggle: () => void;
   isRtl: boolean;
 }) {
+  const panelId = `faq-panel-${id}`;
+  const triggerId = `faq-trigger-${id}`;
   return (
     <div
       className="border-b last:border-b-0"
       style={{ borderColor: 'var(--border)' }}
     >
       <button
+        id={triggerId}
         className={`w-full flex items-start gap-4 py-5 text-left transition-all duration-200 ${isRtl ? 'flex-row-reverse text-right' : ''}`}
         onClick={onToggle}
         aria-expanded={isOpen}
+        aria-controls={panelId}
       >
         <span
           className="font-semibold text-sm md:text-base flex-1 leading-snug"
@@ -42,10 +48,15 @@ function AccordionItem({
             color: 'var(--muted)',
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
+          aria-hidden="true"
         />
       </button>
 
       <div
+        id={panelId}
+        role="region"
+        aria-labelledby={triggerId}
+        aria-hidden={!isOpen}
         style={{
           maxHeight: isOpen ? '500px' : '0',
           overflow: 'hidden',
@@ -130,6 +141,7 @@ export function FAQPreview() {
                   {faqs.map((faq) => (
                     <AccordionItem
                       key={faq.id}
+                      id={faq.id}
                       question={faq.question}
                       answer={faq.answer}
                       isOpen={openId === faq.id}

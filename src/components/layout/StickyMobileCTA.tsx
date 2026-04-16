@@ -10,7 +10,7 @@ export function StickyMobileCTA() {
   const isHe = locale === 'he';
   const [visible, setVisible] = useState(false);
   const setCartOpen = useCartStore((s) => s.setCartOpen);
-  const cartCount = useCartStore((s) => s.items.length);
+  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
 
   useEffect(() => {
     const threshold = document.documentElement.scrollHeight * 0.5;
@@ -51,7 +51,9 @@ export function StickyMobileCTA() {
           onClick={() => setCartOpen(true)}
           className="relative h-12 w-12 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-95 shrink-0"
           style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)', color: 'var(--muted)' }}
-          aria-label="Open cart"
+          aria-label={cartCount > 0
+            ? (isHe ? `פתח סל קניות (${cartCount} פריטים)` : `Open cart (${cartCount} item${cartCount === 1 ? '' : 's'})`)
+            : (isHe ? 'פתח סל קניות' : 'Open cart')}
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -62,6 +64,7 @@ export function StickyMobileCTA() {
             <span
               className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-black"
               style={{ backgroundColor: 'var(--gold)' }}
+              aria-hidden="true"
             >
               {cartCount > 9 ? '9+' : cartCount}
             </span>

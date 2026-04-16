@@ -84,6 +84,7 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
     <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between py-4 text-sm font-medium text-white transition-colors"
         style={{ color: open ? 'var(--gold)' : 'rgba(255,255,255,0.85)' }}
       >
@@ -94,6 +95,7 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
             color: open ? 'var(--gold)' : 'var(--muted)',
             transform: open ? 'rotate(180deg)' : undefined,
           }}
+          aria-hidden="true"
         />
       </button>
       <AnimatePresence initial={false}>
@@ -317,14 +319,19 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
             </div>
 
             {/* Star rating */}
-            <div className={`flex items-center gap-2 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
-              <div className="flex items-center gap-0.5">
+            <div
+              className={`flex items-center gap-2 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}
+              aria-label={isHe
+                ? `דירוג ${AGGREGATE_RATING.ratingValue} מתוך 5 (${AGGREGATE_RATING.reviewCount} ביקורות)`
+                : `Rated ${AGGREGATE_RATING.ratingValue} out of 5 (${AGGREGATE_RATING.reviewCount} reviews)`}
+            >
+              <div className="flex items-center gap-0.5" aria-hidden="true">
                 {[1,2,3,4,5].map((i) => (
                   <span key={i} className="text-xs" style={{ color: i <= Math.round(AGGREGATE_RATING.ratingValue) ? '#FFBE32' : 'rgba(255,190,50,0.35)' }}>★</span>
                 ))}
               </div>
-              <span className="font-mono text-xs font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>{AGGREGATE_RATING.ratingValue}</span>
-              <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>
+              <span className="font-mono text-xs font-bold" style={{ color: 'rgba(255,255,255,0.85)' }} aria-hidden="true">{AGGREGATE_RATING.ratingValue}</span>
+              <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }} aria-hidden="true">
                 {isHe ? `(${AGGREGATE_RATING.reviewCount} ביקורות)` : `(${AGGREGATE_RATING.reviewCount} reviews)`}
               </span>
             </div>
@@ -346,7 +353,11 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
                   color: hydrated && isFav ? '#FF4D6D' : 'var(--muted)',
                   transform: heartPulse ? 'scale(1.15)' : undefined,
                 }}
-                aria-label={isHe ? 'מועדפים' : 'Toggle favorite'}
+                aria-label={
+                  hydrated && isFav
+                    ? (isHe ? 'הסר מהמועדפים' : 'Remove from favorites')
+                    : (isHe ? 'הוסף למועדפים' : 'Add to favorites')
+                }
               >
                 <Heart className="w-5 h-5" fill={hydrated && isFav ? 'currentColor' : 'none'} strokeWidth={2} />
               </button>
