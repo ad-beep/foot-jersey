@@ -84,7 +84,7 @@ const labels = {
     drip: 'דריפ',
     otherProducts: 'מוצרים נוספים',
     stussyEdition: 'מהדורת סטוסי',
-    israeliLeague: 'ליגת על',
+    israeliLeague: 'ליגת העל',
     clearAll: 'נקה הכל',
     showingSuggested: (n: number) => `מציג ${n} חולצות מומלצות`,
     showingFiltered: (n: number) => `מציג ${n} חולצות`,

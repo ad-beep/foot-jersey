@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, getJerseyName } from '@/lib/utils';
 import { CURRENCY, KIDS_SIZES } from '@/lib/constants';
+import { AGGREGATE_RATING } from '@/data/reviews';
 import type { Jersey, JerseyType, Size, KidsSize } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────
@@ -309,7 +310,7 @@ export const ProductCard = React.memo(function ProductCard({
           </p>
           <div className="flex items-center gap-0.5">
             <span className="text-[10px]" style={{ color: '#FFBE32' }}>★</span>
-            <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>4.8</span>
+            <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>{AGGREGATE_RATING.ratingValue}</span>
           </div>
         </div>
       </div>

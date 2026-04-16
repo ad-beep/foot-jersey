@@ -72,7 +72,7 @@ export function Footer() {
       links: [
         { en: 'Privacy Policy',     he: 'מדיניות פרטיות',  href: `/${locale}/privacy`            },
         { en: 'Terms of Service',   he: 'תנאי שימוש',       href: `/${locale}/terms`              },
-        { en: 'Refund Policy',      he: 'מדיניות החזרות',  href: `/${locale}/refund`             },
+        { en: 'Replacement Policy',  he: 'מדיניות החלפות',  href: `/${locale}/refund`             },
       ],
     },
   };

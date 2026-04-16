@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from '@/hooks/useLocale';
 import { Search } from 'lucide-react';
+import { AGGREGATE_RATING } from '@/data/reviews';
 
 const TICKER_EN = 'PREMIER LEAGUE · LA LIGA · SERIE A · BUNDESLIGA · LIGUE 1 · WORLD CUP 2026 · RETRO CLASSICS · DRIP · STUSSY EDITION · MYSTERY BOX · SPECIAL EDITION · ISRAELI LEAGUE · 25/26 SEASON · ';
 const TICKER_HE = 'פרמייר ליג · לה ליגה · סרייה A · בונדסליגה · ליג 1 · מונדיאל 2026 · רטרו קלאסיק · דריפ · מהדורת סטוסי · קופסת הפתעה · מהדורה מיוחדת · ליגת העל · עונת 25/26 · ';
@@ -173,7 +174,7 @@ export default function LandingHero() {
               className="font-mono uppercase mt-3"
               style={{ fontSize: '8px', letterSpacing: '0.35em', color: 'rgba(255,255,255,0.2)' }}
             >
-              {isHe ? 'קולקציות 17' : '17 Collections'}
+              {isHe ? 'קולקציות 18' : '18 Collections'}
             </span>
           </div>
 
@@ -232,7 +233,7 @@ export default function LandingHero() {
               className="section-kicker mb-6"
               style={{ opacity: 0, animation: 'heroFadeUp 0.5s ease 0.5s forwards' }}
             >
-              {isHe ? 'מאז 2023 · ישראל · 17 קולקציות' : 'EST. IL · SINCE 2023 · 17 COLLECTIONS'}
+              {isHe ? 'מאז 2023 · ישראל · 18 קולקציות' : 'EST. IL · SINCE 2023 · 18 COLLECTIONS'}
             </p>
 
             {/* Headline */}
@@ -319,7 +320,7 @@ export default function LandingHero() {
                     <path d="M8 1l1.9 3.9L14 5.6l-3 2.9.7 4.1L8 10.4l-3.7 2.2.7-4.1-3-2.9 4.1-.7z" />
                   </svg>
                 ))}
-                <span className="font-mono text-[11px] ms-1.5" style={{ color: 'var(--gold)' }}>4.8</span>
+                <span className="font-mono text-[11px] ms-1.5" style={{ color: 'var(--gold)' }}>{AGGREGATE_RATING.ratingValue}</span>
               </div>
               <span style={{ width: 1, height: 12, backgroundColor: 'var(--border)', display: 'inline-block' }} />
               <span className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>

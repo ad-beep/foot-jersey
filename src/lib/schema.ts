@@ -25,7 +25,7 @@ export function organizationSchema() {
         },
         image: `${SITE_URL}/favicon.svg`,
         description:
-          'FootJersey is Israel\'s leading online store for premium football jerseys. We carry over 17 collections including Premier League, La Liga, Serie A, Bundesliga, Retro Classics, World Cup 2026, and special editions. Fast shipping across Israel, secure PayPal and BIT payments, 30-day returns.',
+          'FootJersey is Israel\'s leading online store for premium football jerseys. We carry over 18 collections including Premier League, La Liga, Serie A, Bundesliga, Retro Classics, World Cup 2026, and special editions. Fast shipping across Israel, secure PayPal and BIT payments. Free replacement for damaged goods.',
         foundingDate: '2023',
         address: {
           '@type': 'PostalAddress',
@@ -53,7 +53,7 @@ export function organizationSchema() {
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
           name: 'Football Jersey Collections',
-          numberOfItems: 17,
+          numberOfItems: 18,
         },
       },
       {
