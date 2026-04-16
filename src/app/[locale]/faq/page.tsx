@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { FAQPageClient } from './faq-client';
 import { faqPageSchema } from '@/lib/schema';
 import { getFaqsForSchema } from '@/data/faqs';
+import { SITE_URL } from '@/lib/constants';
 import type { Locale } from '@/types';
 
 export async function generateMetadata({
@@ -18,10 +19,10 @@ export async function generateMetadata({
       ? 'תשובות לשאלות הנפוצות ביותר על FootJersey — משלוח, תשלום, איכות, החזרות ועוד.'
       : 'Answers to the most common questions about FootJersey — shipping, payment, quality, returns, and more.',
     alternates: {
-      canonical: `https://shopfootjersey.com/${params.locale}/faq`,
+      canonical: `${SITE_URL}/${params.locale}/faq`,
       languages: {
-        en: 'https://shopfootjersey.com/en/faq',
-        he: 'https://shopfootjersey.com/he/faq',
+        en: `${SITE_URL}/en/faq`,
+        he: `${SITE_URL}/he/faq`,
       },
     },
   };
@@ -31,7 +32,7 @@ export default function FAQPage({ params }: { params: { locale: string } }) {
   const locale = (params.locale === 'he' ? 'he' : 'en') as Locale;
   const schema = faqPageSchema(
     getFaqsForSchema(locale),
-    `https://shopfootjersey.com/${locale}/faq`,
+    `${SITE_URL}/${locale}/faq`,
   );
 
   return (

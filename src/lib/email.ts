@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { SITE_URL } from './constants';
 
 function getTransporter() {
   const user = process.env.GMAIL_USER;
@@ -11,8 +12,6 @@ function getTransporter() {
     auth: { user, pass },
   });
 }
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shopfootjersey.com';
 
 interface OrderItem {
   teamName: string;

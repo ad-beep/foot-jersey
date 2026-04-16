@@ -2,7 +2,7 @@ import { Playfair_Display, Inter_Tight, JetBrains_Mono, Heebo } from 'next/font/
 import dynamic from 'next/dynamic';
 import { isValidLocale, getDirection } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
-import { DEFAULT_LOCALE } from '@/lib/constants';
+import { DEFAULT_LOCALE, SITE_URL } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { organizationSchema } from '@/lib/schema';
@@ -84,9 +84,9 @@ export default async function LocaleLayout({
         <link rel="dns-prefetch" href="https://cdn.shopify.com" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         {/* Hreflang alternates for bilingual SEO */}
-        <link rel="alternate" hrefLang="en" href="https://shopfootjersey.com/en" />
-        <link rel="alternate" hrefLang="he" href="https://shopfootjersey.com/he" />
-        <link rel="alternate" hrefLang="x-default" href="https://shopfootjersey.com/en" />
+        <link rel="alternate" hrefLang="en" href={`${SITE_URL}/en`} />
+        <link rel="alternate" hrefLang="he" href={`${SITE_URL}/he`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/en`} />
         {/* Organization + WebSite + SearchAction schema */}
         <script
           type="application/ld+json"

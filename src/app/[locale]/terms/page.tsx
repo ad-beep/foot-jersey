@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     title: isHe ? 'תנאי שימוש — FootJersey' : 'Terms of Service — FootJersey',
     description: isHe ? 'תנאי השימוש של FootJersey' : 'FootJersey terms of service.',
     alternates: {
-      canonical: `${SITE_URL}/en/terms`,
+      canonical: `${SITE_URL}/${params.locale}/terms`,
       languages: { en: `${SITE_URL}/en/terms`, he: `${SITE_URL}/he/terms` },
     },
   };

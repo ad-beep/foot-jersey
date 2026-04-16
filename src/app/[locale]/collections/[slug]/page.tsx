@@ -25,7 +25,7 @@ export async function generateMetadata({
     title: `${c.name} — FootJersey`,
     description: c.description,
     alternates: {
-      canonical: `${SITE_URL}/en/collections/${params.slug}`,
+      canonical: `${SITE_URL}/${params.locale}/collections/${params.slug}`,
       languages: {
         en: `${SITE_URL}/en/collections/${params.slug}`,
         he: `${SITE_URL}/he/collections/${params.slug}`,

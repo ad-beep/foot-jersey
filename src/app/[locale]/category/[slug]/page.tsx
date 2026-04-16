@@ -56,7 +56,7 @@ export async function generateMetadata({
     title: `${name} | ${SITE_NAME}`,
     description,
     alternates: {
-      canonical: `${SITE_URL}/en/category/${slug}`,
+      canonical: `${SITE_URL}/${locale}/category/${slug}`,
       languages: {
         en: `${SITE_URL}/en/category/${slug}`,
         he: `${SITE_URL}/he/category/${slug}`,

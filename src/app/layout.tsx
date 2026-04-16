@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { SITE_URL } from '@/lib/constants';
 
 export const metadata: Metadata = {
   icons: {
@@ -26,13 +27,13 @@ export const metadata: Metadata = {
     'חולצות כדורגל ישראל', 'חולצות רטרו', 'חולצות מונדיאל 2026',
     'חולצות ילדים כדורגל', 'FootJersey',
   ],
-  metadataBase: new URL('https://shopfootjersey.com'),
+  metadataBase: new URL(SITE_URL),
   alternates: {
-    canonical: 'https://shopfootjersey.com',
+    canonical: SITE_URL,
     languages: {
-      en: 'https://shopfootjersey.com/en',
-      he: 'https://shopfootjersey.com/he',
-      'x-default': 'https://shopfootjersey.com/en',
+      en: `${SITE_URL}/en`,
+      he: `${SITE_URL}/he`,
+      'x-default': `${SITE_URL}/en`,
     },
   },
   openGraph: {
@@ -43,10 +44,10 @@ export const metadata: Metadata = {
     locale: 'en_US',
     alternateLocale: 'he_IL',
     type: 'website',
-    url: 'https://shopfootjersey.com',
+    url: SITE_URL,
     images: [
       {
-        url: 'https://shopfootjersey.com/opengraph-image',
+        url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: 'FootJersey — Premium Football Jerseys',
@@ -58,7 +59,7 @@ export const metadata: Metadata = {
     title: 'FootJersey — Premium Football Jerseys | Israel',
     description:
       'Shop premium football jerseys from every league worldwide. Fast delivery across Israel.',
-    images: ['https://shopfootjersey.com/opengraph-image'],
+    images: [`${SITE_URL}/opengraph-image`],
   },
   robots: {
     index: true,

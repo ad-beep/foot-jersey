@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ? 'פנה אל FootJersey דרך WhatsApp, אינסטגרם, או טיקטוק. תגובה תוך שעתיים.'
       : 'Contact FootJersey via WhatsApp, Instagram, or TikTok. Response within 2 hours.',
     alternates: {
-      canonical: `${SITE_URL}/en/contact`,
+      canonical: `${SITE_URL}/${params.locale}/contact`,
       languages: { en: `${SITE_URL}/en/contact`, he: `${SITE_URL}/he/contact` },
     },
   };

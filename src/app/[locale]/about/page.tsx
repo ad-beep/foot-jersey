@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { localBusinessSchema } from '@/lib/schema';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata({
   params,
@@ -14,10 +15,10 @@ export async function generateMetadata({
       ? 'הסיפור מאחורי FootJersey — חנות חולצות הכדורגל המובילה בישראל. מי אנחנו, מה אנחנו מוכרים, ולמה אנחנו שונים.'
       : "The story behind FootJersey — Israel's leading football jersey store. Who we are, what we sell, and why we're different.",
     alternates: {
-      canonical: `https://shopfootjersey.com/${params.locale}/about`,
+      canonical: `${SITE_URL}/${params.locale}/about`,
       languages: {
-        en: 'https://shopfootjersey.com/en/about',
-        he: 'https://shopfootjersey.com/he/about',
+        en: `${SITE_URL}/en/about`,
+        he: `${SITE_URL}/he/about`,
       },
     },
   };

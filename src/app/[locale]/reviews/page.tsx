@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ? `קרא ביקורות אמיתיות של לקוחות FootJersey. דירוג ממוצע ${AGGREGATE_RATING.ratingValue}/5 מתוך ${AGGREGATE_RATING.reviewCount}+ ביקורות.`
       : `Read real FootJersey customer reviews. Average rating ${AGGREGATE_RATING.ratingValue}/5 from ${AGGREGATE_RATING.reviewCount}+ reviews.`,
     alternates: {
-      canonical: `${SITE_URL}/en/reviews`,
+      canonical: `${SITE_URL}/${params.locale}/reviews`,
       languages: { en: `${SITE_URL}/en/reviews`, he: `${SITE_URL}/he/reviews` },
     },
   };
@@ -43,7 +43,7 @@ export default function ReviewsPage({ params }: { params: { locale: string } }) 
 
   const schema = reviewSchema(
     'FootJersey Football Jerseys',
-    `https://shopfootjersey.com/${locale}/reviews`,
+    `${SITE_URL}/${locale}/reviews`,
     sorted.map((r) => ({
       author: r.name,
       reviewBody: r.text.en,

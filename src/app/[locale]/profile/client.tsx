@@ -144,7 +144,6 @@ export default function ProfileClient({ allJerseys }: ProfileClientProps) {
   }
 
   const handleSignOut = async () => {
-    if (!confirm(isHe ? 'בטוח שברצונך להתנתק?' : 'Are you sure you want to sign out?')) return;
     try {
       await signOut();
       toast({ title: isHe ? L.signedOut.he : L.signedOut.en, variant: 'success' });
@@ -568,6 +567,7 @@ function AddressesTab() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   /** After any mutation, sync the whole addresses array to Firestore. */
   const syncAddresses = async (updatedAddresses: ShippingAddress[]) => {
@@ -596,8 +596,8 @@ function AddressesTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(isHe ? 'בטוח שברצונך למחוק כתובת זו?' : 'Delete this address?')) return;
     removeAddress(id);
+    setConfirmDeleteId(null);
     const updated = useAuthStore.getState().user?.shippingAddresses ?? [];
     await syncAddresses(updated);
     toast({ title: isHe ? 'הכתובת נמחקה' : 'Address deleted', variant: 'info' });
@@ -655,17 +655,33 @@ function AddressesTab() {
                   {addr.street}, {addr.city} {addr.zipCode}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{addr.phone}</p>
-                <div className="flex gap-2 mt-2">
-                  <button onClick={() => handleEdit(addr)} className="text-xs font-medium flex items-center gap-1 transition-colors hover:text-white" style={{ color: 'var(--text-muted)' }}>
-                    <Pencil className="w-3 h-3" /> {isHe ? L.edit.he : L.edit.en}
-                  </button>
-                  <button onClick={() => handleDelete(addr.id)} className="text-xs font-medium flex items-center gap-1 transition-colors hover:text-[var(--error)]" style={{ color: 'var(--text-muted)' }}>
-                    <Trash2 className="w-3 h-3" /> {isHe ? L.delete.he : L.delete.en}
-                  </button>
-                  {!addr.isDefault && (
-                    <button onClick={() => setDefault(addr.id)} className="text-xs font-medium transition-colors hover:text-[var(--gold)]" style={{ color: 'var(--text-muted)' }}>
-                      {isHe ? L.setDefault.he : L.setDefault.en}
-                    </button>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {confirmDeleteId === addr.id ? (
+                    <>
+                      <span className="text-xs" style={{ color: 'var(--error)' }}>
+                        {isHe ? 'למחוק?' : 'Delete?'}
+                      </span>
+                      <button onClick={() => handleDelete(addr.id)} className="text-xs font-semibold transition-colors hover:opacity-80" style={{ color: 'var(--error)' }}>
+                        {isHe ? 'כן' : 'Yes'}
+                      </button>
+                      <button onClick={() => setConfirmDeleteId(null)} className="text-xs font-medium transition-colors hover:text-white" style={{ color: 'var(--text-muted)' }}>
+                        {isHe ? 'ביטול' : 'Cancel'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleEdit(addr)} className="text-xs font-medium flex items-center gap-1 transition-colors hover:text-white" style={{ color: 'var(--text-muted)' }}>
+                        <Pencil className="w-3 h-3" /> {isHe ? L.edit.he : L.edit.en}
+                      </button>
+                      <button onClick={() => setConfirmDeleteId(addr.id)} className="text-xs font-medium flex items-center gap-1 transition-colors hover:text-[var(--error)]" style={{ color: 'var(--text-muted)' }}>
+                        <Trash2 className="w-3 h-3" /> {isHe ? L.delete.he : L.delete.en}
+                      </button>
+                      {!addr.isDefault && (
+                        <button onClick={() => handleSetDefault(addr.id)} className="text-xs font-medium transition-colors hover:text-[var(--gold)]" style={{ color: 'var(--text-muted)' }}>
+                          {isHe ? L.setDefault.he : L.setDefault.en}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

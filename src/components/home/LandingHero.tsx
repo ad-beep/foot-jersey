@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLocale } from '@/hooks/useLocale';
 import { Search } from 'lucide-react';
 import { AGGREGATE_RATING } from '@/data/reviews';
@@ -276,8 +277,8 @@ export default function LandingHero() {
               className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8 ${isHe ? 'sm:flex-row-reverse' : ''}`}
               style={{ opacity: 0, animation: 'heroFadeUp 0.6s ease 1.25s forwards' }}
             >
-              <button
-                onClick={() => router.push(`/${locale}/discover`)}
+              <Link
+                href={`/${locale}/discover`}
                 className="flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 active:scale-[0.97] hover:opacity-90"
                 style={{ backgroundColor: 'var(--flare)', color: '#fff', boxShadow: '0 0 36px rgba(255,77,46,0.4)' }}
               >
@@ -285,7 +286,7 @@ export default function LandingHero() {
                 <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5}>
                   <path d={isHe ? 'M13 8H3M7 4l-4 4 4 4' : 'M3 8h10M9 4l4 4-4 4'} strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              </button>
+              </Link>
 
               <button
                 onClick={() => {

@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     title: isHe ? 'מדיניות מוצרים פגומים — FootJersey' : 'Damage Replacement Policy — FootJersey',
     description: isHe ? 'מדיניות ההחלפה של FootJersey — החלפה חינמית למוצרים פגומים או שגויים.' : 'FootJersey replacement policy — free replacement for damaged or incorrect items.',
     alternates: {
-      canonical: `${SITE_URL}/en/refund`,
+      canonical: `${SITE_URL}/${params.locale}/refund`,
       languages: { en: `${SITE_URL}/en/refund`, he: `${SITE_URL}/he/refund` },
     },
   };

@@ -67,7 +67,7 @@ export async function generateMetadata({
       images: [imageUrl],
     },
     alternates: {
-      canonical: `${SITE_URL}/en/product/${params.id}`,
+      canonical: `${SITE_URL}/${params.locale}/product/${params.id}`,
       languages: {
         'en': `${SITE_URL}/en/product/${params.id}`,
         'he': `${SITE_URL}/he/product/${params.id}`,

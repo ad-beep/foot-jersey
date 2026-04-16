@@ -1,8 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { fetchJerseys } from '@/lib/google-sheets';
-import { CATEGORIES, SPECIAL_SECTIONS } from '@/lib/constants';
+import { CATEGORIES, SPECIAL_SECTIONS, SITE_URL } from '@/lib/constants';
 
-const SITE_URL = 'https://shopfootjersey.com';
 const locales  = ['en', 'he'] as const;
 
 export const revalidate = 3600; // rebuild sitemap hourly

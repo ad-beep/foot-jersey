@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ? 'הזמן Mystery Box של FootJersey וקבל חולצת כדורגל מפתיעה! רטרו, מונדיאל, מהדורה מיוחדת ועוד. מתחיל מ-₪99.'
       : 'Order a FootJersey Mystery Box and receive a surprise football jersey! Retro, World Cup, Special Edition and more. From ₪99.',
     alternates: {
-      canonical: `${SITE_URL}/en/mystery-box`,
+      canonical: `${SITE_URL}/${params.locale}/mystery-box`,
       languages: { en: `${SITE_URL}/en/mystery-box`, he: `${SITE_URL}/he/mystery-box` },
     },
   };

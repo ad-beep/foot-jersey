@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { isValidLocale } from '@/i18n/config';
-import { DEFAULT_LOCALE } from '@/lib/constants';
+import { DEFAULT_LOCALE, SITE_URL } from '@/lib/constants';
 import { fetchJerseys } from '@/lib/google-sheets';
 import HomeClient from './home-client';
 import type { Locale, Jersey } from '@/types';
@@ -17,10 +17,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ? 'קנו חולצות כדורגל פרימיום מהליגות המובילות בעולם. פרמייר ליג, לה ליגה, סרייה A, רטרו, מונדיאל 2026 ועוד. משלוח מהיר לישראל.'
       : 'Shop premium football jerseys from every league worldwide. Premier League, La Liga, Serie A, retro classics, World Cup 2026 and more. Fast shipping to Israel.',
     alternates: {
-      canonical: `https://shopfootjersey.com/${params.locale}`,
+      canonical: `${SITE_URL}/${params.locale}`,
       languages: {
-        en: 'https://shopfootjersey.com/en',
-        he: 'https://shopfootjersey.com/he',
+        en: `${SITE_URL}/en`,
+        he: `${SITE_URL}/he`,
       },
     },
   };

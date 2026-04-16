@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -9,10 +10,10 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ? 'מידע על משלוח FootJersey לכל ישראל. זמני אספקה, עלויות, ערבות על מוצרים פגומים.'
       : 'FootJersey shipping info for all of Israel. Delivery times, costs, and damage replacement policy.',
     alternates: {
-      canonical: `https://shopfootjersey.com/${params.locale}/shipping`,
+      canonical: `${SITE_URL}/${params.locale}/shipping`,
       languages: {
-        en: 'https://shopfootjersey.com/en/shipping',
-        he: 'https://shopfootjersey.com/he/shipping',
+        en: `${SITE_URL}/en/shipping`,
+        he: `${SITE_URL}/he/shipping`,
       },
     },
   };

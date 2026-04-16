@@ -3,8 +3,7 @@
  * Import these and pass the result to <JsonLd schema={...} /> or inject directly.
  */
 
-const SITE_URL = 'https://shopfootjersey.com';
-const SITE_NAME = 'FootJersey';
+import { SITE_URL, SITE_NAME } from './constants';
 
 // ── Organization + LocalBusiness ─────────────────────────────────────────────
 export function organizationSchema() {

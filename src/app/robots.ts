@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/constants';
 
 /**
  * robots.ts — Explicitly allow major AI crawlers so FootJersey appears in
@@ -27,7 +28,7 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: 'YouBot',         allow: '/' },
       { userAgent: 'Meta-ExternalAgent', allow: '/' },
     ],
-    sitemap: 'https://shopfootjersey.com/sitemap.xml',
-    host: 'https://shopfootjersey.com',
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

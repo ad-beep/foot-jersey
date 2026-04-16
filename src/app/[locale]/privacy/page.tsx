@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     title: isHe ? 'מדיניות פרטיות — FootJersey' : 'Privacy Policy — FootJersey',
     description: isHe ? 'מדיניות הפרטיות של FootJersey' : 'FootJersey privacy policy — how we handle your data.',
     alternates: {
-      canonical: `${SITE_URL}/en/privacy`,
+      canonical: `${SITE_URL}/${params.locale}/privacy`,
       languages: { en: `${SITE_URL}/en/privacy`, he: `${SITE_URL}/he/privacy` },
     },
   };
