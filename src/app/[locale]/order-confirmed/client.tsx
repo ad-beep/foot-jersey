@@ -10,6 +10,8 @@ import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
 import { SITE_NAME } from '@/lib/constants';
 import { Loader2, CheckCircle2, Clock, ShoppingBag } from 'lucide-react';
+import { Recommendations } from '@/components/product/Recommendations';
+import type { Jersey } from '@/types';
 
 interface OrderItem {
   jerseyId: string;
@@ -53,7 +55,7 @@ interface Order {
   createdAt: Timestamp | null;
 }
 
-export function OrderConfirmedClient() {
+export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[] }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { locale } = useLocale();
@@ -343,6 +345,28 @@ export function OrderConfirmedClient() {
 
         </div>
       </div>
+
+      {/* ── Post-purchase cross-sell ──────────────────────────────── */}
+      {allJerseys.length > 0 && order.items.length > 0 && (() => {
+        const firstItemId = order.items[0].jerseyId;
+        const currentJersey = allJerseys.find((j) => j.id === firstItemId);
+        if (!currentJersey) return null;
+        return (
+          <div style={{ maxWidth: 680, margin: '32px auto 0' }}>
+            <p
+              style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.25em', color: 'rgba(200,162,75,0.7)', marginBottom: 8 }}
+            >
+              {isHe ? 'בחירות מותאמות' : 'Curated For You'}
+            </p>
+            <h2
+              style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 800, color: '#fff', marginBottom: 16, letterSpacing: '-0.03em' }}
+            >
+              {isHe ? 'השלם את המראה' : 'Complete the Look'}
+            </h2>
+            <Recommendations currentJersey={currentJersey} allJerseys={allJerseys} />
+          </div>
+        );
+      })()}
 
       <div style={{ textAlign: 'center', fontSize: 12, color: '#333', marginTop: 24, paddingBottom: 8 }}>
         <Link href={`/${locale}`} style={{ color: '#444', textDecoration: 'none' }}>{SITE_NAME}</Link>

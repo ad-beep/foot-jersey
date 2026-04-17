@@ -136,6 +136,61 @@ function CartItemCard({ item }: { item: CartItem }) {
   );
 }
 
+// ─── Abandoned-cart session helpers ────────────────────────────────────────
+function getOrCreateSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  let id = sessionStorage.getItem('cart_session_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem('cart_session_id', id);
+  }
+  return id;
+}
+
+async function saveAbandonedCartData(
+  sessionId: string,
+  email: string,
+  items: import('@/types').CartItem[],
+  locale: string,
+) {
+  try {
+    await fetch('/api/abandoned-cart/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        email,
+        items: items.map((i) => ({
+          jerseyId: i.jerseyId,
+          name: i.jersey.nameEn || i.jersey.teamName,
+          size: i.size,
+          quantity: i.quantity,
+          price: i.totalPrice,
+          imageUrl: i.jersey.imageUrl,
+        })),
+        locale,
+      }),
+    });
+  } catch {
+    // best-effort — never block the UI
+  }
+}
+
+async function clearAbandonedCart() {
+  const sessionId = typeof window !== 'undefined' ? sessionStorage.getItem('cart_session_id') : null;
+  if (!sessionId) return;
+  try {
+    await fetch('/api/abandoned-cart/save', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    });
+    sessionStorage.removeItem('cart_session_id');
+  } catch {
+    // best-effort
+  }
+}
+
 // ─── Checkout Form ──────────────────────────────────────────────────────────
 
 interface CheckoutForm {
@@ -192,11 +247,25 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
   const [paymentError, setPaymentError] = useState('');
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
-  // Discount code
-  const [discountCode, setDiscountCode] = useState('');
+  // Discount code — pre-fill from exit-intent popup if available
+  const [discountCode, setDiscountCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('exit_discount_code') || '';
+    }
+    return '';
+  });
   const [discountApplied, setDiscountApplied] = useState<{ code: string; type: string; value: number; amount: number } | null>(null);
   const [discountError, setDiscountError] = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
+
+  // ── Abandoned cart: re-save whenever items change and email is valid ──────
+  useEffect(() => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return;
+    const t = setTimeout(() => {
+      saveAbandonedCartData(getOrCreateSessionId(), form.email.trim(), items, locale);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [items, form.email, locale]);
 
   const freeShipping = itemCount >= SHIPPING_POLICY.freeShippingMinItems;
   const shippingCost = freeShipping ? 0 : PRICES.shippingFlat;
@@ -320,6 +389,9 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         const orderId = result?.orderId;
         if (!orderId) throw new Error('Order saved but no ID returned');
         clearCart();
+        clearAbandonedCart();
+        // Clear exit-intent discount code after successful use
+        if (typeof window !== 'undefined') localStorage.removeItem('exit_discount_code');
         router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save order';
@@ -340,6 +412,8 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         const orderId = result?.orderId;
         if (!orderId) throw new Error('Order saved but no ID returned');
         clearCart();
+        clearAbandonedCart();
+        if (typeof window !== 'undefined') localStorage.removeItem('exit_discount_code');
         router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save order';
@@ -440,6 +514,11 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               type="email"
               value={form.email}
               onChange={(e) => set('email', e.target.value)}
+              onBlur={() => {
+                if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+                  saveAbandonedCartData(getOrCreateSessionId(), form.email.trim(), items, locale);
+                }
+              }}
               placeholder="email@example.com"
               className={inputClass}
               style={{ ...inputStyle(!!errors.email), direction: 'ltr' }}

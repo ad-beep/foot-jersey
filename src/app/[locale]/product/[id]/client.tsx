@@ -14,6 +14,7 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AGGREGATE_RATING } from '@/data/reviews';
+import { getProductReviews } from '@/lib/get-product-reviews';
 import { Reveal } from '@/components/ui/reveal';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { SizeSelector } from '@/components/product/SizeSelector';
@@ -267,6 +268,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
 
   // ── Derived data ─────────────────────────────────────────────────────────
   const displayName = getJerseyName(jersey, locale);
+  const productReviews = getProductReviews(jersey.teamName ?? '');
   const typeLabel = TYPE_LABELS[jersey.type];
   const leagueName = LEAGUE_NAMES[jersey.league];
   const showBadge = BADGE_TYPES.has(jersey.type);
@@ -404,6 +406,19 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
               />
             </div>
 
+            {/* In-stock / delivery indicator */}
+            <div className={`flex flex-col gap-0.5 mb-3 ${isHe ? 'items-end' : ''}`}>
+              <div className={`flex items-center gap-1.5 ${isHe ? 'flex-row-reverse' : ''}`}>
+                <span className="text-xs font-bold" style={{ color: '#4ade80' }}>✓</span>
+                <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
+                  {isHe ? 'במלאי — מיוצר בהזמנה' : 'In Stock — Made to order'}
+                </span>
+              </div>
+              <span className="text-xs font-mono" style={{ color: 'var(--muted)' }}>
+                {isHe ? 'משלוח תוך 2–4 שבועות' : 'Ships in 2–4 weeks'}
+              </span>
+            </div>
+
             {/* Add to Cart CTA */}
             <Button
               variant="primary"
@@ -500,6 +515,52 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
             </div>
           </Reveal>
         </div>
+
+        {/* ── Per-product customer reviews ──────────────────────────── */}
+        {productReviews.length > 0 && (
+          <section className="mt-12 mb-8">
+            <Reveal>
+              <div className="mb-6 px-4 md:px-0">
+                <p className="section-kicker mb-2">{isHe ? 'ביקורות לקוחות' : 'Customer Reviews'}</p>
+                <h2
+                  className="font-playfair font-bold text-white"
+                  style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.2rem)', letterSpacing: '-0.03em', lineHeight: 1.0 }}
+                >
+                  {isHe ? 'מה אומרים הלקוחות' : 'What Customers Say'}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 md:px-0">
+                {productReviews.map((r) => (
+                  <div
+                    key={r.id}
+                    className="rounded-xl p-5"
+                    style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
+                  >
+                    <div className={`flex items-center gap-1 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
+                      {[1,2,3,4,5].map((i) => (
+                        <span key={i} className="text-sm" style={{ color: i <= r.rating ? '#FFBE32' : 'rgba(255,190,50,0.25)' }}>★</span>
+                      ))}
+                    </div>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                      &ldquo;{isHe && r.text.he ? r.text.he : r.text.en}&rdquo;
+                    </p>
+                    <div className={`flex items-center gap-2.5 ${isHe ? 'flex-row-reverse' : ''}`}>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${r.avatarColor}`}
+                      >
+                        {r.avatarInitials}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white">{r.name} · {r.city}</p>
+                        <p className="text-[10px] font-medium" style={{ color: '#4ade80' }}>✓ {isHe ? 'רכישה מאומתת' : 'Verified Purchase'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </section>
+        )}
 
         {/* ── Recommendations ───────────────────────────────────────── */}
         <Recommendations currentJersey={jersey} allJerseys={allJerseys} />

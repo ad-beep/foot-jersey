@@ -403,6 +403,74 @@ export async function sendOrderFailedRefundEmail(opts: {
   }
 }
 
+// ─── Abandoned Cart Reminder Email ───────────────────────────────────────────
+interface AbandonedCartItem {
+  name?: string;
+  jerseyId?: string;
+  size: string;
+  quantity: number;
+  price: number;
+  imageUrl?: string;
+}
+
+export async function sendAbandonedCartEmail(opts: {
+  to: string;
+  items: AbandonedCartItem[];
+  locale?: string;
+}): Promise<void> {
+  const isHe = opts.locale === 'he';
+  const cartUrl = `${SITE_URL}/${opts.locale || 'en'}/cart`;
+
+  const itemsHtml = opts.items.length > 0
+    ? `<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <thead><tr>
+          <th style="text-align:left;padding:8px 0;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid #1a1a1a;">${isHe ? 'פריט' : 'Item'}</th>
+          <th style="text-align:right;padding:8px 0;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid #1a1a1a;">${isHe ? 'מחיר' : 'Price'}</th>
+        </tr></thead>
+        <tbody>${opts.items.map(item => `
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #111;">
+              <div style="font-size:14px;color:#fff;font-weight:600;">${item.name || 'Jersey'}</div>
+              <div style="font-size:12px;color:#666;">${isHe ? 'מידה' : 'Size'}: ${item.size} · ×${item.quantity}</div>
+            </td>
+            <td style="padding:10px 0;border-bottom:1px solid #111;text-align:right;font-family:monospace;color:#C8A24B;font-weight:700;">₪${(item.price * item.quantity).toFixed(0)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : '';
+
+  const subject = isHe ? 'שכחת משהו בעגלה? 🛒' : "You left something behind 🛒";
+
+  const content = `
+    <div class="body">
+      <h1 class="title">${isHe ? 'שכחת משהו? 🛒' : 'Still thinking about it?'}</h1>
+      <p class="subtitle">${isHe
+        ? 'יש לך פריטים בעגלת הקניות שלך. הם ממתינים לך — אבל לא יהיו זמינים לנצח.'
+        : "You left some items in your cart. They're waiting for you — but won't be available forever."}</p>
+
+      ${itemsHtml}
+
+      <a href="${cartUrl}" class="cta-button">${isHe ? 'השלם את הרכישה' : 'Complete Your Order'}</a>
+
+      <div class="info-box success" style="margin-top:20px;">
+        ${isHe
+          ? '🚚 משלוח חינם על 3 פריטים ומעלה · תשלום מאובטח דרך PayPal או BIT'
+          : '🚚 Free shipping on 3+ items · Secure checkout with PayPal or BIT'}
+      </div>
+    </div>`;
+
+  try {
+    await sendMail({
+      to: opts.to,
+      subject,
+      html: wrapEmail(content, isHe ? 'FootJersey — שכחת בעגלה' : 'FootJersey — Items in your cart'),
+    });
+  } catch (err) {
+    console.error('[Email] Failed to send abandoned cart email:', err);
+    throw err; // Re-throw so the cron job can track failures
+  }
+}
+
 // ─── Password Reset Email ─────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(opts: { to: string; resetLink: string }): Promise<void> {
   const content = `

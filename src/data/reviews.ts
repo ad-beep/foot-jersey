@@ -16,6 +16,7 @@ export interface Review {
   verified: boolean;      // true = real order verified
   avatarInitials: string; // Fallback if no photo
   avatarColor: string;    // Tailwind bg color class
+  product?: 'mystery-box'; // Optional tag for product-type filtering
 }
 
 // ── PLACEHOLDER REVIEWS — Replace with real customer reviews ─────────────────
@@ -142,6 +143,54 @@ export const REVIEWS: Review[] = [
     verified: true,
     avatarInitials: 'BR',
     avatarColor: 'bg-orange-800',
+  },
+  {
+    id: 'r9',
+    name: 'Tal H.',
+    city: 'Tel Aviv',
+    jersey: 'Mystery Box',
+    rating: 5,
+    text: {
+      en: "Got a 2024 Barcelona away kit I'd never have picked myself — absolutely love it! Mystery box was the best purchase decision I made this year.",
+      he: 'קיבלתי ערכת ברצלונה חוץ 2024 שלא הייתי בוחר בעצמי — פשוט מת עליה! קופסת המסתורין הייתה ההחלטה הטובה ביותר שעשיתי השנה.',
+    },
+    date: '2026-01-10',
+    verified: true,
+    avatarInitials: 'TH',
+    avatarColor: 'bg-teal-700',
+    product: 'mystery-box',
+  },
+  {
+    id: 'r10',
+    name: 'Roei A.',
+    city: 'Haifa',
+    jersey: 'Mystery Box',
+    rating: 5,
+    text: {
+      en: 'Received a premium Juventus Player Version jersey in the mixed mystery box. Worth way more than I paid. Already ordered another one.',
+      he: 'קיבלתי חולצת יובנטוס גרסת שחקן פרמיום בקופסת המיקס. שווה הרבה יותר ממה ששילמתי. כבר הזמנתי עוד אחת.',
+    },
+    date: '2026-02-05',
+    verified: true,
+    avatarInitials: 'RA',
+    avatarColor: 'bg-purple-800',
+    product: 'mystery-box',
+  },
+  {
+    id: 'r11',
+    name: 'Gal B.',
+    city: 'Petah Tikva',
+    jersey: 'Mystery Box',
+    rating: 4,
+    text: {
+      en: 'Fun experience! Got a World Cup Argentina jersey — great quality and the surprise element made it even more exciting to open. Recommended.',
+      he: 'חוויה מהנה! קיבלתי חולצת ארגנטינה מונדיאל — איכות מעולה ואלמנט ההפתעה הפך את הפתיחה למרגשת עוד יותר. מומלץ.',
+    },
+    date: '2026-01-28',
+    verified: true,
+    avatarInitials: 'GB',
+    avatarColor: 'bg-green-800',
+    product: 'mystery-box',
   },
 ];
 

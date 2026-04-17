@@ -304,6 +304,11 @@ export const ProductCard = React.memo(function ProductCard({
             ? (isHe ? 'קופסת הפתעה' : 'Mystery Box')
             : `${jersey.season} · ${isHe ? typeLabel.he : typeLabel.en}`}
         </p>
+        {!isMysteryBox && (
+          <p className="text-[9px] font-mono uppercase tracking-[0.15em]" style={{ color: 'rgba(200,162,75,0.55)' }}>
+            {isHe ? 'מלאי מוגבל' : 'While supplies last'}
+          </p>
+        )}
         <div className="flex items-center justify-between mt-1">
           <p className="font-mono text-base font-bold" style={{ color: 'var(--gold)' }}>
             {CURRENCY}{jersey.price}

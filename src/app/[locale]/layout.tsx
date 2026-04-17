@@ -1,6 +1,7 @@
 import { Playfair_Display, Inter_Tight, JetBrains_Mono, Heebo } from 'next/font/google';
 import dynamic from 'next/dynamic';
 import { isValidLocale, getDirection } from '@/i18n/config';
+import { ExitIntentPopup } from '@/components/ui/ExitIntentPopup';
 import { getDictionary } from '@/i18n/dictionaries';
 import { DEFAULT_LOCALE, SITE_URL } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
@@ -19,6 +20,7 @@ import { Dock } from '@/components/layout/Dock';
 import { ToastProvider } from '@/components/ui/toast';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import type { Locale } from '@/types';
 
 // Lazy-load heavy components that aren't needed for initial paint
@@ -107,9 +109,11 @@ export default async function LocaleLayout({
           <CartDrawer dict={dict} />
           <WhatsAppFloat />
           <StickyMobileCTA />
+          <ExitIntentPopup />
         </ToastProvider>
         <Analytics />
         <SpeedInsights />
+        <GoogleAnalytics />
       </body>
     </html>
   );

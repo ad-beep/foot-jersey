@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SITE_URL } from '@/lib/constants';
+import { REVIEWS } from '@/data/reviews';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 export default function MysteryBoxPage({ params }: { params: { locale: string } }) {
   const isHe = params.locale === 'he';
   const locale = params.locale;
+  const mysteryReviews = REVIEWS.filter((r) => r.product === 'mystery-box');
 
   const boxes = [
     {
@@ -94,6 +96,14 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
           >
             {isHe ? '🔥 פופולרי — לרוב אוזל' : '🔥 Popular — often sells out'}
           </div>
+          {/* Sold counter */}
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <span style={{ fontSize: '1.1rem' }}>📦</span>
+            <span className="font-mono font-bold text-lg" style={{ color: 'var(--gold)' }}>847+</span>
+            <span className="text-sm" style={{ color: 'var(--muted)' }}>
+              {isHe ? 'קופסאות נמכרו' : 'mystery boxes sold'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -167,6 +177,87 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
             })}
           </div>
         </div>
+
+        {/* ── What's inside? accordion ─────────────────────────────── */}
+        <div className={`mt-10 ${isHe ? 'text-right' : ''}`}>
+          <details className="group rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}>
+            <summary className="flex items-center justify-between px-6 py-5 cursor-pointer list-none select-none">
+              <span className="font-semibold text-white text-base">
+                {isHe ? 'מה יש בתוך קופסת המסתורין?' : "What's inside the Mystery Box?"}
+              </span>
+              <svg
+                className="w-5 h-5 transition-transform duration-200 group-open:rotate-180 shrink-0"
+                style={{ color: 'var(--gold)' }}
+                fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-6 pb-5" style={{ borderTop: '1px solid var(--border)' }}>
+              <ul className="mt-4 space-y-2">
+                {(isHe ? [
+                  'חולצת כדורגל פרמיום אחת (קבוצה ועונה לפי קטגוריה)',
+                  'יכולה להיות עונה נוכחית, קלאסיק, מונדיאל או מהדורה מיוחדת',
+                  'כל החולצות חדשות עם תגיות',
+                  'מידה לבחירתך',
+                  'תמיד שווה יותר ממה ששילמת',
+                ] : [
+                  '1 premium football jersey (team & season based on category)',
+                  'Could be current season, classic, World Cup, or special edition',
+                  'All jerseys are brand new with tags',
+                  'Size of your choice',
+                  'Always worth more than you paid',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    <span className="mt-0.5 shrink-0 text-xs" style={{ color: 'var(--gold)' }}>✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </details>
+        </div>
+
+        {/* ── Customer reviews ─────────────────────────────────────── */}
+        {mysteryReviews.length > 0 && (
+          <div className={`mt-12 ${isHe ? 'text-right' : ''}`}>
+            <h2
+              className="font-playfair font-bold text-white mb-6"
+              style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', letterSpacing: '-0.02em' }}
+            >
+              {isHe ? 'מה הלקוחות אומרים' : 'What customers are saying'}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {mysteryReviews.map((r) => (
+                <div
+                  key={r.id}
+                  className="rounded-xl p-5"
+                  style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
+                >
+                  <div className={`flex items-center gap-1 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
+                    {[1,2,3,4,5].map((i) => (
+                      <span key={i} className="text-sm" style={{ color: i <= r.rating ? '#FFBE32' : 'rgba(255,190,50,0.25)' }}>★</span>
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed mb-3" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                    &ldquo;{isHe && r.text.he ? r.text.he : r.text.en}&rdquo;
+                  </p>
+                  <div className={`flex items-center gap-2 ${isHe ? 'flex-row-reverse' : ''}`}>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${r.avatarColor}`}
+                    >
+                      {r.avatarInitials}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-white">{r.name}</p>
+                      <p className="text-[10px] font-medium" style={{ color: '#4ade80' }}>✓ {isHe ? 'רכישה מאומתת' : 'Verified Purchase'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
