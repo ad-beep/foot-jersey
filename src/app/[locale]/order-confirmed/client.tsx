@@ -62,6 +62,7 @@ export function OrderConfirmedClient() {
   const orderId = searchParams.get('orderId');
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   // Prevent back button from returning to the payment form
   useEffect(() => {
@@ -95,14 +96,16 @@ export function OrderConfirmedClient() {
           } else if (attempts < MAX_ATTEMPTS) {
             setTimeout(tryFetch, RETRY_DELAY_MS);
           } else {
-            router.replace(`/${locale}`);
+            setLoading(false);
+            setFetchError(true);
           }
         })
         .catch(() => {
           if (attempts < MAX_ATTEMPTS) {
             setTimeout(tryFetch, RETRY_DELAY_MS);
           } else {
-            router.replace(`/${locale}`);
+            setLoading(false);
+            setFetchError(true);
           }
         });
     }
@@ -118,7 +121,45 @@ export function OrderConfirmedClient() {
     );
   }
 
-  if (!order) return null;
+  if (fetchError || !order) {
+    const supportRef = orderId ? orderId.slice(0, 8).toUpperCase() : null;
+    return (
+      <div style={{ backgroundColor: 'var(--ink)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+        <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(200,162,75,0.10)', border: '2px solid rgba(200,162,75,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <CheckCircle2 style={{ width: 28, height: 28, color: '#C8A24B' }} />
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 12, fontFamily: 'Playfair Display, Georgia, serif' }}>
+            {isHe ? 'התשלום התקבל' : 'Payment Received'}
+          </h1>
+          <p style={{ fontSize: 14, color: '#888', lineHeight: 1.7, marginBottom: 20 }}>
+            {isHe
+              ? 'תשלומך עבר בהצלחה, אך יש לנו קושי זמני בטעינת פרטי ההזמנה. ההזמנה שלך נשמרה — צור קשר עם התמיכה עם קוד ההפניה שלהלן.'
+              : 'Your payment went through, but we\'re having trouble loading your order details. Your order is saved — please contact support with the reference below.'}
+          </p>
+          {supportRef && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(200,162,75,0.10)', border: '1px solid rgba(200,162,75,0.22)', borderRadius: 100, padding: '8px 20px', fontSize: 13, fontFamily: 'monospace', color: '#C8A24B', marginBottom: 24 }}>
+              {isHe ? 'קוד הפניה:' : 'Reference:'} {supportRef}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <a
+              href={`mailto:support@shopfootjersey.com?subject=${encodeURIComponent(isHe ? `עזרה עם הזמנה ${supportRef || ''}` : `Order help - ref ${supportRef || ''}`)}`}
+              style={{ display: 'block', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
+            >
+              {isHe ? 'צור קשר עם תמיכה' : 'Contact Support'}
+            </a>
+            <Link
+              href={`/${locale}`}
+              style={{ display: 'block', backgroundColor: 'transparent', color: '#555', fontSize: 13, padding: '10px', borderRadius: 12, textDecoration: 'none' }}
+            >
+              {isHe ? 'חזור לדף הבית' : 'Back to Home'}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isBit = order.paymentMethod === 'bit';
   const isPending = isBit && order.status === 'pending_bit_approval';

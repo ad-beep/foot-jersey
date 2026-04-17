@@ -31,18 +31,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Order already approved' });
     }
 
-    // Mark as processing + payment completed
-    await updateDoc(orderRef, {
-      status: 'processing',
-      paymentStatus: 'completed',
-      approvedAt: new Date().toISOString(),
-    });
-
-    // Send approval email to customer — include full order details from Firestore
+    // Send approval email FIRST — if it fails we can retry without having
+    // already mutated Firestore state, so the admin can safely retry the approval.
     const email = customerEmail || order?.shippingInfo?.email;
     writeAuditLog({ action: 'order.bit_approved', adminEmail: auth.email, details: { orderId, customerEmail: email } });
     if (email) {
       const customerName = order?.shippingInfo?.name || 'Customer';
+      const mappedItems = Array.isArray(order?.items) && order.items.length > 0
+        ? order.items.map((item: Record<string, unknown>) => ({
+            teamName: String(item.teamName || ''),
+            size: String(item.size || ''),
+            quantity: Number(item.quantity) || 1,
+            totalPrice: Number(item.totalPrice) || 0,
+            customization: item.customization as Record<string, unknown> | undefined,
+          }))
+        : undefined;
       await sendBitApprovedEmail({
         to: email,
         customerName,
@@ -52,13 +55,7 @@ export async function POST(request: NextRequest) {
         shipping: order?.shipping ?? 0,
         discountAmount: order?.discountAmount ?? 0,
         discountCode: order?.discountCode ?? undefined,
-        items: Array.isArray(order?.items) ? order.items.map((item: Record<string, unknown>) => ({
-          teamName: String(item.teamName || ''),
-          size: String(item.size || ''),
-          quantity: Number(item.quantity) || 1,
-          totalPrice: Number(item.totalPrice) || 0,
-          customization: item.customization as Record<string, unknown> | undefined,
-        })) : undefined,
+        items: mappedItems,
         shippingAddress: order?.shippingInfo ? {
           street: String(order.shippingInfo.street || ''),
           city: String(order.shippingInfo.city || ''),
@@ -67,6 +64,14 @@ export async function POST(request: NextRequest) {
         } : undefined,
       });
     }
+
+    // Mark as processing AFTER email succeeds — keeps order in retryable 'pending' state
+    // if email delivery fails (network error, etc.)
+    await updateDoc(orderRef, {
+      status: 'processing',
+      paymentStatus: 'completed',
+      approvedAt: new Date().toISOString(),
+    });
 
     return NextResponse.json({ success: true, message: 'Order approved and email sent' });
   } catch (error) {

@@ -18,7 +18,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
         setStatus('authorized');
       } else {
         setStatus('denied');
-        router.replace('/');
+        router.replace('/en');
       }
     });
     return () => unsub();

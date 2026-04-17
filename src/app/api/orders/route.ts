@@ -599,7 +599,7 @@ export async function POST(request: NextRequest) {
     // automatically refund the customer so no money is taken without an order.
     if (paymentConfirmedCaptured && paypalCaptureIdForRefund) {
       console.log(`[orders] Order creation failed after capture — attempting auto-refund of capture ${paypalCaptureIdForRefund}`);
-      const refunded = await issuePayPalRefund(paypalCaptureIdForRefund);
+      const refunded = await withRetry(() => issuePayPalRefund(paypalCaptureIdForRefund!), 3).catch(() => false);
       if (refunded) {
         console.log(`[orders] Auto-refund succeeded for capture ${paypalCaptureIdForRefund}`);
         try {
