@@ -35,6 +35,17 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
     return () => el.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
+  // Retry failed images when the browser regains connectivity.
+  useEffect(() => {
+    const handleOnline = () => {
+      setErrors(new Set());
+      setRetryCounts({});
+      setLoadedSet(new Set());
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
   const handleImageError = useCallback((idx: number) => {
     setRetryCounts((prev) => {
       const current = prev[idx] ?? 0;

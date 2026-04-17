@@ -58,83 +58,25 @@ export default function LandingHero() {
        */}
       <div className={`flex flex-col flex-1 ${isHe ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
 
-        {/* ── Visual panel ──────────────────────────────────────────────── */}
+        {/* ── Visual panel — desktop only, subtle editorial composition ───── */}
         <div
-          className="hero-visual-panel relative flex flex-col items-center justify-center overflow-hidden w-full md:w-[45%]"
-          style={{ backgroundColor: 'var(--pitch)' }}
+          className="hero-visual-panel relative hidden md:flex flex-col items-center justify-center overflow-hidden md:w-[42%]"
+          style={{
+            backgroundColor: 'var(--ink)',
+            backgroundImage:
+              'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(200,162,75,0.06) 0%, transparent 70%)',
+          }}
         >
-          {/* Radial glow */}
+          {/* Vertical gold hairline separator on the text-facing edge */}
           <div
-            className="absolute inset-0 pointer-events-none"
+            className="absolute top-[15%] bottom-[15%] w-px pointer-events-none"
             style={{
-              background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(200,162,75,0.1) 0%, rgba(200,162,75,0.03) 55%, transparent 80%)',
-            }}
-          />
-
-          {/* Film grain */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              backgroundSize: '256px 256px',
-              opacity: 0.04,
-              mixBlendMode: 'overlay',
+              [isHe ? 'right' : 'left']: 0,
+              background:
+                'linear-gradient(to bottom, transparent 0%, rgba(200,162,75,0.35) 50%, transparent 100%)',
             }}
             aria-hidden="true"
           />
-
-          {/* Corner registration marks */}
-          {([
-            { top: '14px', left: '14px' },
-            { top: '14px', right: '14px' },
-            { bottom: '14px', left: '14px' },
-            { bottom: '14px', right: '14px' },
-          ] as React.CSSProperties[]).map((pos, i) => (
-            <div
-              key={i}
-              className="absolute w-4 h-4 pointer-events-none"
-              style={{
-                ...pos,
-                borderTop:    i < 2 ? '1px solid rgba(200,162,75,0.35)' : undefined,
-                borderBottom: i >= 2 ? '1px solid rgba(200,162,75,0.35)' : undefined,
-                borderLeft:   i % 2 === 0 ? '1px solid rgba(200,162,75,0.35)' : undefined,
-                borderRight:  i % 2 === 1 ? '1px solid rgba(200,162,75,0.35)' : undefined,
-              }}
-              aria-hidden="true"
-            />
-          ))}
-
-          {/* Jersey silhouette watermark */}
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-            style={{ opacity: 0.055 }}
-            aria-hidden="true"
-          >
-            <svg
-              viewBox="0 0 200 220"
-              fill="none"
-              className="w-[72%] h-[72%] max-w-[320px]"
-              style={{ color: '#C8A24B' }}
-            >
-              {/* Jersey front silhouette */}
-              <path
-                d="M70 10 L50 0 L10 30 L30 50 L20 220 L180 220 L170 50 L190 30 L150 0 L130 10 C130 28 70 28 70 10 Z"
-                fill="currentColor"
-                fillOpacity="0.35"
-              />
-              {/* Collar */}
-              <path
-                d="M85 10 Q100 26 115 10"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-                strokeOpacity="0.6"
-              />
-              {/* Sleeve seam lines */}
-              <line x1="30" y1="50" x2="55" y2="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
-              <line x1="170" y1="50" x2="145" y2="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
-            </svg>
-          </div>
 
           {/* Editorial centrepiece — massive "No.10" */}
           <div
@@ -142,52 +84,50 @@ export default function LandingHero() {
             style={{ opacity: 0, animation: 'heroFadeUp 1s ease 0.4s forwards' }}
             aria-hidden="true"
           >
-            {/* "No." label */}
             <span
-              className="font-mono uppercase tracking-[0.4em]"
-              style={{ fontSize: '9px', color: 'rgba(200,162,75,0.5)', letterSpacing: '0.45em' }}
+              className="font-mono uppercase"
+              style={{ fontSize: '10px', color: 'rgba(200,162,75,0.55)', letterSpacing: '0.45em' }}
             >
               No.
             </span>
-            {/* Giant 10 */}
             <span
               className="font-playfair font-bold leading-none"
               style={{
-                fontSize: 'clamp(7rem, 22vw, 14rem)',
-                color: 'rgba(200,162,75,0.13)',
+                fontSize: 'clamp(8rem, 20vw, 15rem)',
+                color: 'rgba(200,162,75,0.18)',
                 letterSpacing: '-0.06em',
                 lineHeight: 0.85,
+                textShadow: '0 0 60px rgba(200,162,75,0.08)',
               }}
             >
               10
             </span>
-            {/* Hairline under */}
             <div
               style={{
-                width: '48px',
+                width: '56px',
                 height: '1px',
-                backgroundColor: 'rgba(200,162,75,0.3)',
-                marginTop: '12px',
+                backgroundColor: 'rgba(200,162,75,0.35)',
+                marginTop: '14px',
               }}
             />
-            {/* Sub-label */}
             <span
               className="font-mono uppercase mt-3"
-              style={{ fontSize: '8px', letterSpacing: '0.35em', color: 'rgba(255,255,255,0.2)' }}
+              style={{ fontSize: '9px', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.28)' }}
             >
-              {isHe ? 'קולקציות 18' : '18 Collections'}
+              {isHe ? '18 קולקציות' : '18 Collections'}
             </span>
           </div>
 
-          {/* Vertical "VOL. 01" label — desktop only */}
+          {/* Vertical "VOL. 01" label */}
           <div
-            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2"
+            className="absolute top-1/2 -translate-y-1/2"
             style={{
+              [isHe ? 'left' : 'right']: '18px',
               writingMode: 'vertical-rl',
               fontFamily: 'monospace',
               fontSize: '9px',
-              letterSpacing: '0.28em',
-              color: 'rgba(200,162,75,0.28)',
+              letterSpacing: '0.3em',
+              color: 'rgba(200,162,75,0.32)',
               textTransform: 'uppercase',
             }}
             aria-hidden="true"
@@ -198,7 +138,7 @@ export default function LandingHero() {
 
         {/* ── Text panel ────────────────────────────────────────────────── */}
         <div
-          className="relative flex flex-col justify-center px-6 md:px-12 lg:px-20 py-10 md:py-0 w-full md:w-[55%]"
+          className="relative flex flex-col justify-center px-6 md:px-12 lg:px-20 py-10 md:py-0 w-full md:w-[58%]"
           style={{ backgroundColor: 'var(--ink)' }}
         >
           {/* Gold hairline top */}

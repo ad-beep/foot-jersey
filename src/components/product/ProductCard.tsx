@@ -94,6 +94,18 @@ export const ProductCard = React.memo(function ProductCard({
     return () => clearTimeout(timer);
   }, [isMysteryBox, jersey.imageUrl, imgLoaded]);
 
+  // Retry images when the browser regains connectivity so users don't have to
+  // reload the page after a brief offline blip.
+  useEffect(() => {
+    if (isMysteryBox) return;
+    const handleOnline = () => {
+      setImgError(false);
+      setImgLoaded(false);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [isMysteryBox]);
+
   // Close size picker on click outside
   useEffect(() => {
     if (!sizePickerOpen) return;
