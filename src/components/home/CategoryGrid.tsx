@@ -16,6 +16,10 @@ interface CategoryDef {
   accent: string;
   /** Primary editorial glyph */
   symbol: string;
+  /** Vertical masthead on tile edge — English only for both locales */
+  masthead: string;
+  /** Metadata kicker above label — English only for both locales */
+  meta: string;
   /** Short editorial sub-line — shown on lg tiles */
   sub?: { en: string; he: string };
 }
@@ -28,6 +32,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'פרמייר ליג',
     bg: '#0e0a17',
     symbol: 'PL',
+    masthead: 'PREMIER · EST. 1992',
+    meta: 'ENGLAND · 20 CLUBS · ENG',
     accent: 'rgba(88,28,135,0.9)',
     grid: 'col-span-2 min-h-[140px] lg:col-start-3 lg:col-end-6 lg:row-start-3 lg:row-end-4 lg:min-h-0',
     size: 'sm',
@@ -38,6 +44,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'לה ליגה',
     bg: '#180a05',
     symbol: 'LL',
+    masthead: 'LA LIGA · EST. 1929',
+    meta: 'SPAIN · 20 CLUBS · ESP',
     accent: 'rgba(180,50,18,0.9)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-6 lg:row-start-1 lg:row-end-2 lg:min-h-0',
     size: 'sm',
@@ -48,6 +56,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'סרייה A',
     bg: '#060d1f',
     symbol: 'SA',
+    masthead: 'SERIE A · EST. 1898',
+    meta: 'ITALY · 20 CLUBS · ITA',
     accent: 'rgba(30,58,138,0.9)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-2 lg:row-end-3 lg:min-h-0',
     size: 'sm',
@@ -58,6 +68,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'רטרו',
     bg: '#120e04',
     symbol: "'90",
+    masthead: 'VINTAGE · THE ARCHIVE',
+    meta: '1960 — 2005 · CLASSICS',
     accent: 'rgba(200,162,75,0.8)',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-7 lg:row-start-4 lg:row-end-5 lg:min-h-0',
     size: 'sm',
@@ -68,6 +80,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'בונדסליגה',
     bg: '#170505',
     symbol: 'BL',
+    masthead: 'BUNDESLIGA · EST. 1963',
+    meta: 'GERMANY · 18 CLUBS · DEU',
     accent: 'rgba(180,20,20,0.9)',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-6 lg:row-start-2 lg:row-end-3 lg:min-h-0',
     size: 'sm',
@@ -78,6 +92,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'ליג 1',
     bg: '#030f08',
     symbol: 'L1',
+    masthead: 'LIGUE 1 · EST. 1932',
+    meta: 'FRANCE · 18 CLUBS · FRA',
     accent: 'rgba(15,100,50,0.9)',
     grid: 'min-h-[140px] lg:col-start-6 lg:col-end-7 lg:row-start-3 lg:row-end-4 lg:min-h-0',
     size: 'sm',
@@ -90,6 +106,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'עונת 25/26',
     bg: '#03100b',
     symbol: '25',
+    masthead: 'CURRENT · 2025 — 2026',
+    meta: 'THIS SEASON · FRESH DROP',
     accent: 'rgba(15,61,46,1)',
     grid: 'col-span-2 min-h-[180px] lg:col-start-1 lg:col-end-3 lg:row-start-3 lg:row-end-5 lg:min-h-0',
     size: 'lg',
@@ -101,6 +119,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'מונדיאל 2026',
     bg: '#021009',
     symbol: 'WC',
+    masthead: 'FIFA WORLD CUP · 2026',
+    meta: 'USA · CANADA · MEXICO',
     accent: 'rgba(15,61,46,1)',
     grid: 'col-span-2 min-h-[200px] lg:col-start-1 lg:col-end-4 lg:row-start-1 lg:row-end-3 lg:min-h-0',
     size: 'lg',
@@ -112,6 +132,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'שאר העולם',
     bg: '#030f10',
     symbol: '∞',
+    masthead: 'GLOBAL · REST OF WORLD',
+    meta: 'AFRICA · ASIA · AMERICAS',
     accent: 'rgba(17,94,89,0.9)',
     grid: 'col-span-2 min-h-[180px] lg:col-start-6 lg:col-end-7 lg:row-start-1 lg:row-end-3 lg:min-h-0',
     size: 'lg',
@@ -123,6 +145,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'נבחרות',
     bg: '#130a02',
     symbol: 'INT',
+    masthead: 'NATIONAL · INTERNATIONAL',
+    meta: 'FIFA MEMBERS · 211 NATIONS',
     accent: 'rgba(140,80,18,0.9)',
     grid: 'min-h-[140px] lg:col-start-5 lg:col-end-7 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
@@ -133,6 +157,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'מהדורה מיוחדת',
     bg: '#140603',
     symbol: '★',
+    masthead: 'SPECIAL · LIMITED',
+    meta: 'RARE DROPS · NUMBERED',
     accent: 'rgba(255,77,46,0.8)',
     special: true,
     grid: 'min-h-[140px] lg:col-start-3 lg:col-end-5 lg:row-start-4 lg:row-end-5 lg:min-h-0',
@@ -144,6 +170,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'ילדים',
     bg: '#060d1f',
     symbol: 'K',
+    masthead: 'KIDS · YOUTH',
+    meta: 'SIZES 16 — 28 · FAMILY',
     accent: 'rgba(50,80,180,0.9)',
     grid: 'min-h-[140px] lg:col-start-2 lg:col-end-4 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
@@ -156,6 +184,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'דריפ',
     bg: '#120302',
     symbol: 'D',
+    masthead: 'STREET · DRIP · CULTURE',
+    meta: 'ARCHIVE · STREETWEAR',
     accent: 'rgba(220,60,30,0.7)',
     grid: 'col-span-2 min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-6 lg:row-end-7 lg:min-h-0',
     size: 'sm',
@@ -166,6 +196,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'שרוול ארוך',
     bg: '#060d1f',
     symbol: 'LS',
+    masthead: 'LONG SLEEVE · LS',
+    meta: 'COLD WEATHER · WINTER',
     accent: 'rgba(30,58,138,0.9)',
     grid: 'min-h-[140px] lg:col-start-1 lg:col-end-2 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
@@ -178,6 +210,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'קופסת הפתעה',
     bg: '#100302',
     symbol: '?',
+    masthead: 'MYSTERY · SEALED',
+    meta: 'UNKNOWN · SURPRISE',
     accent: 'rgba(255,77,46,0.8)',
     special: true,
     priceLabel: { en: 'From ₪99', he: 'החל מ-₪99' },
@@ -190,6 +224,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'מוצרים נוספים',
     bg: '#111113',
     symbol: '+',
+    masthead: 'OTHER · EXTRAS',
+    meta: 'ACCESSORIES · MORE',
     accent: 'rgba(120,120,130,0.7)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-5 lg:row-start-5 lg:row-end-6 lg:min-h-0',
     size: 'sm',
@@ -202,6 +238,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'מהדורת סטוסי',
     bg: '#0a0614',
     symbol: 'S',
+    masthead: 'STUSSY · COLLAB',
+    meta: 'STREETWEAR · EXCLUSIVE',
     accent: 'rgba(200,162,75,0.8)',
     special: true,
     grid: 'min-h-[140px] lg:col-start-1 lg:col-end-4 lg:row-start-7 lg:row-end-8 lg:min-h-0',
@@ -213,6 +251,8 @@ const CATEGORIES: CategoryDef[] = [
     he: 'ליגת העל',
     bg: '#010818',
     symbol: 'IL',
+    masthead: "LIGAT HA'AL · EST. 1999",
+    meta: 'ISRAEL · 14 CLUBS · ISR',
     accent: 'rgba(0,100,230,0.8)',
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
     size: 'sm',
@@ -252,9 +292,7 @@ function CornerArc({ accent }: { accent: string }) {
       fill="none"
       aria-hidden="true"
     >
-      {/* Quarter circle — pitch corner arc */}
       <path d="M52 0 A52 52 0 0 0 0 52" stroke={color} strokeWidth="1" fill="none" />
-      {/* Tighter inner arc */}
       <path d="M52 12 A40 40 0 0 0 12 52" stroke={color.replace(/[\d.]+\)$/, '0.07)')} strokeWidth="0.75" fill="none" />
     </svg>
   );
@@ -334,17 +372,21 @@ export function CategoryGrid() {
             const num = String(i + 1).padStart(2, '0');
             const accentFaint = cat.accent.replace(/[\d.]+\)$/, '0.12)');
             const accentMid   = cat.accent.replace(/[\d.]+\)$/, '0.55)');
+            const accentFill  = cat.accent.replace(/[\d.]+\)$/, '0.28)');
+            const accentSplit = cat.accent.replace(/[\d.]+\)$/, '0.22)');
+            const accentEdge  = cat.accent.replace(/[\d.]+\)$/, '0.38)');
             const symbolSize  = cat.size === 'lg'
-              ? 'clamp(4.5rem, 14vw, 8rem)'
-              : 'clamp(3rem, 8vw, 5.5rem)';
+              ? 'clamp(6.5rem, 20vw, 11.5rem)'
+              : 'clamp(4.2rem, 12vw, 7.5rem)';
             const isItalic = cat.slug === 'retro';
 
             return (
               <Reveal key={cat.slug} delay={i * 30} className={cat.grid}>
                 <Link
                   href={getCategoryHref(locale, cat.slug)}
-                  className="group relative flex flex-col justify-end rounded-xl overflow-hidden h-full transition-all duration-300 hover:scale-[1.02]"
+                  className="group relative flex flex-col justify-end rounded-xl overflow-hidden h-full transition-all duration-300 grain"
                   style={{
+                    background: `linear-gradient(135deg, ${accentSplit} 0%, ${cat.bg} 55%, ${cat.bg} 100%)`,
                     backgroundColor: cat.bg,
                     border: cat.special
                       ? '1px solid rgba(255,77,46,0.22)'
@@ -371,16 +413,7 @@ export function CategoryGrid() {
                     }}
                   />
 
-                  {/* ② Dot-grid texture */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px)',
-                      backgroundSize: '18px 18px',
-                    }}
-                  />
-
-                  {/* ③ Radial glow from top-center */}
+                  {/* ② Radial glow from top-center */}
                   <div
                     className="absolute inset-0 pointer-events-none transition-opacity duration-400 opacity-60 group-hover:opacity-100"
                     style={{
@@ -388,38 +421,38 @@ export function CategoryGrid() {
                     }}
                   />
 
-                  {/* ④ Symbol — ghost stroke depth layer (slightly offset) */}
+                  {/* ③ Symbol — accent-filled + ghost stroke depth */}
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
                     aria-hidden="true"
                   >
+                    {/* Ghost stroke layer (slightly offset for depth) */}
                     <span
-                      className="font-playfair font-bold absolute"
+                      className="font-playfair font-black absolute transition-transform duration-500 group-hover:translate-x-1"
                       style={{
                         fontSize: symbolSize,
                         color: 'transparent',
-                        WebkitTextStroke: `1.5px ${cat.accent.replace(/[\d.]+\)$/, '0.22)')}`,
-                        letterSpacing: '-0.05em',
-                        lineHeight: 0.85,
+                        WebkitTextStroke: `2px ${cat.accent.replace(/[\d.]+\)$/, '0.28)')}`,
+                        letterSpacing: '-0.06em',
+                        lineHeight: 0.82,
                         fontStyle: isItalic ? 'italic' : 'normal',
-                        transform: 'translate(4px, calc(8% + 4px))',
+                        transform: 'translate(6px, calc(6% + 6px))',
                         userSelect: 'none',
                       }}
                     >
                       {cat.symbol}
                     </span>
 
-                    {/* Fill layer on top */}
+                    {/* Accent-colored fill layer on top */}
                     <span
-                      className="font-playfair font-bold relative transition-opacity duration-300 group-hover:opacity-[0.15]"
+                      className="font-playfair font-black relative transition-transform duration-500 group-hover:-translate-x-0.5"
                       style={{
                         fontSize: symbolSize,
-                        color: 'rgba(255,255,255,1)',
-                        opacity: 0.08,
-                        letterSpacing: '-0.05em',
-                        lineHeight: 0.85,
+                        color: accentFill,
+                        letterSpacing: '-0.06em',
+                        lineHeight: 0.82,
                         fontStyle: isItalic ? 'italic' : 'normal',
-                        transform: 'translateY(8%)',
+                        transform: 'translateY(6%)',
                         userSelect: 'none',
                       }}
                     >
@@ -427,9 +460,31 @@ export function CategoryGrid() {
                     </span>
                   </div>
 
+                  {/* ④ Vertical masthead on tile edge — English, rotated 90° */}
+                  <div
+                    className="absolute top-3 bottom-3 pointer-events-none select-none z-[5] hidden sm:flex items-center"
+                    style={{
+                      [isHe ? 'right' : 'left']: '8px',
+                    } as React.CSSProperties}
+                    aria-hidden="true"
+                  >
+                    <span
+                      className="font-mono uppercase whitespace-nowrap"
+                      style={{
+                        writingMode: 'vertical-rl',
+                        transform: 'rotate(180deg)',
+                        fontSize: cat.size === 'lg' ? '9px' : '8px',
+                        letterSpacing: '0.28em',
+                        color: accentEdge,
+                        textShadow: `0 0 12px ${cat.accent.replace(/[\d.]+\)$/, '0.18)')}`,
+                      }}
+                    >
+                      {cat.masthead}
+                    </span>
+                  </div>
+
                   {/* ⑤ Football pitch corner arcs */}
                   <CornerArc accent={cat.accent} />
-                  {/* Mirror on bottom-left */}
                   <svg
                     className="absolute bottom-0 left-0 pointer-events-none"
                     width="28"
@@ -444,15 +499,7 @@ export function CategoryGrid() {
                   {/* ⑥ Centre-circle fragment — lg tiles only */}
                   {cat.size === 'lg' && <CenterCircle accent={cat.accent} />}
 
-                  {/* ⑦ Left accent bar */}
-                  <div
-                    className="absolute left-0 top-4 bottom-4 w-[2px] rounded-full pointer-events-none"
-                    style={{
-                      background: `linear-gradient(to bottom, transparent, ${accentMid}, transparent)`,
-                    }}
-                  />
-
-                  {/* ⑧ Gold hairline top edge on lg tiles */}
+                  {/* ⑦ Gold hairline top edge on lg tiles */}
                   {cat.size === 'lg' && (
                     <div
                       className="absolute top-0 left-4 right-4 pointer-events-none"
@@ -463,26 +510,26 @@ export function CategoryGrid() {
                     />
                   )}
 
-                  {/* ⑨ Bottom gradient for label readability */}
+                  {/* ⑧ Bottom gradient for label readability */}
                   <div
                     className="absolute inset-0 pointer-events-none"
                     style={{
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.12) 45%, transparent 70%)',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.15) 45%, transparent 70%)',
                     }}
                   />
 
-                  {/* ⑩ Index number — top corner */}
+                  {/* ⑨ Index number — top corner */}
                   <span
                     className="absolute top-2.5 end-3 font-mono text-[10px] pointer-events-none select-none z-10"
-                    style={{ color: 'rgba(255,255,255,0.18)', letterSpacing: '0.1em' }}
+                    style={{ color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}
                     aria-hidden="true"
                   >
                     {num}
                   </span>
 
-                  {/* ⑪ Sub-text on lg tiles */}
+                  {/* ⑩ Sub-text on lg tiles */}
                   {cat.size === 'lg' && cat.sub && (
-                    <div className="relative z-10 px-3.5 mb-1">
+                    <div className={`relative z-10 px-3.5 mb-1 ${isHe ? 'pe-9' : 'ps-9'}`}>
                       <p
                         className="font-mono uppercase"
                         style={{ fontSize: '8px', letterSpacing: '0.18em', color: cat.accent.replace(/[\d.]+\)$/, '0.55)') }}
@@ -492,8 +539,28 @@ export function CategoryGrid() {
                     </div>
                   )}
 
-                  {/* ⑫ Label row */}
-                  <div className={`relative z-10 p-3.5 pt-0 ${isHe ? 'text-right' : ''}`}>
+                  {/* ⑪ Label row with metadata kicker */}
+                  <div className={`relative z-10 p-3.5 pt-0 ${isHe ? 'text-right pe-9' : 'ps-9'}`}>
+                    {/* Meta kicker — English for both locales */}
+                    <p
+                      className="font-mono uppercase mb-1.5"
+                      style={{
+                        fontSize: '8px',
+                        letterSpacing: '0.2em',
+                        color: cat.accent.replace(/[\d.]+\)$/, '0.7)'),
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="inline-block align-middle me-1.5"
+                        style={{
+                          width: '14px',
+                          height: '1px',
+                          background: cat.accent.replace(/[\d.]+\)$/, '0.6)'),
+                        }}
+                      />
+                      {cat.meta}
+                    </p>
                     <p
                       className={`font-bold leading-tight text-white ${
                         cat.size === 'lg' ? 'text-base md:text-lg' : 'text-sm'
