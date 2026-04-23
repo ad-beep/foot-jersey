@@ -8,8 +8,8 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   return {
     title: isHe ? 'Mystery Box — חולצת הפתעה | FootJersey' : 'Mystery Box — Surprise Jersey | FootJersey',
     description: isHe
-      ? 'הזמן Mystery Box של FootJersey וקבל חולצת כדורגל מפתיעה! רטרו, מונדיאל, מהדורה מיוחדת ועוד. מתחיל מ-₪99.'
-      : 'Order a FootJersey Mystery Box and receive a surprise football jersey! Retro, World Cup, Special Edition and more. From ₪99.',
+      ? 'הזמן Mystery Box של FootJersey וקבל חולצת כדורגל מפתיעה! רטרו, מונדיאל, מהדורה מיוחדת ועוד. מתחיל מ-₪100.'
+      : 'Order a FootJersey Mystery Box and receive a surprise football jersey! Retro, World Cup, Special Edition and more. From ₪100.',
     alternates: {
       canonical: `${SITE_URL}/${params.locale}/mystery-box`,
       languages: { en: `${SITE_URL}/en/mystery-box`, he: `${SITE_URL}/he/mystery-box` },
@@ -25,42 +25,42 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
   const boxes = [
     {
       slug: 'retro-mystery',
-      price: 109,
+      price: 110,
       emoji: '📼',
       en: { name: 'Retro Mystery', desc: 'A legendary kit from the 90s or 2000s. Your chance to own a piece of football history.' },
       he: { name: 'רטרו מיסטרי', desc: 'ערכה אגדית מהשנות ה-90 או ה-2000. הסיכוי שלך להחזיק חלק מהיסטוריית הכדורגל.' },
     },
     {
       slug: 'season-mystery',
-      price: 99,
+      price: 100,
       emoji: '⚽',
       en: { name: '25/26 Season Mystery', desc: 'A current season jersey from one of the top leagues. Could be anyone.' },
       he: { name: 'מיסטרי עונה 25/26', desc: 'חולצת עונה נוכחית מאחת הליגות המובילות. יכול להיות כל קבוצה.' },
     },
     {
       slug: 'world-cup-mystery',
-      price: 99,
+      price: 100,
       emoji: '🏆',
       en: { name: 'World Cup 2026 Mystery', desc: 'A national team jersey from the upcoming World Cup. Which country will you get?' },
       he: { name: 'מונדיאל 2026 מיסטרי', desc: 'חולצת נבחרת לאומית למונדיאל הקרוב. איזו מדינה תקבל?' },
     },
     {
       slug: 'mixed-mystery',
-      price: 109,
+      price: 110,
       emoji: '🎲',
       en: { name: 'Mixed Mystery', desc: 'Could be anything — retro, current season, World Cup, or special. Maximum surprise.' },
       he: { name: 'מיקס מיסטרי', desc: 'יכול להיות הכל — רטרו, עונה נוכחית, מונדיאל, או מיוחד. הפתעה מקסימלית.' },
     },
     {
       slug: 'special-mystery',
-      price: 99,
+      price: 100,
       emoji: '✨',
       en: { name: 'Special Edition Mystery', desc: 'One of our most exclusive drops — special and limited edition jerseys.' },
       he: { name: 'מהדורה מיוחדת מיסטרי', desc: 'אחד מהדרופים הבלעדיים שלנו — חולצות מיוחדות ומוגבלות.' },
     },
     {
       slug: 'player-mystery',
-      price: 109,
+      price: 110,
       emoji: '🌟',
       en: { name: 'Player Version Mystery', desc: 'Premium player-version quality. The best materials, exact stitching. A real treat.' },
       he: { name: 'גרסת שחקן מיסטרי', desc: 'איכות גרסת שחקן פרמיום. חומרים הטובים ביותר, תפירה מדויקת. פינוק אמיתי.' },

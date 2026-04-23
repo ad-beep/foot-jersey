@@ -173,8 +173,8 @@ export const FAQS: FaqEntry[] = [
       he: 'מה זה קופסת מסתורין (Mystery Box)?',
     },
     answer: {
-      en: 'A Mystery Box is a surprise jersey chosen for you from a specific category. You choose the type (Retro, 25/26 Season, World Cup, Mixed, or Special Edition) and receive a random jersey from that collection. Great value — often the best deal on the site. Mystery Boxes start from ₪99.',
-      he: 'קופסת מסתורין היא חולצת הפתעה שנבחרה עבורך מקטגוריה מסוימת. אתה בוחר את הסוג (רטרו, עונה 25/26, מונדיאל, מעורב, או מהדורה מיוחדת) ומקבל חולצה אקראית מאותה קולקציה. ערך מצוין — לרוב העסקה הטובה ביותר באתר. קופסאות מסתורין מתחילות מ-₪99.',
+      en: 'A Mystery Box is a surprise jersey chosen for you from a specific category. You choose the type (Retro, 25/26 Season, World Cup, Mixed, or Special Edition) and receive a random jersey from that collection. Great value — often the best deal on the site. Mystery Boxes start from ₪100.',
+      he: 'קופסת מסתורין היא חולצת הפתעה שנבחרה עבורך מקטגוריה מסוימת. אתה בוחר את הסוג (רטרו, עונה 25/26, מונדיאל, מעורב, או מהדורה מיוחדת) ומקבל חולצה אקראית מאותה קולקציה. ערך מצוין — לרוב העסקה הטובה ביותר באתר. קופסאות מסתורין מתחילות מ-₪100.',
     },
   },
 
@@ -251,8 +251,8 @@ export const FAQS: FaqEntry[] = [
       he: 'כמה עולות חולצות ב-FootJersey?',
     },
     answer: {
-      en: 'Most jerseys are priced at ₪100–₪125. Standard jerseys start at ₪100. Customization options (name/number, patch, player version) are available for +₪10 each. Mystery Boxes start from ₪99. Free shipping when you order 3 or more jerseys.',
-      he: 'רוב החולצות מתומחרות ב-₪100–₪125. חולצות סטנדרטיות מתחילות מ-₪100. אפשרויות התאמה אישית (שם/מספר, טלאי, גרסת שחקן) זמינות ב-+₪10 כל אחת. קופסאות מסתורין מתחילות מ-₪99. משלוח חינם בהזמנה של 3 חולצות ומעלה.',
+      en: 'Most jerseys are priced at ₪100–₪125. Standard jerseys start at ₪100. Customization options (name/number, patch, player version) are available for +₪10 each. Mystery Boxes start from ₪100. Free shipping when you order 3 or more jerseys.',
+      he: 'רוב החולצות מתומחרות ב-₪100–₪125. חולצות סטנדרטיות מתחילות מ-₪100. אפשרויות התאמה אישית (שם/מספר, טלאי, גרסת שחקן) זמינות ב-+₪10 כל אחת. קופסאות מסתורין מתחילות מ-₪100. משלוח חינם בהזמנה של 3 חולצות ומעלה.',
     },
   },
   {

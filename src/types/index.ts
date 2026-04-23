@@ -1,5 +1,7 @@
 // ─── Product Types ────────────────────────────────────────────
-export type JerseyType = 'regular' | 'retro' | 'kids' | 'special' | 'drip' | 'world_cup' | 'other_products' | 'stussy';
+export type JerseyType = 'regular' | 'retro' | 'kids' | 'special' | 'drip' | 'world_cup' | 'other_products' | 'stussy' | 'second_hand';
+
+export type JerseyCondition = 'new_with_tags' | 'like_new' | 'excellent' | 'good' | 'fair';
 
 export type League =
   | 'england'
@@ -30,6 +32,8 @@ export interface Jersey {
   tags: string[];
   isLongSleeve: boolean;
   createdAt: string;
+  // Second-hand only — condition of used jersey
+  condition?: JerseyCondition;
   // Computed
   price: number;
   slug: string;

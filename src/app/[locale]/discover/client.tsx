@@ -53,6 +53,7 @@ const labels = {
     drip: 'Drip',
     otherProducts: 'Other Products',
     stussyEdition: 'Stussy Edition',
+    secondHand: 'Second Hand',
     clearAll: 'Clear All',
     showingSuggested: (n: number) => `Showing ${n} suggested jerseys`,
     showingFiltered: (n: number) => `Showing ${n} jerseys`,
@@ -84,6 +85,7 @@ const labels = {
     drip: 'דריפ',
     otherProducts: 'מוצרים נוספים',
     stussyEdition: 'מהדורת סטוסי',
+    secondHand: 'יד שנייה',
     israeliLeague: 'ליגת העל',
     clearAll: 'נקה הכל',
     showingSuggested: (n: number) => `מציג ${n} חולצות מומלצות`,
@@ -127,6 +129,7 @@ const COLLECTION_PILLS: Pill[] = [
   { id: 'long-sleeve',    labelKey: 'longSleeve' },
   { id: 'drip',           labelKey: 'drip' },
   { id: 'other-products', labelKey: 'otherProducts' },
+  { id: 'second-hand',    labelKey: 'secondHand' },
 ];
 
 const SORT_OPTIONS = [
@@ -186,6 +189,7 @@ function collectionMatchesJersey(colId: string, j: Jersey): boolean {
     case 'long-sleeve':    return j.isLongSleeve || j.tags.some((t) => t.includes('ארוך') || t === 'long_sleeve');
     case 'drip':           return j.type === 'drip';
     case 'other-products': return j.type === 'other_products';
+    case 'second-hand':    return j.type === 'second_hand';
     default:               return false;
   }
 }

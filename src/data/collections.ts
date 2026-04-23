@@ -85,7 +85,7 @@ export const COLLECTIONS: CollectionData[] = [
       fact2Label: 'Host countries',
       fact2Value: '3',
       fact3Label: 'Starting from',
-      fact3Value: '₪99',
+      fact3Value: '₪100',
     },
     he: {
       name: 'מונדיאל 2026',
@@ -99,7 +99,7 @@ export const COLLECTIONS: CollectionData[] = [
       fact2Label: 'מדינות מארחות',
       fact2Value: '3',
       fact3Label: 'החל מ',
-      fact3Value: '₪99',
+      fact3Value: '₪100',
     },
   },
   {

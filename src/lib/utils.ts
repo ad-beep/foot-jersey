@@ -1,7 +1,9 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { Jersey, JerseyType, SheetRow, Size } from '@/types';
+import type { Jersey, JerseyCondition, JerseyType, SheetRow, Size } from '@/types';
 import { PRICES, RETRO_SEASON_THRESHOLD } from '@/lib/constants';
+
+const VALID_CONDITIONS: JerseyCondition[] = ['new_with_tags', 'like_new', 'excellent', 'good', 'fair'];
 
 // ─── Tailwind Merge ──────────────────────────────────────────
 export function cn(...inputs: ClassValue[]) {
@@ -52,15 +54,19 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     ? row.tags.split('|').filter(Boolean)
     : [];
 
-  // Extract structured tags (images:..., en:..., etc.) and plain tags
+  // Extract structured tags (images:..., en:..., condition:..., etc.) and plain tags
   const tags: string[] = [];
   let additionalImages: string[] = [];
   let englishName = '';
+  let condition: JerseyCondition | undefined;
   for (const t of rawTags) {
     if (t.startsWith('images:')) {
       additionalImages = t.slice(7).split(',').filter(Boolean);
     } else if (t.startsWith('en:')) {
       englishName = t.slice(3);
+    } else if (t.startsWith('condition:')) {
+      const c = t.slice(10) as JerseyCondition;
+      if (VALID_CONDITIONS.includes(c)) condition = c;
     } else {
       tags.push(t);
     }
@@ -81,7 +87,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     type = 'world_cup';
   } else if (rawType === 'regular' && tags.some((t) => t.toLowerCase() === 'stussy')) {
     type = 'stussy';
-  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products', 'stussy'].includes(rawType)) {
+  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products', 'stussy', 'second_hand'].includes(rawType)) {
     type = rawType as JerseyType;
   } else {
     type = 'regular';
@@ -117,6 +123,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     tags,
     isLongSleeve,
     createdAt: row.date_added?.trim() || row.created_at?.trim() || new Date().toISOString(),
+    condition,
     price,
     slug: generateSlug(row.team_name?.trim() || '', season),
   };

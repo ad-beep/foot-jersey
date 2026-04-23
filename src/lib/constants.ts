@@ -10,6 +10,7 @@ export const PRICES = {
   drip: 110,
   world_cup: 100,
   other_products: 150,
+  second_hand: 0, // manually priced per-jersey; 0 means "use stored price"
   customization: {
     nameAndNumber: 10,
     patch: 10,
@@ -68,17 +69,29 @@ export const SPECIAL_SECTIONS: {
   { slug: 'other-products', labelKey: 'categories.otherProducts', labelHe: 'מוצרים נוספים', labelEn: 'Other Products', icon: 'other-products', typeMatch: 'other_products', filterMode: 'type', description: { en: 'Scarves, jackets, training wear', he: 'צעיפים, ז׳קטים, ביגוד אימון' } },
   { slug: 'mystery-box', labelKey: 'categories.mysteryBox', labelHe: 'קופסת הפתעה', labelEn: 'Mystery Box', icon: 'mystery-box', typeMatch: 'mystery-box', filterMode: 'type', description: { en: 'Surprise jersey boxes — pick your style, we pick the shirt', he: 'קופסאות הפתעה — בחר סגנון, אנחנו נבחר את החולצה' } },
   { slug: 'stussy-edition', labelKey: 'categories.stussyEdition', labelHe: 'מהדורת סטוסי', labelEn: 'Stussy Edition', icon: 'stussy-edition', typeMatch: '', tagMatch: 'stussy', filterMode: 'tag', description: { en: 'Stussy collaboration jerseys — limited streetwear drops', he: 'חולצות שיתוף פעולה עם Stussy — שחרורים מוגבלים' } },
+  { slug: 'second-hand', labelKey: 'categories.secondHand', labelHe: 'יד שנייה', labelEn: 'Second Hand', icon: 'second-hand', typeMatch: 'second_hand', filterMode: 'type', description: { en: 'Pre-loved jerseys from our community — handpicked and inspected', he: 'חולצות יד שנייה מהקהילה — נבחרו ונבדקו בקפידה' } },
 ];
 
 // ─── Mystery Box Options ─────────────────────────────────────
 export const MYSTERY_BOX_OPTIONS = [
-  { slug: 'retro-mystery', labelEn: 'Retro Mystery Box', labelHe: 'קופסת הפתעה רטרו', price: 109, description: { en: 'A surprise retro jersey from the golden eras', he: 'חולצת רטרו הפתעה מתקופות הזהב' } },
-  { slug: '2526-mystery', labelEn: '25/26 Mystery Box', labelHe: 'קופסת הפתעה 25/26', price: 99, description: { en: 'A surprise jersey from the current 25/26 season', he: 'חולצת הפתעה מעונת 25/26' } },
-  { slug: 'world-cup-mystery', labelEn: 'World Cup Mystery Box', labelHe: 'קופסת הפתעה מונדיאל', price: 99, description: { en: 'A surprise World Cup national team jersey', he: 'חולצת נבחרת הפתעה ממונדיאל' } },
-  { slug: 'mixed-mystery', labelEn: 'Mixed Mystery Box', labelHe: 'קופסת הפתעה מיקס', price: 109, description: { en: 'Any jersey from our entire collection — total surprise', he: 'חולצה כלשהי מכל הקולקציה — הפתעה מוחלטת' } },
-  { slug: 'player-version-mystery', labelEn: 'Player Version Mystery Box', labelHe: 'קופסת הפתעה גרסת שחקן', price: 109, description: { en: 'A surprise player version jersey — premium quality', he: 'חולצת גרסת שחקן הפתעה — איכות פרימיום' } },
-  { slug: 'special-edition-mystery', labelEn: 'Special Edition Mystery Box', labelHe: 'קופסת הפתעה מהדורה מיוחדת', price: 99, description: { en: 'A surprise special edition jersey — limited and unique', he: 'חולצת מהדורה מיוחדת הפתעה — מוגבלת וייחודית' } },
+  { slug: 'retro-mystery', labelEn: 'Retro Mystery Box', labelHe: 'קופסת הפתעה רטרו', price: 110, description: { en: 'A surprise retro jersey from the golden eras', he: 'חולצת רטרו הפתעה מתקופות הזהב' } },
+  { slug: '2526-mystery', labelEn: '25/26 Mystery Box', labelHe: 'קופסת הפתעה 25/26', price: 100, description: { en: 'A surprise jersey from the current 25/26 season', he: 'חולצת הפתעה מעונת 25/26' } },
+  { slug: 'world-cup-mystery', labelEn: 'World Cup Mystery Box', labelHe: 'קופסת הפתעה מונדיאל', price: 100, description: { en: 'A surprise World Cup national team jersey', he: 'חולצת נבחרת הפתעה ממונדיאל' } },
+  { slug: 'mixed-mystery', labelEn: 'Mixed Mystery Box', labelHe: 'קופסת הפתעה מיקס', price: 110, description: { en: 'Any jersey from our entire collection — total surprise', he: 'חולצה כלשהי מכל הקולקציה — הפתעה מוחלטת' } },
+  { slug: 'player-version-mystery', labelEn: 'Player Version Mystery Box', labelHe: 'קופסת הפתעה גרסת שחקן', price: 110, description: { en: 'A surprise player version jersey — premium quality', he: 'חולצת גרסת שחקן הפתעה — איכות פרימיום' } },
+  { slug: 'special-edition-mystery', labelEn: 'Special Edition Mystery Box', labelHe: 'קופסת הפתעה מהדורה מיוחדת', price: 100, description: { en: 'A surprise special edition jersey — limited and unique', he: 'חולצת מהדורה מיוחדת הפתעה — מוגבלת וייחודית' } },
 ] as const;
+
+// ─── Second Hand Condition Options ───────────────────────────
+export const SECOND_HAND_CONDITIONS = [
+  { value: 'new_with_tags', labelEn: 'New with tags',  labelHe: 'חדש עם תגיות',     descEn: 'Brand new, never worn, original tags attached' },
+  { value: 'like_new',      labelEn: 'Like new',       labelHe: 'כמו חדש',           descEn: 'Worn once or twice, no visible signs of wear' },
+  { value: 'excellent',     labelEn: 'Excellent',      labelHe: 'מצוין',             descEn: 'Minor signs of use, washed a few times' },
+  { value: 'good',          labelEn: 'Good',           labelHe: 'טוב',               descEn: 'Visible wear but no damage, all prints intact' },
+  { value: 'fair',          labelEn: 'Fair',           labelHe: 'סביר',              descEn: 'Significant wear — still wearable, priced accordingly' },
+] as const;
+
+export type SecondHandConditionValue = (typeof SECOND_HAND_CONDITIONS)[number]['value'];
 
 // ─── Locales ─────────────────────────────────────────────────
 export const LOCALES: Record<string, LocaleConfig> = {
