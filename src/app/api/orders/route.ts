@@ -79,6 +79,14 @@ interface BitSenderDetails {
   amountPaid: string;
 }
 
+interface ShipmentLegInput {
+  source: 'local' | 'international';
+  itemJerseyIds: string[]; // ids of items that belong to this leg (order preserved)
+  itemCount: number;
+  subtotal: number;
+  shipping: number;
+}
+
 interface OrderData {
   items: CartItem[];
   shippingInfo: ShippingInfo;
@@ -93,6 +101,7 @@ interface OrderData {
   bitSenderDetails?: BitSenderDetails;
   discountCode?: string;
   discountAmount?: number;
+  shipmentLegs?: ShipmentLegInput[]; // present only when cart mixes local + international
 }
 
 // ─── Google Sheets auth (reuse same service account) ────
@@ -310,7 +319,7 @@ export async function POST(request: NextRequest) {
     try {
       const { fetchJerseys } = await import('@/lib/google-sheets');
       const { calculateCustomizationPrice } = await import('@/lib/utils');
-      const { PRICES, SHIPPING_POLICY, MYSTERY_BOX_OPTIONS } = await import('@/lib/constants');
+      const { MYSTERY_BOX_OPTIONS } = await import('@/lib/constants');
 
       const catalogJerseys = await fetchJerseys();
 
@@ -354,16 +363,43 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Recompute order total
-      const computedSubtotal = body.items.reduce(
-        (sum, item) => sum + item.totalPrice * item.quantity,
-        0
-      );
-      const totalItemCount = body.items.reduce((sum, item) => sum + item.quantity, 0);
-      const freeShipping = totalItemCount >= SHIPPING_POLICY.freeShippingMinItems;
-      const computedShipping = freeShipping ? 0 : PRICES.shippingFlat;
+      // Recompute order total — per-leg when the cart mixes local + international,
+      // otherwise single-leg (existing behaviour).
+      const { splitCart } = await import('@/lib/shipping-split');
+      // Rehydrate each cart item with its canonical jersey record so the splitter
+      // can see jersey.type (it uses that to decide local vs. international).
+      const hydratedItems = body.items.map((item) => {
+        if (MYSTERY_BOX_OPTIONS.find((m) => m.slug === item.jerseyId)) return item;
+        const j = catalogJerseys.find((c) => c.id === item.jerseyId);
+        return j ? { ...item, jersey: j } : item;
+      });
+      const serverSplit = splitCart(hydratedItems);
+      const computedSubtotal = serverSplit.subtotal;
+      const computedShipping = serverSplit.shipping;
       const computedTotal =
         computedSubtotal + computedShipping - (body.discountAmount || 0);
+
+      // If the client declared legs, verify each leg's subtotal + shipping + count
+      // match what the server computed. Never trust client-declared shipping totals.
+      if (body.shipmentLegs && body.shipmentLegs.length > 0) {
+        if (!serverSplit.hasSplit || body.shipmentLegs.length !== serverSplit.legs.length) {
+          throw new Error('Shipment split mismatch. Please refresh and try again.');
+        }
+        for (const clientLeg of body.shipmentLegs) {
+          const serverLeg = serverSplit.legs.find((l) => l.source === clientLeg.source);
+          if (!serverLeg) throw new Error(`Unknown shipment source: ${clientLeg.source}`);
+          if (
+            Math.abs(serverLeg.subtotal - clientLeg.subtotal) > 1 ||
+            serverLeg.shipping !== clientLeg.shipping ||
+            serverLeg.itemCount !== clientLeg.itemCount
+          ) {
+            console.warn(
+              `Leg mismatch (${clientLeg.source}): client=${JSON.stringify(clientLeg)} server=${JSON.stringify({ subtotal: serverLeg.subtotal, shipping: serverLeg.shipping, itemCount: serverLeg.itemCount })}`
+            );
+            throw new Error('Shipment totals mismatch. Please refresh and try again.');
+          }
+        }
+      }
 
       if (Math.abs(computedTotal - body.total) > 1) {
         console.warn(
@@ -464,49 +500,153 @@ export async function POST(request: NextRequest) {
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
     catchName = customerName;
 
-    // 1. Write to Firestore with atomic order number
+    // 1. Write to Firestore with atomic order number.
+    // ── Mixed shipment: write TWO linked orders sharing an orderGroupId ─────
+    // Each leg has its own items / subtotal / shipping / status / tracking so
+    // admin can fulfil them independently. Payment is shared (one capture).
+    // Discount is applied to the first (primary) leg to keep the sum exact;
+    // the second leg carries a reference to the same discountCode but amount=0.
     const counterRef = doc(db, 'meta', 'orderCounter');
     const ordersCollection = collection(db, 'orders');
-    const newOrderRef = doc(ordersCollection);
+
+    // Rehydrate items once (same logic as price-check) so saved order rows
+    // contain canonical teamName/imageUrl even if the client-side jersey was stale.
+    const { splitCart: splitCartForSave, sourceForItem: sourceForItemForSave } = await import('@/lib/shipping-split');
+    const catalogJerseysForSave = body.shipmentLegs && body.shipmentLegs.length > 0
+      ? await (async () => {
+          const { fetchJerseys } = await import('@/lib/google-sheets');
+          return fetchJerseys();
+        })()
+      : null;
+    const hydratedItemsForSave = catalogJerseysForSave
+      ? body.items.map((item) => {
+          const j = catalogJerseysForSave.find((c) => c.id === item.jerseyId);
+          return j ? { ...item, jersey: j } : item;
+        })
+      : body.items;
+
+    const isSplit = !!(body.shipmentLegs && body.shipmentLegs.length > 1);
+    const orderGroupId = isSplit ? `grp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}` : null;
+    const primaryOrderRef = doc(ordersCollection);
+    const secondaryOrderRef = isSplit ? doc(ordersCollection) : null;
+
+    // Compute per-leg splits so each order doc carries only its own items.
+    const legSplit = isSplit ? splitCartForSave(hydratedItemsForSave) : null;
+
+    function serializeItems(src: typeof body.items) {
+      return src.map((item) => ({
+        jerseyId: item.jerseyId,
+        teamName: item.jersey?.teamName || '',
+        imageUrl: item.jersey?.imageUrl || '',
+        size: item.size,
+        quantity: item.quantity,
+        customization: item.customization,
+        totalPrice: item.totalPrice,
+      }));
+    }
+
+    const commonShippingInfo = {
+      name: customerName,
+      phone: body.shippingInfo.phone,
+      email: body.shippingInfo.email,
+      country: body.shippingInfo.country,
+      city: body.shippingInfo.city,
+      street: body.shippingInfo.street,
+      zip: body.shippingInfo.zip,
+      notes: body.shippingInfo.notes || '',
+    };
 
     await withRetry(async () => {
       await runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
-        const orderNumber = counterSnap.exists()
-          ? (counterSnap.data().count as number) + 1
-          : 1;
-        transaction.set(counterRef, { count: orderNumber });
-        transaction.set(newOrderRef, {
-          orderNumber,
-          items: body.items.map((item) => ({
-            jerseyId: item.jerseyId,
-            teamName: item.jersey?.teamName || '',
-            imageUrl: item.jersey?.imageUrl || '',
-            size: item.size,
-            quantity: item.quantity,
-            customization: item.customization,
-            totalPrice: item.totalPrice,
-          })),
-          shippingInfo: {
-            name: customerName,
-            phone: body.shippingInfo.phone,
-            email: body.shippingInfo.email,
-            country: body.shippingInfo.country,
-            city: body.shippingInfo.city,
-            street: body.shippingInfo.street,
-            zip: body.shippingInfo.zip,
-            notes: body.shippingInfo.notes || '',
-          },
+        const baseCount = counterSnap.exists() ? (counterSnap.data().count as number) : 0;
+        const primaryNumber = baseCount + 1;
+        const secondaryNumber = isSplit ? baseCount + 2 : null;
+        transaction.set(counterRef, { count: secondaryNumber ?? primaryNumber });
+
+        if (!isSplit) {
+          transaction.set(primaryOrderRef, {
+            orderNumber: primaryNumber,
+            items: serializeItems(body.items),
+            shippingInfo: commonShippingInfo,
+            paymentMethod: body.paymentMethod,
+            paymentStatus: body.paymentMethod === 'paypal' ? 'completed' : body.paymentStatus,
+            paypalOrderId: body.paypalOrderId || null,
+            bitTransactionId: body.bitTransactionId || null,
+            bitSenderDetails: body.bitSenderDetails || null,
+            discountCode: body.discountCode || null,
+            discountAmount: body.discountAmount || 0,
+            subtotal: body.subtotal,
+            shipping: body.shipping ?? 0,
+            total: body.total,
+            currency: body.currency,
+            createdAt: serverTimestamp(),
+            status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+          });
+          return;
+        }
+
+        // isSplit = true from here ↓
+        const legs = legSplit!.legs;
+        // Order legs so 'local' (second-hand, Israel) is always the primary order.
+        const localLeg = legs.find((l) => l.source === 'local')!;
+        const intlLeg = legs.find((l) => l.source === 'international')!;
+        const primaryLegItems = localLeg.items;
+        const secondaryLegItems = intlLeg.items;
+
+        // Apply discount proportionally — simplest: apply entirely to primary leg
+        // (our discount codes are order-level, not per-item, and this keeps the
+        // sum exact). Capped so primary total never goes negative.
+        const fullDiscount = body.discountAmount || 0;
+        const primarySubtotal = localLeg.subtotal;
+        const primaryShipping = localLeg.shipping;
+        const appliedToPrimary = Math.min(fullDiscount, primarySubtotal + primaryShipping);
+        const remainingDiscount = fullDiscount - appliedToPrimary;
+
+        const primaryTotal = primarySubtotal + primaryShipping - appliedToPrimary;
+        const secondaryTotal = intlLeg.subtotal + intlLeg.shipping - remainingDiscount;
+
+        transaction.set(primaryOrderRef, {
+          orderNumber: primaryNumber,
+          orderGroupId,
+          shipmentSource: 'local',
+          siblingOrderId: secondaryOrderRef!.id,
+          siblingOrderNumber: secondaryNumber,
+          items: serializeItems(primaryLegItems),
+          shippingInfo: commonShippingInfo,
           paymentMethod: body.paymentMethod,
           paymentStatus: body.paymentMethod === 'paypal' ? 'completed' : body.paymentStatus,
           paypalOrderId: body.paypalOrderId || null,
           bitTransactionId: body.bitTransactionId || null,
           bitSenderDetails: body.bitSenderDetails || null,
           discountCode: body.discountCode || null,
-          discountAmount: body.discountAmount || 0,
-          subtotal: body.subtotal,
-          shipping: body.shipping ?? 0,
-          total: body.total,
+          discountAmount: appliedToPrimary,
+          subtotal: primarySubtotal,
+          shipping: primaryShipping,
+          total: primaryTotal,
+          currency: body.currency,
+          createdAt: serverTimestamp(),
+          status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+        });
+
+        transaction.set(secondaryOrderRef!, {
+          orderNumber: secondaryNumber,
+          orderGroupId,
+          shipmentSource: 'international',
+          siblingOrderId: primaryOrderRef.id,
+          siblingOrderNumber: primaryNumber,
+          items: serializeItems(secondaryLegItems),
+          shippingInfo: commonShippingInfo,
+          paymentMethod: body.paymentMethod,
+          paymentStatus: body.paymentMethod === 'paypal' ? 'completed' : body.paymentStatus,
+          paypalOrderId: body.paypalOrderId || null,
+          bitTransactionId: body.bitTransactionId || null,
+          bitSenderDetails: body.bitSenderDetails || null,
+          discountCode: body.discountCode || null,
+          discountAmount: remainingDiscount,
+          subtotal: intlLeg.subtotal,
+          shipping: intlLeg.shipping,
+          total: secondaryTotal,
           currency: body.currency,
           createdAt: serverTimestamp(),
           status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
@@ -514,19 +654,28 @@ export async function POST(request: NextRequest) {
       });
     }, 3);
 
-    const orderDoc = newOrderRef;
+    const orderDoc = primaryOrderRef;
 
     // Mark the captured payment record as fulfilled (best-effort)
     if (body.paypalOrderId) {
       try {
         const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
-        await updateDoc(capturedRef, { orderCreated: true, orderId: newOrderRef.id });
+        await updateDoc(capturedRef, {
+          orderCreated: true,
+          orderId: primaryOrderRef.id,
+          ...(isSplit && secondaryOrderRef ? { orderIds: [primaryOrderRef.id, secondaryOrderRef.id] } : {}),
+        });
       } catch {
         // Non-blocking
       }
     }
 
-    // 2. Append to Google Sheets Orders Log (fire-and-forget)
+    // Suppress unused-var lint when not using the helper outside the txn
+    void sourceForItemForSave;
+
+    // 2. Append to Google Sheets Orders Log (fire-and-forget).
+    // On split orders we still write a single row-group with the primary order id
+    // so the sheet stays a flat log; the split metadata is preserved in Firestore.
     appendOrderToSheet(orderDoc.id, body);
 
     // 3. Increment discount code usage (fire-and-forget)
@@ -589,6 +738,9 @@ export async function POST(request: NextRequest) {
       {
         orderId: orderDoc.id,
         message: 'Order created successfully',
+        ...(isSplit && secondaryOrderRef
+          ? { orderGroupId, siblingOrderId: secondaryOrderRef.id, orderIds: [primaryOrderRef.id, secondaryOrderRef.id] }
+          : {}),
       },
       { status: 201 }
     );

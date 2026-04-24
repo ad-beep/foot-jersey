@@ -7,7 +7,7 @@ import { doc, onSnapshot, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { writeAuditLog } from '@/lib/audit-log';
-import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2, PackageCheck, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2, PackageCheck, CheckCircle, XCircle, Link as LinkIcon, Home, Plane } from 'lucide-react';
 import { calcOrderCost, type ProductInfo } from '@/lib/cost-utils';
 
 interface OrderItem {
@@ -50,6 +50,10 @@ interface Order {
   currency: string;
   status: string;
   createdAt: Timestamp | null;
+  orderGroupId?: string;
+  siblingOrderId?: string;
+  siblingOrderNumber?: number;
+  shipmentSource?: 'local' | 'international';
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -221,7 +225,44 @@ export default function OrderDetailPage() {
         <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md border ${statusInfo.color}`}>
           {statusInfo.label}
         </span>
+        {order.shipmentSource === 'local' && (
+          <span className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+            <Home className="w-3 h-3" />
+            Ships from Israel
+          </span>
+        )}
+        {order.shipmentSource === 'international' && (
+          <span className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">
+            <Plane className="w-3 h-3" />
+            Ships from supplier
+          </span>
+        )}
       </div>
+
+      {/* Split-shipment sibling link */}
+      {order.orderGroupId && order.siblingOrderId && (
+        <div className="mb-6 flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25">
+          <LinkIcon className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="flex-1 text-sm">
+            <span className="font-semibold text-amber-300">Split shipment — </span>
+            <span className="text-gray-300">
+              this is one of two linked orders sharing a single payment.
+              {order.shipmentSource === 'local'
+                ? ' The new jerseys ship separately from the international supplier.'
+                : order.shipmentSource === 'international'
+                ? ' The pre-loved jerseys ship separately from the Israel warehouse.'
+                : ''}
+            </span>
+          </div>
+          <button
+            onClick={() => router.push(`/admin/orders/${order.siblingOrderId}`)}
+            className="flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-3 py-1.5 rounded-md hover:bg-amber-500/25 transition-colors whitespace-nowrap"
+          >
+            View Order #{order.siblingOrderNumber ?? '?'}
+            <ArrowLeft className="w-3 h-3 rotate-180" />
+          </button>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 mb-7">

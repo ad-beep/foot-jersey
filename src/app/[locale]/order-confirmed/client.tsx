@@ -9,7 +9,7 @@ import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
 import { SITE_NAME } from '@/lib/constants';
-import { Loader2, CheckCircle2, Clock, ShoppingBag } from 'lucide-react';
+import { Loader2, CheckCircle2, Clock, ShoppingBag, Truck } from 'lucide-react';
 import { Recommendations } from '@/components/product/Recommendations';
 import type { Jersey } from '@/types';
 
@@ -53,6 +53,10 @@ interface Order {
   currency: string;
   status: string;
   createdAt: Timestamp | null;
+  orderGroupId?: string;
+  siblingOrderId?: string;
+  siblingOrderNumber?: number;
+  shipmentSource?: 'local' | 'international';
 }
 
 export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[] }) {
@@ -236,6 +240,39 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
               <strong style={{ color: isPending ? amber : gold }}>{order.shippingInfo.email}</strong>
             </span>
           </div>
+
+          {/* Split-shipment notice */}
+          {order.orderGroupId && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, backgroundColor: 'rgba(200,162,75,0.08)', border: '1px solid rgba(200,162,75,0.22)', borderRadius: 12, padding: '14px 16px', marginBottom: 24 }}>
+              <Truck style={{ width: 18, height: 18, color: gold, flexShrink: 0, marginTop: 2 }} />
+              <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.6 }}>
+                <div style={{ color: '#fff', fontWeight: 700, marginBottom: 4 }}>
+                  {isHe
+                    ? `ההזמנה שלך נשלחת בשני חלקים${order.siblingOrderNumber ? ` · מקושרת להזמנה #${order.siblingOrderNumber}` : ''}`
+                    : `Your order ships in two parts${order.siblingOrderNumber ? ` · linked to Order #${order.siblingOrderNumber}` : ''}`}
+                </div>
+                {isHe ? (
+                  <>
+                    {order.shipmentSource === 'local'
+                      ? <>זהו קבלה של חלק יד שנייה — נשלח מהמחסן שלנו בישראל תוך <strong style={{ color: '#fff' }}>2–3 ימי עסקים</strong>. חולצות חדשות נשלחות מהספק תוך 14–21 ימי עסקים.</>
+                      : <>זהו קבלה של חולצות חדשות — נשלח מהספק הבינלאומי תוך <strong style={{ color: '#fff' }}>14–21 ימי עסקים</strong>. פריטי יד שנייה נשלחים מישראל תוך 2–3 ימי עסקים.</>
+                    }
+                    <br />
+                    <span style={{ color: '#888' }}>שילמת פעם אחת — שני החלקים כלולים. תקבל עדכון מעקב נפרד לכל משלוח.</span>
+                  </>
+                ) : (
+                  <>
+                    {order.shipmentSource === 'local'
+                      ? <>This receipt covers the pre-loved items — shipping from our Israel warehouse in <strong style={{ color: '#fff' }}>2–3 business days</strong>. New jerseys ship from our supplier in 14–21 business days.</>
+                      : <>This receipt covers the new jerseys — shipping from our international supplier in <strong style={{ color: '#fff' }}>14–21 business days</strong>. Pre-loved items ship from Israel in 2–3 business days.</>
+                    }
+                    <br />
+                    <span style={{ color: '#888' }}>You paid once — both shipments are included. You&apos;ll get a separate tracking update for each.</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Items */}
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#444', marginBottom: 12 }}>

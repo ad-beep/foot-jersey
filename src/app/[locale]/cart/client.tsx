@@ -17,6 +17,7 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Reveal } from '@/components/ui/reveal';
 import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
+import { splitCart, SHIPMENT_LEG_LABELS, SPLIT_SHIPMENT_NOTICE, type SplitResult } from '@/lib/shipping-split';
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
 import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment/PaymentMethodSelector';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
@@ -227,17 +228,17 @@ interface FieldError {
   zip?: string;
 }
 
-function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
+function CheckoutSection({ isHe, isRtl, split }: {
   isHe: boolean;
   isRtl: boolean;
-  subtotal: number;
-  itemCount: number;
+  split: SplitResult;
 }) {
   const clearCart = useCartStore((s) => s.clearCart);
   const items = useCartStore((s) => s.items);
   const { toast } = useToast();
   const router = useRouter();
   const { locale } = useLocale();
+  const { subtotal, shipping: shippingCost, itemCount, hasSplit, legs } = split;
 
   const [form, setForm] = useState<CheckoutForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldError>({});
@@ -267,8 +268,13 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
     return () => clearTimeout(t);
   }, [items, form.email, locale]);
 
-  const freeShipping = itemCount >= SHIPPING_POLICY.freeShippingMinItems;
-  const shippingCost = freeShipping ? 0 : PRICES.shippingFlat;
+  // Shipping already computed per-leg by splitCart (sum of per-leg flat fees).
+  // freeShipping is used only by the free-shipping progress bar — we keep the
+  // single-bag threshold view for the combined cart since both legs get the
+  // same free-shipping threshold applied independently.
+  const freeShipping = hasSplit
+    ? legs.every((l) => l.freeShipping)
+    : itemCount >= SHIPPING_POLICY.freeShippingMinItems;
   const discountAmount = discountApplied?.amount ?? 0;
   // Guard against negative totals (e.g. large discount on free-shipping order)
   // and round to avoid floating-point display artifacts (e.g. 119.99999)
@@ -365,6 +371,19 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
             discountAmount,
             total: finalTotal,
             currency: CURRENCY_CODE,
+            // Per-shipment-source legs (second-hand from Israel vs. supplier from abroad).
+            // Only sent when the order ships in two parts — the server rebuilds
+            // everything from items when this is absent, so legacy single-source
+            // orders are unaffected.
+            shipmentLegs: hasSplit
+              ? legs.map((leg) => ({
+                  source: leg.source,
+                  itemJerseyIds: leg.items.map((i) => i.jerseyId),
+                  itemCount: leg.itemCount,
+                  subtotal: leg.subtotal,
+                  shipping: leg.shipping,
+                }))
+              : undefined,
           }),
         });
 
@@ -378,7 +397,7 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
         throw error;
       }
     },
-    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling]
+    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs]
   );
 
   const handlePaymentSuccess = useCallback(
@@ -718,12 +737,29 @@ function CheckoutSection({ isHe, isRtl, subtotal, itemCount }: {
               <span style={{ color: 'var(--gold)' }}>-{CURRENCY}{discountAmount}</span>
             </div>
           )}
-          <div className="flex justify-between text-sm">
-            <span style={{ color: 'var(--text-secondary)' }}>{isHe ? 'משלוח' : 'Shipping'}</span>
-            <span style={{ color: freeShipping ? 'var(--gold)' : 'var(--text-secondary)' }}>
-              {freeShipping ? (isHe ? 'חינם!' : 'Free!') : `${CURRENCY}${PRICES.shippingFlat}`}
-            </span>
-          </div>
+          {hasSplit ? (
+            legs.map((leg) => {
+              const L = SHIPMENT_LEG_LABELS[leg.source][isHe ? 'he' : 'en'];
+              const label = isHe
+                ? (leg.source === 'local' ? 'משלוח · יד שנייה' : 'משלוח · חולצות חדשות')
+                : (leg.source === 'local' ? 'Shipping · Second Hand' : 'Shipping · New Jerseys');
+              return (
+                <div key={leg.source} className="flex justify-between text-sm" title={L.sub}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <span style={{ color: leg.freeShipping ? 'var(--gold)' : 'var(--text-secondary)' }}>
+                    {leg.freeShipping ? (isHe ? 'חינם!' : 'Free!') : `${CURRENCY}${leg.shipping}`}
+                  </span>
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex justify-between text-sm">
+              <span style={{ color: 'var(--text-secondary)' }}>{isHe ? 'משלוח' : 'Shipping'}</span>
+              <span style={{ color: freeShipping ? 'var(--gold)' : 'var(--text-secondary)' }}>
+                {freeShipping ? (isHe ? 'חינם!' : 'Free!') : `${CURRENCY}${PRICES.shippingFlat}`}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between pt-2" style={{ borderTop: '1px solid var(--border)' }}>
             <span className="font-bold text-white">{isHe ? 'סה"כ' : 'Total'}</span>
             <span className="text-lg font-bold" style={{ color: 'var(--cta)' }}>
@@ -856,14 +892,14 @@ export function CartPageClient() {
 
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
-  const getItemCount = useCartStore((s) => s.getItemCount);
-  const getSubtotal = useCartStore((s) => s.getSubtotal);
   const { toast } = useToast();
 
-  const itemCount = hydrated ? getItemCount() : 0;
-  const subtotal = hydrated ? getSubtotal() : 0;
   const hasItems = hydrated && items.length > 0;
-  const freeShipping = itemCount >= SHIPPING_POLICY.freeShippingMinItems;
+  const split = useMemo(() => splitCart(hydrated ? items : []), [items, hydrated]);
+  const { itemCount, hasSplit, legs } = split;
+  const freeShipping = hasSplit
+    ? legs.every((l) => l.freeShipping)
+    : itemCount >= SHIPPING_POLICY.freeShippingMinItems;
   const remaining = SHIPPING_POLICY.freeShippingMinItems - itemCount;
 
   const BackArrow = isRtl ? ArrowRight : ArrowLeft;
@@ -957,17 +993,70 @@ export function CartPageClient() {
               </Reveal>
             )}
 
+            {/* Split shipment notice — explains why two shipping lines appear */}
+            {hasSplit && (
+              <Reveal>
+                <div
+                  className="rounded-xl p-4 mb-6 flex items-start gap-3"
+                  style={{ backgroundColor: 'rgba(200,162,75,0.06)', border: '1px solid rgba(200,162,75,0.22)' }}
+                  role="status"
+                >
+                  <Truck className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} />
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
+                      {isHe ? SPLIT_SHIPMENT_NOTICE.he.title : SPLIT_SHIPMENT_NOTICE.en.title}
+                    </p>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                      {isHe ? SPLIT_SHIPMENT_NOTICE.he.body : SPLIT_SHIPMENT_NOTICE.en.body}
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            )}
+
             {/* Two-column layout */}
             <div className="lg:flex lg:gap-8">
-              {/* Left: Cart items */}
+              {/* Left: Cart items — grouped by shipment leg when mixed */}
               <div className="lg:w-[60%]">
-                <div className="space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {items.map((item) => (
-                      <CartItemCard key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}-${item.customization?.hasPatch ? '1' : '0'}-${item.customization?.hasPants ? '1' : '0'}-${item.customization?.isPlayerVersion ? '1' : '0'}`} item={item} />
-                    ))}
-                  </AnimatePresence>
-                </div>
+                {hasSplit ? (
+                  <div className="space-y-6">
+                    {legs.map((leg) => {
+                      const L = SHIPMENT_LEG_LABELS[leg.source][isHe ? 'he' : 'en'];
+                      return (
+                        <section key={leg.source} aria-labelledby={`leg-${leg.source}`}>
+                          <header className="mb-2 flex items-baseline justify-between gap-3">
+                            <h2
+                              id={`leg-${leg.source}`}
+                              className="text-sm font-semibold uppercase tracking-wider"
+                              style={{ color: 'var(--gold)', letterSpacing: '0.08em' }}
+                            >
+                              {L.title}
+                            </h2>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {leg.itemCount} {isHe ? 'פריטים' : `item${leg.itemCount === 1 ? '' : 's'}`}
+                            </span>
+                          </header>
+                          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{L.sub}</p>
+                          <div className="space-y-3">
+                            <AnimatePresence mode="popLayout">
+                              {leg.items.map((item) => (
+                                <CartItemCard key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}-${item.customization?.hasPatch ? '1' : '0'}-${item.customization?.hasPants ? '1' : '0'}-${item.customization?.isPlayerVersion ? '1' : '0'}`} item={item} />
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <AnimatePresence mode="popLayout">
+                      {items.map((item) => (
+                        <CartItemCard key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}-${item.customization?.hasPatch ? '1' : '0'}-${item.customization?.hasPants ? '1' : '0'}-${item.customization?.isPlayerVersion ? '1' : '0'}`} item={item} />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 {/* Continue shopping link */}
                 <Link
@@ -991,8 +1080,7 @@ export function CartPageClient() {
                   <CheckoutSection
                     isHe={isHe}
                     isRtl={isRtl}
-                    subtotal={subtotal}
-                    itemCount={itemCount}
+                    split={split}
                   />
                 </div>
               </div>

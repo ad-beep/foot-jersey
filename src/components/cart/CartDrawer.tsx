@@ -10,6 +10,8 @@ import { useHydration } from '@/hooks/useHydration';
 import { useLocale } from '@/hooks/useLocale';
 import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY } from '@/lib/constants';
+import { splitCart, SHIPMENT_LEG_LABELS } from '@/lib/shipping-split';
+import { useMemo } from 'react';
 import type { Dictionary } from '@/i18n/dictionaries';
 import type { CartItem } from '@/types';
 
@@ -160,6 +162,7 @@ export function CartDrawer({ dict: _dict }: CartDrawerProps) {
   const itemCount = hydrated ? getItemCount() : 0;
   const subtotal = hydrated ? getSubtotal() : 0;
   const hasItems = hydrated && items.length > 0;
+  const split = useMemo(() => splitCart(hydrated ? items : []), [items, hydrated]);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -245,13 +248,50 @@ export function CartDrawer({ dict: _dict }: CartDrawerProps) {
                 {/* Free shipping bar */}
                 <FreeShippingIndicator itemCount={itemCount} isHe={isHe} />
 
-                {/* Cart items */}
+                {/* Split shipment notice — shown only when cart mixes local + international */}
+                {split.hasSplit && (
+                  <div
+                    className="px-6 py-2.5 text-xs leading-snug flex items-start gap-2"
+                    style={{ backgroundColor: 'rgba(200,162,75,0.06)', borderBottom: '1px solid var(--border)', color: 'var(--gold)' }}
+                  >
+                    <Truck className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>
+                      {isHe
+                        ? 'ההזמנה תגיע בשני משלוחים — יד שנייה מישראל, חדשות מהספק. תשלום אחד.'
+                        : 'Ships in two parts — Second Hand from Israel, new from supplier. One payment.'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Cart items — grouped by shipment leg when mixed */}
                 <div className="flex-1 overflow-y-auto px-6">
-                  <AnimatePresence mode="popLayout">
-                    {items.map((item) => (
-                      <CartItemRow key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}`} item={item} />
-                    ))}
-                  </AnimatePresence>
+                  {split.hasSplit ? (
+                    split.legs.map((leg) => {
+                      const L = SHIPMENT_LEG_LABELS[leg.source][isHe ? 'he' : 'en'];
+                      return (
+                        <section key={leg.source} className="py-2" aria-labelledby={`drawer-leg-${leg.source}`}>
+                          <h3
+                            id={`drawer-leg-${leg.source}`}
+                            className="text-[11px] uppercase font-semibold pt-3 pb-1"
+                            style={{ color: 'var(--gold)', letterSpacing: '0.08em' }}
+                          >
+                            {L.title}
+                          </h3>
+                          <AnimatePresence mode="popLayout">
+                            {leg.items.map((item) => (
+                              <CartItemRow key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}`} item={item} />
+                            ))}
+                          </AnimatePresence>
+                        </section>
+                      );
+                    })
+                  ) : (
+                    <AnimatePresence mode="popLayout">
+                      {items.map((item) => (
+                        <CartItemRow key={`${item.jerseyId}-${item.size}-${item.customization?.customName ?? ''}-${item.customization?.customNumber ?? ''}`} item={item} />
+                      ))}
+                    </AnimatePresence>
+                  )}
                 </div>
 
                 {/* Footer */}

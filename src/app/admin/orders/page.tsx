@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Loader2, Package, Search } from 'lucide-react';
+import { Loader2, Package, Search, Home, Plane } from 'lucide-react';
 
 interface OrderSummary {
   id: string;
@@ -15,6 +15,8 @@ interface OrderSummary {
   paymentMethod: string;
   status: string;
   createdAt: Timestamp | null;
+  orderGroupId?: string;
+  shipmentSource?: 'local' | 'international';
 }
 
 function formatOrderDate(ts: Timestamp | null): string {
@@ -194,6 +196,19 @@ export default function OrdersPage() {
                 <span className="text-sm font-bold text-white min-w-[60px] text-right">
                   ₪{order.total}
                 </span>
+                {order.orderGroupId && (
+                  <span
+                    title={order.shipmentSource === 'local' ? 'Split order — ships from Israel' : 'Split order — ships from supplier'}
+                    className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md border shrink-0 ${
+                      order.shipmentSource === 'local'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                    }`}
+                  >
+                    {order.shipmentSource === 'local' ? <Home className="w-2.5 h-2.5" /> : <Plane className="w-2.5 h-2.5" />}
+                    Split
+                  </span>
+                )}
                 {order.paymentMethod === 'bit' ? (
                   <span className="text-[11px] font-semibold px-2 py-1 rounded-md bg-orange-500/10 text-orange-400 border border-orange-500/15">
                     ⚡ BIT{isBitDeclined ? ' · Declined' : ''}
