@@ -556,12 +556,15 @@ export async function POST(request: NextRequest) {
       notes: body.shippingInfo.notes || '',
     };
 
+    let secondaryNumberOuter: number | null = null;
+
     await withRetry(async () => {
       await runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
         const baseCount = counterSnap.exists() ? (counterSnap.data().count as number) : 0;
         const primaryNumber = baseCount + 1;
         const secondaryNumber = isSplit ? baseCount + 2 : null;
+        secondaryNumberOuter = secondaryNumber;
         transaction.set(counterRef, { count: secondaryNumber ?? primaryNumber });
 
         if (!isSplit) {
@@ -713,6 +716,8 @@ export async function POST(request: NextRequest) {
           country: body.shippingInfo.country,
         },
         paymentMethod: body.paymentMethod,
+        isSplit,
+        siblingOrderNumber: secondaryNumberOuter ?? undefined,
       }).catch(async (e) => {
         console.error('Email send error:', e);
         try {
@@ -726,6 +731,8 @@ export async function POST(request: NextRequest) {
         customerName: emailCustomerName,
         orderId: orderDoc.id,
         total: body.total,
+        isSplit,
+        siblingOrderNumber: secondaryNumberOuter ?? undefined,
       }).catch(async (e) => {
         console.error('Email send error:', e);
         try {

@@ -44,6 +44,8 @@ interface SendOrderConfirmationOptions {
     country: string;
   };
   paymentMethod: string;
+  isSplit?: boolean;
+  siblingOrderNumber?: number;
 }
 
 interface SendBitPendingOptions {
@@ -57,6 +59,8 @@ interface SendBitPendingOptions {
   discountCode?: string;
   items?: OrderItem[];
   shippingAddress?: { street: string; city: string; zip: string; country: string };
+  isSplit?: boolean;
+  siblingOrderNumber?: number;
 }
 
 // ─── Shared HTML wrapper ──────────────────────────────────────────────────────
@@ -159,6 +163,13 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
     ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
     : '';
 
+  const splitNoticeHtml = opts.isSplit
+    ? `<div class="info-box" style="background:rgba(200,162,75,0.08);border:1px solid rgba(200,162,75,0.22);color:#d4b570;margin-bottom:20px;">
+        <strong style="color:#fff;">Your order ships in two parts${opts.siblingOrderNumber ? ` · linked to Order #${opts.siblingOrderNumber}` : ''}.</strong><br>
+        Pre-loved items ship from our Israel warehouse in 2–3 business days; new jerseys ship from our international supplier in 14–21 business days. You paid once — both shipments are included. You'll get a separate tracking update for each.
+      </div>`
+    : '';
+
   const content = `
     <div class="body">
       <div style="margin-bottom:16px;">
@@ -168,6 +179,8 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
       <p class="subtitle">Your order has been placed and payment confirmed. We're preparing your jerseys!</p>
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
+
+      ${splitNoticeHtml}
 
       <table class="items-table">
         <thead>
@@ -244,6 +257,13 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
         ${opts.shippingAddress.zip}, ${opts.shippingAddress.country}</p>
       </div>` : '';
 
+  const splitNoticeHtml = opts.isSplit
+    ? `<div class="info-box" style="background:rgba(200,162,75,0.08);border:1px solid rgba(200,162,75,0.22);color:#d4b570;margin-bottom:20px;">
+        <strong style="color:#fff;">Your order ships in two parts${opts.siblingOrderNumber ? ` · linked to Order #${opts.siblingOrderNumber}` : ''}.</strong><br>
+        Pre-loved items ship from Israel in 2–3 business days; new jerseys ship from the supplier in 14–21 business days. One payment covers both — each ships with its own tracking update.
+      </div>`
+    : '';
+
   const content = `
     <div class="body">
       <div style="margin-bottom:16px;">
@@ -254,6 +274,7 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
 
+      ${splitNoticeHtml}
       ${itemsHtml}
       ${totalsHtml}
       ${addressHtml}
