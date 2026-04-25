@@ -371,10 +371,16 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
           </div>
 
           {/* CTA */}
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Link
+              href={`/${locale}/track-order`}
+              style={{ flex: '1 1 0', minWidth: 140, textAlign: 'center', backgroundColor: 'transparent', color: gold, fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 12, textDecoration: 'none', display: 'block', border: `1px solid ${goldBorder}` }}
+            >
+              {isHe ? 'עקוב אחר ההזמנה' : 'Track Order'}
+            </Link>
             <Link
               href={`/${locale}/discover`}
-              style={{ flex: 1, textAlign: 'center', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', display: 'block', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
+              style={{ flex: '2 1 0', minWidth: 140, textAlign: 'center', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', display: 'block', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
             >
               {isHe ? 'המשך קנייה' : 'Continue Shopping'}
             </Link>

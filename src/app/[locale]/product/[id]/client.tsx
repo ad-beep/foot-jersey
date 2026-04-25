@@ -20,6 +20,8 @@ import { ProductGallery } from '@/components/product/ProductGallery';
 import { SizeSelector } from '@/components/product/SizeSelector';
 import { CustomizationOptions } from '@/components/product/CustomizationOptions';
 import { Recommendations } from '@/components/product/Recommendations';
+import { StockAlertModal } from '@/components/product/StockAlertModal';
+import { ReviewList } from '@/components/product/ReviewList';
 import { getJerseyName, calculateCustomizationPrice } from '@/lib/utils';
 import { CURRENCY, CATEGORIES, SPECIAL_SECTIONS, SHIPPING_POLICY } from '@/lib/constants';
 import type { Jersey, Size, CartCustomization, JerseyType } from '@/types';
@@ -80,10 +82,24 @@ const SIZE_GUIDE = {
 
 // ─── Accordion ───────────────────────────────────────────────────────────────
 
-function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
+function Accordion({
+  title,
+  children,
+  openSignal,
+  id,
+}: {
+  title: string;
+  children: React.ReactNode;
+  openSignal?: number;
+  id?: string;
+}) {
   const [open, setOpen] = useState(false);
+  // When parent bumps openSignal, force this accordion open.
+  useEffect(() => {
+    if (openSignal !== undefined && openSignal > 0) setOpen(true);
+  }, [openSignal]);
   return (
-    <div style={{ borderBottom: '1px solid var(--border)' }}>
+    <div id={id} style={{ borderBottom: '1px solid var(--border)' }}>
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
@@ -150,6 +166,15 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
   const [patchOpen, setPatchOpen] = useState(false);
   const [patchError, setPatchError] = useState(false);
   const [nameNumberError, setNameNumberError] = useState(false);
+  const [sizeGuideSignal, setSizeGuideSignal] = useState(0);
+  const [stockAlertSize, setStockAlertSize] = useState<Size | null>(null);
+
+  const showSizeGuide = useCallback(() => {
+    setSizeGuideSignal((n) => n + 1);
+    requestAnimationFrame(() => {
+      document.getElementById('size-guide-accordion')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, []);
 
   // Timeout refs to prevent memory leaks on unmount
   const shakeSizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -383,12 +408,27 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
 
             {/* Size selector */}
             <div className="mb-6">
+              <div className={`flex items-center justify-between mb-2 ${isHe ? 'flex-row-reverse' : ''}`}>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  {isHe ? 'מידה' : 'Size'}
+                </p>
+                <button
+                  type="button"
+                  onClick={showSizeGuide}
+                  className="text-xs font-medium transition-colors hover:underline"
+                  style={{ color: 'var(--gold)' }}
+                >
+                  {isHe ? 'מדריך מידות ↓' : 'Size guide ↓'}
+                </button>
+              </div>
               <SizeSelector
                 availableSizes={jersey.availableSizes}
                 selectedSize={selectedSize}
                 onSelect={setSelectedSize}
                 jerseyType={jersey.type}
                 shake={shakeSize}
+                hideLabel
+                onOutOfStockClick={(size) => setStockAlertSize(size)}
               />
             </div>
 
@@ -484,7 +524,11 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
                 </ul>
               </Accordion>
 
-              <Accordion title={isHe ? 'מדריך מידות' : 'Size Guide'}>
+              <Accordion
+                title={isHe ? 'מדריך מידות' : 'Size Guide'}
+                id="size-guide-accordion"
+                openSignal={sizeGuideSignal}
+              >
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -518,54 +562,25 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
         </div>
 
         {/* ── Per-product customer reviews ──────────────────────────── */}
-        {productReviews.length > 0 && (
-          <section className="mt-12 mb-8">
-            <Reveal>
-              <div className="mb-6 px-4 md:px-0">
-                <p className="section-kicker mb-2">{isHe ? 'ביקורות לקוחות' : 'Customer Reviews'}</p>
-                <h2
-                  className="font-playfair font-bold text-white"
-                  style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.2rem)', letterSpacing: '-0.03em', lineHeight: 1.0 }}
-                >
-                  {isHe ? 'מה אומרים הלקוחות' : 'What Customers Say'}
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 md:px-0">
-                {productReviews.map((r) => (
-                  <div
-                    key={r.id}
-                    className="rounded-xl p-5"
-                    style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
-                  >
-                    <div className={`flex items-center gap-1 mb-3 ${isHe ? 'flex-row-reverse' : ''}`}>
-                      {[1,2,3,4,5].map((i) => (
-                        <span key={i} className="text-sm" style={{ color: i <= r.rating ? '#FFBE32' : 'rgba(255,190,50,0.25)' }}>★</span>
-                      ))}
-                    </div>
-                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                      &ldquo;{isHe && r.text.he ? r.text.he : r.text.en}&rdquo;
-                    </p>
-                    <div className={`flex items-center gap-2.5 ${isHe ? 'flex-row-reverse' : ''}`}>
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${r.avatarColor}`}
-                      >
-                        {r.avatarInitials}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-white">{r.name} · {r.city}</p>
-                        <p className="text-[10px] font-medium" style={{ color: '#4ade80' }}>✓ {isHe ? 'רכישה מאומתת' : 'Verified Purchase'}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-          </section>
-        )}
+        <Reveal>
+          <ReviewList
+            jerseyId={jersey.id}
+            jerseyName={displayName}
+            staticReviews={productReviews}
+          />
+        </Reveal>
 
         {/* ── Recommendations ───────────────────────────────────────── */}
         <Recommendations currentJersey={jersey} allJerseys={allJerseys} />
       </div>
+
+      <StockAlertModal
+        open={stockAlertSize !== null}
+        onClose={() => setStockAlertSize(null)}
+        jerseyId={jersey.id}
+        jerseyName={displayName}
+        size={stockAlertSize}
+      />
     </div>
   );
 }

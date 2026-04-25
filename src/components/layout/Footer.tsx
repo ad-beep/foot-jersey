@@ -61,6 +61,7 @@ export function Footer() {
         { en: 'About Us',           he: 'אודות',            href: `/${locale}/about`              },
         { en: 'FAQ',                he: 'שאלות נפוצות',    href: `/${locale}/faq`                },
         { en: 'Shipping',           he: 'משלוח',            href: `/${locale}/shipping`           },
+        { en: 'Track Order',        he: 'מעקב הזמנה',      href: `/${locale}/track-order`        },
         { en: 'Size Guide',         he: 'מדריך מידות',     href: `/${locale}/size-guide`         },
         { en: 'Reviews',            he: 'ביקורות',          href: `/${locale}/reviews`            },
         { en: 'Contact',            he: 'צור קשר',          href: `/${locale}/contact`            },

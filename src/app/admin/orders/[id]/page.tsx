@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { doc, onSnapshot, deleteDoc, Timestamp } from 'firebase/firestore';
+import { doc, onSnapshot, deleteDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { writeAuditLog } from '@/lib/audit-log';
@@ -54,6 +54,8 @@ interface Order {
   siblingOrderId?: string;
   siblingOrderNumber?: number;
   shipmentSource?: 'local' | 'international';
+  trackingNumber?: string;
+  trackingCarrier?: string;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -115,6 +117,34 @@ export default function OrderDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
   const [productMap, setProductMap] = useState<Map<string, ProductInfo>>(new Map());
+  const [trackingDraft, setTrackingDraft] = useState<{ trackingNumber: string; trackingCarrier: string }>({ trackingNumber: '', trackingCarrier: '' });
+  const [trackingSaved, setTrackingSaved] = useState(false);
+  const [trackingSaving, setTrackingSaving] = useState(false);
+
+  useEffect(() => {
+    if (!order) return;
+    setTrackingDraft({
+      trackingNumber: order.trackingNumber ?? '',
+      trackingCarrier: order.trackingCarrier ?? '',
+    });
+  }, [order?.id, order?.trackingNumber, order?.trackingCarrier]);
+
+  const saveTracking = useCallback(async () => {
+    if (!order) return;
+    setTrackingSaving(true);
+    try {
+      await updateDoc(doc(db, 'orders', order.id), {
+        trackingNumber: trackingDraft.trackingNumber.trim() || null,
+        trackingCarrier: trackingDraft.trackingCarrier.trim() || null,
+      });
+      setTrackingSaved(true);
+      setTimeout(() => setTrackingSaved(false), 2000);
+    } catch (err) {
+      console.error('save tracking failed', err);
+    } finally {
+      setTrackingSaving(false);
+    }
+  }, [order, trackingDraft]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'orders', id), (snap) => {
@@ -541,6 +571,53 @@ export default function OrderDetailPage() {
             <div className="flex justify-between text-base font-bold mt-3 pt-3 border-t border-white/5">
               <span className="text-white">Total</span>
               <span className="text-cyan-400">₪{order.total}</span>
+            </div>
+          </div>
+
+          {/* Tracking */}
+          <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-5">
+            <p className="text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-4">Tracking</p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-gray-600 uppercase tracking-widest mb-1.5">
+                  Carrier
+                </label>
+                <input
+                  type="text"
+                  value={trackingDraft.trackingCarrier}
+                  onChange={(e) => setTrackingDraft((t) => ({ ...t, trackingCarrier: e.target.value }))}
+                  placeholder="Israel Post, DHL, EMS…"
+                  className="w-full h-9 px-2.5 text-xs rounded-md bg-white/[0.04] border border-white/8 text-white placeholder-gray-700 focus:outline-none focus:border-cyan-500/40"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-600 uppercase tracking-widest mb-1.5">
+                  Tracking Number
+                </label>
+                <input
+                  type="text"
+                  value={trackingDraft.trackingNumber}
+                  onChange={(e) => setTrackingDraft((t) => ({ ...t, trackingNumber: e.target.value }))}
+                  placeholder="e.g. RR123456789IL"
+                  className="w-full h-9 px-2.5 text-xs font-mono rounded-md bg-white/[0.04] border border-white/8 text-white placeholder-gray-700 focus:outline-none focus:border-cyan-500/40"
+                />
+              </div>
+              <button
+                onClick={saveTracking}
+                disabled={trackingSaving}
+                className="mt-1 h-9 px-3 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold hover:bg-cyan-500/20 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+              >
+                {trackingSaving
+                  ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
+                  : trackingSaved
+                  ? <><Check className="w-3 h-3" /> Saved</>
+                  : 'Save Tracking'}
+              </button>
+              {order.trackingNumber && (
+                <p className="text-[10px] text-gray-600 italic">
+                  Customer sees this on /{''}track-order and in admin-triggered shipping emails.
+                </p>
+              )}
             </div>
           </div>
 
