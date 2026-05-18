@@ -179,6 +179,10 @@
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(8px); }
 }
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50%       { transform: translateY(-14px) rotate(1deg); }
+}
 
 /* Editorial word-reveal: clip-path from bottom → top */
 @keyframes wordReveal {
