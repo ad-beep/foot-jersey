@@ -173,7 +173,7 @@ export default function LandingHero() {
               className="font-mono uppercase mt-3"
               style={{ fontSize: '9px', letterSpacing: '0.38em', color: 'rgba(200,162,75,0.48)' }}
             >
-              SEASON 25/26
+              FOOTJERSEYS
             </span>
           </div>
 
