@@ -520,3 +520,185 @@ export async function sendPasswordResetEmail(opts: { to: string; resetLink: stri
     console.error('[Email] Failed to send password reset email:', err);
   }
 }
+
+// ─── Marketing — Welcome Email (exit-intent lead) ─────────────────────────────
+export async function sendMarketingWelcomeEmail(opts: {
+  to: string;
+  discountCode: string;
+}): Promise<void> {
+  const content = `
+    <div class="body">
+      <h1 class="title">Welcome to FootJersey! 🎽</h1>
+      <p class="subtitle">Here's your exclusive 10% discount code — use it on any jersey.</p>
+
+      <div style="text-align:center;margin:28px 0;">
+        <div style="display:inline-block;background:rgba(200,162,75,0.12);border:2px dashed rgba(200,162,75,0.5);border-radius:16px;padding:20px 40px;">
+          <p style="font-size:11px;font-family:monospace;text-transform:uppercase;letter-spacing:0.2em;color:#888;margin-bottom:8px;">Your Discount Code</p>
+          <p style="font-size:36px;font-weight:900;font-family:monospace;color:#C8A24B;letter-spacing:0.1em;margin:0;">${opts.discountCode}</p>
+          <p style="font-size:12px;color:#888;margin-top:8px;">10% off your entire order · Valid 14 days</p>
+        </div>
+      </div>
+
+      <div class="info-box success" style="margin-bottom:24px;">
+        🚚 Free shipping on 3+ items &nbsp;·&nbsp; PayPal &amp; BIT accepted &nbsp;·&nbsp; 300+ jerseys in stock
+      </div>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+        <tr>
+          <td width="33%" style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:10px;padding:12px;text-align:center;">
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">Retro Classics</p>
+              <p style="font-size:11px;color:#555;margin:0;">Archive 1990–2010</p>
+            </div>
+          </td>
+          <td width="33%" style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:10px;padding:12px;text-align:center;">
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">25/26 Season</p>
+              <p style="font-size:11px;color:#555;margin:0;">New kits just dropped</p>
+            </div>
+          </td>
+          <td width="33%" style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:10px;padding:12px;text-align:center;">
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">World Cup 2026</p>
+              <p style="font-size:11px;color:#555;margin:0;">48 national teams</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <a href="${SITE_URL}" class="cta-button">Shop Now — Use ${opts.discountCode}</a>
+    </div>`;
+
+  try {
+    await sendMail({
+      to: opts.to,
+      subject: `Your 10% discount is inside 🎽 — FootJersey`,
+      html: wrapEmail(content, 'Welcome to FootJersey'),
+    });
+  } catch (err) {
+    console.error('[Email] Failed to send marketing welcome email:', err);
+    throw err;
+  }
+}
+
+// ─── Marketing — Day 3 Follow-up ─────────────────────────────────────────────
+export async function sendMarketingDay3Email(opts: {
+  to: string;
+  discountCode: string;
+}): Promise<void> {
+  const content = `
+    <div class="body">
+      <h1 class="title">Still looking for your jersey? ⚽</h1>
+      <p class="subtitle">Thousands of football fans have already found their perfect kit at FootJersey. Your 10% discount is still waiting for you.</p>
+
+      <div class="order-id" style="text-align:center;">${opts.discountCode} — 10% off</div>
+
+      <p style="font-size:13px;color:#888;margin:20px 0 12px;">Our most popular teams right now:</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+        <tr>
+          <td style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:8px;padding:10px 14px;text-align:center;">
+              <p style="font-size:12px;font-weight:700;color:#fff;margin:0;">FC Barcelona</p>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;">La Liga</p>
+            </div>
+          </td>
+          <td style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:8px;padding:10px 14px;text-align:center;">
+              <p style="font-size:12px;font-weight:700;color:#fff;margin:0;">Real Madrid</p>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;">La Liga</p>
+            </div>
+          </td>
+          <td style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:8px;padding:10px 14px;text-align:center;">
+              <p style="font-size:12px;font-weight:700;color:#fff;margin:0;">Brazil</p>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;">National Team</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:8px;padding:10px 14px;text-align:center;">
+              <p style="font-size:12px;font-weight:700;color:#fff;margin:0;">Argentina</p>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;">National Team</p>
+            </div>
+          </td>
+          <td style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:8px;padding:10px 14px;text-align:center;">
+              <p style="font-size:12px;font-weight:700;color:#fff;margin:0;">Liverpool</p>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;">Premier League</p>
+            </div>
+          </td>
+          <td style="padding:4px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:8px;padding:10px 14px;text-align:center;">
+              <p style="font-size:12px;font-weight:700;color:#fff;margin:0;">PSG</p>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;">Ligue 1</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="info-box success" style="margin-bottom:24px;">
+        ⭐ Over 300 jerseys in stock · Retro, current &amp; World Cup kits · Ships to Israel &amp; worldwide
+      </div>
+
+      <a href="${SITE_URL}" class="cta-button">Find My Jersey — ${opts.discountCode}</a>
+    </div>`;
+
+  try {
+    await sendMail({
+      to: opts.to,
+      subject: `Still looking for your jersey? ⚽ Your discount is waiting`,
+      html: wrapEmail(content, 'Still Shopping — FootJersey'),
+    });
+  } catch (err) {
+    console.error('[Email] Failed to send marketing day-3 email:', err);
+    throw err;
+  }
+}
+
+// ─── Marketing — Day 7 Final Email ───────────────────────────────────────────
+export async function sendMarketingDay7Email(opts: {
+  to: string;
+  discountCode: string;
+}): Promise<void> {
+  const content = `
+    <div class="body">
+      <div style="margin-bottom:16px;">
+        <span class="status-badge status-pending">⏰ Your discount expires soon</span>
+      </div>
+      <h1 class="title">Last chance — don't miss out</h1>
+      <p class="subtitle">Your ${opts.discountCode} code gives you 10% off any jersey. After this, we won't contact you again.</p>
+
+      <div style="text-align:center;margin:28px 0;">
+        <div style="display:inline-block;background:rgba(200,162,75,0.12);border:2px dashed rgba(200,162,75,0.5);border-radius:16px;padding:20px 40px;">
+          <p style="font-size:36px;font-weight:900;font-family:monospace;color:#C8A24B;letter-spacing:0.1em;margin:0;">${opts.discountCode}</p>
+          <p style="font-size:12px;color:#888;margin-top:8px;">10% off — expires soon</p>
+        </div>
+      </div>
+
+      <div class="info-box warning" style="margin-bottom:24px;">
+        <strong>Why act now?</strong><br><br>
+        · World Cup 2026 jerseys selling fast — 48 nations in stock<br>
+        · New retro kits added every week<br>
+        · 25/26 season kits available now<br>
+        · Free shipping on 3+ jerseys
+      </div>
+
+      <a href="${SITE_URL}" class="cta-button">Use ${opts.discountCode} Before It Expires</a>
+
+      <p style="font-size:12px;color:#555;text-align:center;margin-top:20px;">
+        This is our last email — we respect your inbox.
+      </p>
+    </div>`;
+
+  try {
+    await sendMail({
+      to: opts.to,
+      subject: `⏰ Last chance — your FootJersey discount expires soon`,
+      html: wrapEmail(content, 'Last Chance — FootJersey'),
+    });
+  } catch (err) {
+    console.error('[Email] Failed to send marketing day-7 email:', err);
+    throw err;
+  }
+}

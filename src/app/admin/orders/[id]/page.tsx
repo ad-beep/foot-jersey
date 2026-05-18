@@ -56,6 +56,8 @@ interface Order {
   shipmentSource?: 'local' | 'international';
   trackingNumber?: string;
   trackingCarrier?: string;
+  discountCode?: string | null;
+  discountAmount?: number;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -568,6 +570,12 @@ export default function OrderDetailPage() {
                 </div>
               );
             })()}
+            {order.discountCode && (order.discountAmount ?? 0) > 0 && (
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Discount ({order.discountCode})</span>
+                <span className="text-amber-400 font-medium">−₪{order.discountAmount}</span>
+              </div>
+            )}
             <div className="flex justify-between text-base font-bold mt-3 pt-3 border-t border-white/5">
               <span className="text-white">Total</span>
               <span className="text-cyan-400">₪{order.total}</span>

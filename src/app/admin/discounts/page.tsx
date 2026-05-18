@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getAuth } from 'firebase/auth';
 import {
-  Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Ticket, CheckCircle2, AlertCircle,
+  Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Ticket, CheckCircle2, AlertCircle, BarChart2,
 } from 'lucide-react';
 
 interface Discount {
@@ -16,6 +16,45 @@ interface Discount {
   expiry_date: string;
   is_active: string;
   created_at: string;
+  firestore_uses?: number;
+}
+
+function UsageChart({ discounts }: { discounts: Discount[] }) {
+  const withData = discounts.filter((d) => d.code);
+  if (withData.length === 0) return null;
+  const maxUses = Math.max(...withData.map((d) => d.firestore_uses ?? parseInt(d.current_uses) || 0), 1);
+  return (
+    <div className="mb-8 p-5 rounded-xl border border-white/10 bg-white/[0.02]">
+      <p className="text-sm font-semibold mb-4 flex items-center gap-2">
+        <BarChart2 className="w-4 h-4 text-cyan-400" />
+        Code Usage
+      </p>
+      <div className="space-y-3">
+        {withData.map((d) => {
+          const uses = d.firestore_uses ?? parseInt(d.current_uses) || 0;
+          const pct = Math.round((uses / maxUses) * 100);
+          return (
+            <div key={d.code}>
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="font-mono font-bold text-white">{d.code}</span>
+                <span className="text-gray-500">{uses} use{uses !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: uses > 0 ? '#C8A24B' : 'rgba(255,255,255,0.08)',
+                    minWidth: uses > 0 ? '4px' : undefined,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function DiscountsPage() {
@@ -202,6 +241,8 @@ export default function DiscountsPage() {
 
       <h1 className="text-2xl font-bold mb-1">Discount Codes</h1>
       <p className="text-sm text-gray-400 mb-8">Create and manage promotional codes</p>
+
+      <UsageChart discounts={discounts} />
 
       {/* Create form */}
       <form onSubmit={handleCreate} className="p-4 rounded-xl border border-white/10 bg-white/[0.02] mb-8 space-y-4">

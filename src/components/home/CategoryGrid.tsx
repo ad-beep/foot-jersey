@@ -279,7 +279,7 @@ const COLLECTION_SLUG_MAP: Record<string, string> = {
   'retro': 'retro',
   'season-2526': 'season-2526',
   'special': 'special',
-  'world-cup-2026': 'world-cup-2026',
+  'world-cup-2026': 'world-cup',
   'kids': 'kids',
   'long-sleeve': 'long-sleeve',
   'drip': 'drip',

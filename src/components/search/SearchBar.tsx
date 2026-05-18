@@ -248,7 +248,7 @@ export function SearchBar({ className, mobile, onClose }: SearchBarProps) {
     setFocused(false);
     setQuery('');
     if (onClose) onClose();
-    router.push(`/${locale}/search?q=${encodeURIComponent(searchQ)}`);
+    router.push(`/${locale}/discover?q=${encodeURIComponent(searchQ)}`);
   }, [locale, router, query, onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {

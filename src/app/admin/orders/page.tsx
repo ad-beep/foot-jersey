@@ -17,6 +17,8 @@ interface OrderSummary {
   createdAt: Timestamp | null;
   orderGroupId?: string;
   shipmentSource?: 'local' | 'international';
+  discountCode?: string | null;
+  discountAmount?: number;
 }
 
 function formatOrderDate(ts: Timestamp | null): string {
@@ -26,14 +28,15 @@ function formatOrderDate(ts: Timestamp | null): string {
     d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-type Tab = 'all' | 'pending_bit' | 'processing' | 'shipped' | 'completed';
+type Tab = 'new' | 'all' | 'pending_bit' | 'processing' | 'shipped' | 'completed';
 
 const TABS: { id: Tab; label: string; filter: (o: OrderSummary) => boolean }[] = [
-  { id: 'all',         label: 'All Orders',    filter: () => true },
-  { id: 'pending_bit', label: '⚡ Pending BIT', filter: (o) => o.status === 'pending_bit_approval' || o.status === 'bit_declined' },
-  { id: 'processing',  label: 'Processing',    filter: (o) => o.status === 'processing' },
-  { id: 'shipped',     label: 'Shipped',       filter: (o) => o.status === 'shipped' },
-  { id: 'completed',   label: 'Completed',     filter: (o) => o.status === 'completed' || o.status === 'delivered' },
+  { id: 'new',         label: '🆕 New',         filter: (o) => o.status === 'pending' || o.status === 'pending_bit_approval' },
+  { id: 'all',         label: 'All Orders',      filter: () => true },
+  { id: 'pending_bit', label: '⚡ Pending BIT',  filter: (o) => o.status === 'pending_bit_approval' || o.status === 'bit_declined' },
+  { id: 'processing',  label: 'Processing',      filter: (o) => o.status === 'processing' },
+  { id: 'shipped',     label: 'Shipped',         filter: (o) => o.status === 'shipped' },
+  { id: 'completed',   label: 'Completed',       filter: (o) => o.status === 'completed' || o.status === 'delivered' },
 ];
 
 const STATUS_OPTIONS = [
@@ -56,7 +59,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>('all');
+  const [tab, setTab] = useState<Tab>('new');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -143,7 +146,7 @@ export default function OrdersPage() {
               {t.label}
               {count > 0 && (
                 <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                  t.id === 'pending_bit'
+                  t.id === 'new' || t.id === 'pending_bit'
                     ? 'bg-orange-500/15 text-orange-400'
                     : 'bg-white/8 text-gray-500'
                 }`}>{count}</span>
@@ -196,6 +199,11 @@ export default function OrdersPage() {
                 <span className="text-sm font-bold text-white min-w-[60px] text-right">
                   ₪{order.total}
                 </span>
+                {order.discountCode && (order.discountAmount ?? 0) > 0 && (
+                  <span className="hidden lg:inline text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/15 shrink-0 whitespace-nowrap">
+                    {order.discountCode} −₪{order.discountAmount}
+                  </span>
+                )}
                 {order.orderGroupId && (
                   <span
                     title={order.shipmentSource === 'local' ? 'Split order — ships from Israel' : 'Split order — ships from supplier'}

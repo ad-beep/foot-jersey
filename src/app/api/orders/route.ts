@@ -4,6 +4,9 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
+  query,
+  where,
   runTransaction,
   serverTimestamp,
   updateDoc,
@@ -192,6 +195,17 @@ async function incrementDiscountUsage(code: string) {
     await setDoc(usageRef, { count: increment(1) }, { merge: true });
   } catch (error) {
     console.error('Failed to increment discount usage:', error);
+  }
+}
+
+async function markLeadConverted(email: string) {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'exitIntentLeads'), where('email', '==', email)),
+    );
+    await Promise.all(snap.docs.map((d) => updateDoc(d.ref, { convertedAt: serverTimestamp() })));
+  } catch (error) {
+    console.error('Failed to mark lead as converted:', error);
   }
 }
 
@@ -681,10 +695,11 @@ export async function POST(request: NextRequest) {
     // so the sheet stays a flat log; the split metadata is preserved in Firestore.
     appendOrderToSheet(orderDoc.id, body);
 
-    // 3. Increment discount code usage (fire-and-forget)
+    // 3. Increment discount code usage + mark lead as converted (fire-and-forget)
     if (body.discountCode) {
       incrementDiscountUsage(body.discountCode);
     }
+    markLeadConverted(body.shippingInfo.email);
 
     // 4. Send confirmation or pending email
     const emailCustomerName =

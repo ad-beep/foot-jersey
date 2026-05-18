@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { requireAdmin } from '@/lib/admin-auth';
 import { writeAuditLog } from '@/lib/audit-log';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -88,7 +90,23 @@ export async function GET(request: NextRequest) {
       return obj;
     });
 
-    return NextResponse.json({ data });
+    // Merge real-time usage counts from Firestore discountUsage collection
+    let usageMap: Record<string, number> = {};
+    try {
+      const usageSnap = await getDocs(collection(db, 'discountUsage'));
+      usageSnap.forEach((usageDoc) => {
+        usageMap[usageDoc.id.toUpperCase()] = (usageDoc.data().count as number) || 0;
+      });
+    } catch {
+      // Non-blocking — Sheets current_uses remains as fallback
+    }
+
+    const dataWithUsage = data.map((d) => ({
+      ...d,
+      firestore_uses: usageMap[(d.code || '').toUpperCase()] ?? parseInt(String(d.current_uses) || '0'),
+    }));
+
+    return NextResponse.json({ data: dataWithUsage });
   } catch (error) {
     const detail = sheetsErrorDetail(error);
     console.error('GET /admin/discounts error:', detail);
