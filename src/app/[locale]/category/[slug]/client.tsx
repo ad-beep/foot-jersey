@@ -281,33 +281,6 @@ function MysteryBoxCard({
                   </span>
                 </button>
 
-                {/* Name & Number inputs */}
-                {opt.key === 'nameNumber' && opt.active && (
-                  <div className="px-4 pb-3 flex gap-2">
-                    <input
-                      type="text"
-                      value={customName}
-                      onChange={(e) => setCustomName(e.target.value.slice(0, 12))}
-                      placeholder={isHe ? 'שם' : 'Name'}
-                      maxLength={12}
-                      className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
-                      style={{ ...inputStyle, direction: isRtl ? 'rtl' : 'ltr' }}
-                    />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={customNumber}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/\D/g, '').slice(0, 2);
-                        setCustomNumber(v);
-                      }}
-                      placeholder="#"
-                      maxLength={2}
-                      className="w-16 rounded-lg px-3 py-2 text-sm text-white text-center placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-[var(--gold)]"
-                      style={inputStyle}
-                    />
-                  </div>
-                )}
 
                 {/* Divider */}
                 {i < toggleOptions.length - 1 && (

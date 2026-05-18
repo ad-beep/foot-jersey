@@ -8,9 +8,10 @@ import type { Jersey, Locale } from '@/types';
 import LandingHero from '@/components/home/LandingHero';
 
 // Below-fold sections — lazy-loaded to reduce initial bundle
-const TrustBar       = dynamic(() => import('@/components/home/TrustBar').then(m => ({ default: m.TrustBar })));
-const WhatsHot       = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })));
-const CategoryGrid   = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })));
+const TrustBar         = dynamic(() => import('@/components/home/TrustBar').then(m => ({ default: m.TrustBar })));
+const WhatsHot         = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })));
+const MysteryBoxTeaser = dynamic(() => import('@/components/home/MysteryBoxTeaser').then(m => ({ default: m.MysteryBoxTeaser })));
+const CategoryGrid     = dynamic(() => import('@/components/home/CategoryGrid').then(m => ({ default: m.CategoryGrid })));
 const RetroSpotlight = dynamic(() => import('@/components/home/RetroSpotlight').then(m => ({ default: m.RetroSpotlight })));
 const LockerRoom     = dynamic(() => import('@/components/home/LockerRoom').then(m => ({ default: m.LockerRoom })));
 const FAQPreview     = dynamic(() => import('@/components/home/FAQPreview').then(m => ({ default: m.FAQPreview })));
@@ -44,24 +45,27 @@ export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
       {/* 3. What's Hot — featured products */}
       <WhatsHot locale={locale} hotJerseys={hotJerseys} />
 
-      {/* 4. Collections grid — category bento */}
+      {/* 4. Mystery Box teaser — full-width, before collections */}
+      <MysteryBoxTeaser />
+
+      {/* 5. Collections grid — category bento */}
       <div id="collections-section">
         <CategoryGrid />
       </div>
 
-      {/* 5. Retro Classics spotlight — light editorial band */}
+      {/* 6. Retro Classics spotlight — light editorial band */}
       <RetroSpotlight />
 
-      {/* 6. The Locker Room — reviews wall */}
+      {/* 7. The Locker Room — reviews wall */}
       <LockerRoom />
 
-      {/* 7. FAQ Preview — trust + AI visibility */}
+      {/* 8. FAQ Preview — trust + AI visibility */}
       <FAQPreview />
 
-      {/* 8. Founder Moment — human story, trust */}
+      {/* 9. Founder Moment — human story, trust */}
       <FounderMoment />
 
-      {/* 9. Newsletter */}
+      {/* 10. Newsletter */}
       <Newsletter />
     </div>
   );

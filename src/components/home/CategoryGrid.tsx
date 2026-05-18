@@ -205,20 +205,6 @@ const CATEGORIES: CategoryDef[] = [
 
   // ── Row 6 (desktop) ────────────────────────────────────────────────────────
   {
-    slug: 'mystery-box',
-    en: 'Mystery Box',
-    he: 'קופסת הפתעה',
-    bg: '#100302',
-    symbol: '?',
-    masthead: 'MYSTERY · SEALED',
-    meta: 'UNKNOWN · SURPRISE',
-    accent: 'rgba(255,77,46,0.8)',
-    special: true,
-    priceLabel: { en: 'From ₪100', he: 'החל מ-₪100' },
-    grid: 'col-span-2 min-h-[140px] lg:col-start-1 lg:col-end-4 lg:row-start-6 lg:row-end-7 lg:min-h-0',
-    size: 'sm',
-  },
-  {
     slug: 'other-products',
     en: 'Other Products',
     he: 'מוצרים נוספים',
