@@ -4,7 +4,7 @@ import type { League, LocaleConfig } from '@/types';
 export const PRICES = {
   regular: 100,
   retro: 110,
-  kids: 100,
+  kids: 120,
   special: 100,
   stussy: 125,
   drip: 110,
