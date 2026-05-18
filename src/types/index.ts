@@ -1,5 +1,5 @@
 // ─── Product Types ────────────────────────────────────────────
-export type JerseyType = 'regular' | 'retro' | 'kids' | 'special' | 'drip' | 'world_cup' | 'other_products' | 'stussy' | 'second_hand';
+export type JerseyType = 'regular' | 'retro' | 'kids' | 'special' | 'drip' | 'world_cup' | 'other_products' | 'stussy' | 'second_hand' | 'mystery';
 
 export type JerseyCondition = 'new_with_tags' | 'like_new' | 'excellent' | 'good' | 'fair';
 

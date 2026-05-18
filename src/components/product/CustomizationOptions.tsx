@@ -15,6 +15,7 @@ interface CustomizationOptionsProps {
   setPatchOpen: Dispatch<SetStateAction<boolean>>;
   patchError?: boolean;
   nameNumberError?: boolean;
+  hideTextInputs?: boolean;
 }
 
 export function CustomizationOptions({
@@ -27,6 +28,7 @@ export function CustomizationOptions({
   setPatchOpen,
   patchError = false,
   nameNumberError = false,
+  hideTextInputs = false,
 }: CustomizationOptionsProps) {
   const { locale, isRtl } = useLocale();
   const isHe = locale === 'he';
@@ -149,7 +151,7 @@ export function CustomizationOptions({
               </button>
 
               {/* Name & Number inputs */}
-              {opt.key === 'nameNumber' && nameNumberOpen && (
+              {opt.key === 'nameNumber' && nameNumberOpen && !hideTextInputs && (
                 <div className="px-4 pb-3">
                   <div className="flex gap-2" style={{ flexDirection: isRtl ? 'row-reverse' : 'row' }}>
                     <div className="flex-1 flex flex-col">
@@ -199,7 +201,7 @@ export function CustomizationOptions({
               )}
 
               {/* Patch text input */}
-              {opt.key === 'patch' && patchOpen && (
+              {opt.key === 'patch' && patchOpen && !hideTextInputs && (
                 <div className="px-4 pb-3">
                   <input
                     type="text"

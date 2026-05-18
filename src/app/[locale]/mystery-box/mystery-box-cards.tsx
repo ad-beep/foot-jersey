@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { MYSTERY_ACCENT } from '@/lib/mystery-jerseys';
 
 export const BOXES = [
   {
@@ -125,6 +126,144 @@ export const BOXES = [
   },
 ] as const;
 
+// ─── League/collection-specific mystery boxes (10 items) ──────────────────
+const MAIN_BOX_SLUGS: Set<string> = new Set(BOXES.map((b) => b.slug));
+
+const LEAGUE_BOX_ENTRIES = Object.entries(MYSTERY_ACCENT).filter(
+  ([slug]) => !MAIN_BOX_SLUGS.has(slug),
+);
+
+function MysteryCard({
+  slug,
+  locale,
+  isHe,
+}: {
+  slug: string;
+  locale: string;
+  isHe: boolean;
+}) {
+  const m = MYSTERY_ACCENT[slug];
+  if (!m) return null;
+  const accent = m.accent;
+  const accentFaint  = accent.replace(/[\d.]+\)$/, '0.07)');
+  const accentMid    = accent.replace(/[\d.]+\)$/, '0.45)');
+  const accentBorder = accent.replace(/[\d.]+\)$/, '0.22)');
+  const label = isHe ? m.labelHe : m.labelEn;
+  const hint  = isHe ? m.hintHe  : m.hintEn;
+  const desc  = isHe ? m.descHe  : m.descEn;
+  const inside = isHe ? m.insideHe : m.insideEn;
+
+  return (
+    <Link
+      href={`/${locale}/product/${slug}`}
+      className="group relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300"
+      style={{ backgroundColor: m.bg, border: `1px solid ${accentBorder}`, textDecoration: 'none' }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = accent.replace(/[\d.]+\)$/, '0.55)');
+        el.style.boxShadow = `0 0 40px ${m.glow}, 0 0 80px ${m.glow.replace(/[\d.]+\)$/, '0.15)')}`;
+        el.style.transform = 'translateY(-3px)';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = accentBorder;
+        el.style.boxShadow = '';
+        el.style.transform = '';
+      }}
+    >
+      {/* Hover radial glow */}
+      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-400"
+        style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${accentFaint}, transparent 70%)` }} />
+
+      {/* Giant background symbol */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden" aria-hidden="true">
+        <span className="font-playfair font-black transition-transform duration-500 group-hover:scale-110" style={{
+          fontSize: 'clamp(8rem, 18vw, 10rem)',
+          color: 'transparent',
+          WebkitTextStroke: `1.5px ${accent.replace(/[\d.]+\)$/, '0.1)')}`,
+          letterSpacing: '-0.06em', lineHeight: 0.82,
+          transform: 'translateY(8%)',
+        }}>{m.symbol}</span>
+      </div>
+
+      {/* Sealed stamp + price */}
+      <div className="relative z-10 px-5 pt-5 pb-2 flex items-center justify-between">
+        <span className="font-mono text-[9px] uppercase tracking-[0.25em] px-2.5 py-1 rounded-full"
+          style={{ border: `1px solid ${accentMid}`, color: accent, background: m.glow.replace(/[\d.]+\)$/, '0.1)') }}>
+          {isHe ? 'חתום' : 'Sealed'}
+        </span>
+        <span className="font-mono font-bold text-xl" style={{ color: accent }}>₪90</span>
+      </div>
+
+      {/* Box visual panel */}
+      <div className="relative z-10 mx-5 my-3 rounded-xl overflow-hidden flex items-center justify-center"
+        style={{
+          height: '130px',
+          background: `linear-gradient(135deg, ${m.glow} 0%, rgba(0,0,0,0.4) 100%)`,
+          border: `1px solid ${accent.replace(/[\d.]+\)$/, '0.14)')}`,
+        }}>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: `radial-gradient(ellipse 70% 70% at 50% 50%, ${m.glow} 0%, transparent 70%)` }} />
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2"
+            style={{ background: `linear-gradient(to bottom, transparent, ${accent.replace(/[\d.]+\)$/, '0.18)')}, transparent)` }} />
+          <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2"
+            style={{ background: `linear-gradient(to right, transparent, ${accent.replace(/[\d.]+\)$/, '0.18)')}, transparent)` }} />
+        </div>
+        <span className="relative font-playfair font-black select-none transition-transform duration-500 group-hover:scale-110" style={{
+          fontSize: '5.5rem', lineHeight: 1.1,
+          background: `linear-gradient(135deg, ${accent} 0%, rgba(255,255,255,0.95) 100%)`,
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          filter: `drop-shadow(0 0 24px ${m.glow})`,
+        }}>{m.symbol}</span>
+      </div>
+
+      {/* Text content */}
+      <div className={`relative z-10 px-5 pb-5 flex flex-col gap-3 flex-1 ${isHe ? 'text-right' : ''}`}>
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-[0.22em] mb-1" style={{ color: accentMid }}>
+            {hint}
+          </p>
+          <h3 className="font-bold text-white text-base leading-tight">{label}</h3>
+        </div>
+        <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.48)' }}>
+          {desc}
+        </p>
+        <ul className="space-y-1 mt-auto">
+          {inside.map((item, i) => (
+            <li key={i} className={`flex items-center gap-2 text-[11px] ${isHe ? 'flex-row-reverse' : ''}`}
+              style={{ color: 'rgba(255,255,255,0.42)' }}>
+              <span style={{ color: accentMid, fontSize: '7px' }}>◆</span>
+              {item}
+            </li>
+          ))}
+        </ul>
+        <div className={`flex items-center justify-between mt-3 pt-3 ${isHe ? 'flex-row-reverse' : ''}`}
+          style={{ borderTop: `1px solid ${accent.replace(/[\d.]+\)$/, '0.12)')}` }}>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: accent }}>
+            {isHe ? 'הזמן עכשיו' : 'Order now'}
+          </span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+            className={`transition-transform duration-300 ${isHe ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`}
+            style={{ color: accent }}>
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export function MysteryLeagueCards({ locale, isHe }: { locale: string; isHe: boolean }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+      {LEAGUE_BOX_ENTRIES.map(([slug]) => (
+        <MysteryCard key={slug} slug={slug} locale={locale} isHe={isHe} />
+      ))}
+    </div>
+  );
+}
+
 export function MysteryBoxCards({ locale, isHe }: { locale: string; isHe: boolean }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
@@ -137,7 +276,7 @@ export function MysteryBoxCards({ locale, isHe }: { locale: string; isHe: boolea
         return (
           <Link
             key={box.slug}
-            href={`/${locale}/category/mystery-box`}
+            href={`/${locale}/product/${box.slug}`}
             className="group relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300"
             style={{ backgroundColor: box.bg, border: `1px solid ${accentBorder}`, textDecoration: 'none' }}
             onMouseEnter={(e) => {

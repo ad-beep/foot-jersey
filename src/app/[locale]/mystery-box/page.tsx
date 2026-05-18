@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/constants';
 import { REVIEWS } from '@/data/reviews';
-import { MysteryBoxCards } from './mystery-box-cards';
+import { MysteryBoxCards, MysteryLeagueCards } from './mystery-box-cards';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isHe = params.locale === 'he';
@@ -100,7 +100,21 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
 
       {/* ── Box cards (client component for hover effects) ──────────── */}
       <div className="max-w-[1100px] mx-auto px-4 md:px-6 pb-16">
+        {/* Main 6 */}
         <MysteryBoxCards locale={locale} isHe={isHe} />
+
+        {/* Divider */}
+        <div className="my-10 flex items-center gap-4">
+          <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] shrink-0 px-3 py-1.5 rounded-full"
+            style={{ color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            {isHe ? 'ספציפי לליגה' : 'League-specific'}
+          </span>
+          <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+        </div>
+
+        {/* League-specific mystery boxes */}
+        <MysteryLeagueCards locale={locale} isHe={isHe} />
 
         {/* ── How it works ─────────────────────────────────────────── */}
         <div className={`mt-16 ${isHe ? 'text-right' : ''}`}>

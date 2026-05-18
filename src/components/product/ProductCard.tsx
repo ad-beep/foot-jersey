@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { cn, getJerseyName } from '@/lib/utils';
 import { CURRENCY, KIDS_SIZES } from '@/lib/constants';
 import { AGGREGATE_RATING } from '@/data/reviews';
+import { MYSTERY_ACCENT } from '@/lib/mystery-jerseys';
 import type { Jersey, JerseyType, Size, KidsSize } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────
@@ -30,6 +31,7 @@ const TYPE_LABELS: Record<JerseyType, { en: string; he: string }> = {
   other_products: { en: 'Other',     he: 'אחר'   },
   stussy:         { en: 'Stussy',    he: 'סטוסי'  },
   second_hand:    { en: 'Second Hand', he: 'יד שנייה' },
+  mystery:        { en: 'Mystery',   he: 'מיסטרי' },
 };
 
 // ─── Props ────────────────────────────────────────────────────
@@ -73,14 +75,13 @@ export const ProductCard = React.memo(function ProductCard({
   }, []);
 
   const isHe          = locale === 'he';
-  const isMysteryBox  = jersey.category === 'mystery-box';
+  const isMysteryBox  = jersey.type === 'mystery';
   const isKids        = jersey.type === 'kids';
   const displayName   = getJerseyName(jersey, locale);
   const typeLabel     = TYPE_LABELS[jersey.type];
-  const href          = isMysteryBox
-    ? `/${locale}/category/mystery-box`
-    : `/${locale}/product/${jersey.id}`;
+  const href          = `/${locale}/product/${jersey.id}`;
   const showBadge     = BADGE_TYPES.has(jersey.type);
+  const mysteryAccent = isMysteryBox ? MYSTERY_ACCENT[jersey.id] : null;
 
   const sizes = isKids
     ? (KIDS_SIZES as readonly string[])
@@ -174,10 +175,29 @@ export const ProductCard = React.memo(function ProductCard({
       {/* Image area */}
       <div className="relative aspect-[3/4] overflow-hidden">
         {isMysteryBox ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[var(--steel)] to-[#0F1814]">
-            <Package className="w-16 h-16" style={{ color: 'var(--gold)' }} />
-            <span className="text-xs font-medium px-3 text-center leading-snug" style={{ color: 'var(--muted)' }}>
-              {isHe ? 'קופסת הפתעה' : 'Mystery Box'}
+          <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden"
+            style={{ backgroundColor: mysteryAccent?.bg ?? '#0a0a0f' }}>
+            {/* Radial glow */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: `radial-gradient(ellipse 80% 80% at 50% 50%, ${mysteryAccent?.glow ?? 'rgba(200,162,75,0.25)'}, transparent 70%)` }} />
+            {/* Symbol */}
+            <span className="relative font-playfair font-black select-none"
+              style={{
+                fontSize: '4.5rem', lineHeight: 1,
+                background: `linear-gradient(135deg, ${mysteryAccent?.accent ?? 'var(--gold)'} 0%, rgba(255,255,255,0.9) 100%)`,
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                filter: `drop-shadow(0 0 20px ${mysteryAccent?.glow ?? 'rgba(200,162,75,0.4)'})`,
+              }}>
+              {mysteryAccent?.symbol ?? '?'}
+            </span>
+            {/* Sealed badge */}
+            <span className="relative mt-2 font-mono text-[8px] uppercase tracking-[0.25em] px-2 py-0.5 rounded-full"
+              style={{
+                border: `1px solid ${(mysteryAccent?.accent ?? 'rgba(200,162,75,1)').replace(/[\d.]+\)$/, '0.45)')}`,
+                color: mysteryAccent?.accent ?? 'var(--gold)',
+                background: (mysteryAccent?.glow ?? 'rgba(200,162,75,0.3)').replace(/[\d.]+\)$/, '0.1)'),
+              }}>
+              {isHe ? 'חתום' : 'Sealed'}
             </span>
           </div>
         ) : imgError ? (
@@ -240,7 +260,7 @@ export const ProductCard = React.memo(function ProductCard({
           </Badge>
         )}
 
-        {/* Hover overlay — desktop only (hidden for mystery boxes) */}
+        {/* Hover overlay — desktop only */}
         {!isMysteryBox && (
           <div
             className="absolute inset-0 flex items-end justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto"
@@ -314,7 +334,7 @@ export const ProductCard = React.memo(function ProductCard({
         </p>
         <p className="text-xs" style={{ color: 'var(--muted)' }}>
           {isMysteryBox
-            ? (isHe ? 'קופסת הפתעה' : 'Mystery Box')
+            ? (isHe ? (mysteryAccent?.hintHe ?? 'קופסת הפתעה') : (mysteryAccent?.hintEn ?? 'Mystery Box'))
             : `${jersey.season} · ${isHe ? typeLabel.he : typeLabel.en}`}
         </p>
         {!isMysteryBox && (

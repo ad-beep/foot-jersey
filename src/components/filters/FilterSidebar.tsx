@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<JerseyType | 'all', { en: string; he: string }> = {
   other_products: { en: 'Other',         he: 'אחר' },
   stussy:         { en: 'Stussy',        he: 'סטוסי' },
   second_hand:    { en: 'Second Hand',   he: 'יד שנייה' },
+  mystery:        { en: 'Mystery',       he: 'מיסטרי' },
 };
 
 export function FilterSidebar({ jerseys, filters, onFilterChange }: FilterSidebarProps) {

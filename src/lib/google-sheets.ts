@@ -3,6 +3,7 @@ import type { SheetRow, Jersey } from '@/types';
 import { mapSheetRowToJersey } from './utils';
 import { SHEET_NAME, SHEET_RANGE } from './constants';
 import { cache } from './cache';
+import { ALL_MYSTERY_JERSEYS } from './mystery-jerseys';
 
 // ─── Auth ────────────────────────────────────────────────────
 function getAuth() {
@@ -58,8 +59,9 @@ export async function fetchJerseys(): Promise<Jersey[]> {
       .filter((row) => row.id && row.team_name && row.image_url)
       .map(mapSheetRowToJersey);
 
-    cache.set(CACHE_KEY, jerseys);
-    return jerseys;
+    const allJerseys = [...ALL_MYSTERY_JERSEYS, ...jerseys];
+    cache.set(CACHE_KEY, allJerseys);
+    return allJerseys;
   } catch (error) {
     console.error('Failed to fetch from Google Sheets:', error);
     // Return cached data even if expired in case of error

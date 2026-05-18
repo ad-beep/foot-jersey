@@ -87,7 +87,7 @@ export function mapSheetRowToJersey(row: SheetRow): Jersey {
     type = 'world_cup';
   } else if (rawType === 'regular' && tags.some((t) => t.toLowerCase() === 'stussy')) {
     type = 'stussy';
-  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products', 'stussy', 'second_hand'].includes(rawType)) {
+  } else if (['regular', 'retro', 'kids', 'special', 'drip', 'other_products', 'stussy', 'second_hand', 'mystery'].includes(rawType)) {
     type = rawType as JerseyType;
   } else {
     type = 'regular';

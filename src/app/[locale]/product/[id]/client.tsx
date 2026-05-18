@@ -24,6 +24,7 @@ import { StockAlertModal } from '@/components/product/StockAlertModal';
 import { ReviewList } from '@/components/product/ReviewList';
 import { getJerseyName, calculateCustomizationPrice } from '@/lib/utils';
 import { CURRENCY, CATEGORIES, SPECIAL_SECTIONS, SHIPPING_POLICY } from '@/lib/constants';
+import { MYSTERY_ACCENT } from '@/lib/mystery-jerseys';
 import type { Jersey, Size, CartCustomization, JerseyType } from '@/types';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ const TYPE_LABELS: Record<JerseyType, { en: string; he: string }> = {
   other_products: { en: 'Other',     he: 'אחר' },
   stussy:         { en: 'Stussy',    he: 'סטוסי' },
   second_hand:    { en: 'Second Hand', he: 'יד שנייה' },
+  mystery:        { en: 'Mystery',   he: 'מיסטרי' },
 };
 
 const LEAGUE_NAMES: Record<string, { en: string; he: string }> = {
@@ -201,16 +203,18 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
     }
   }, [jersey?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const isMystery = jersey?.type === 'mystery';
+
   // ── Price calculation ────────────────────────────────────────────────────
   const extras = useMemo(() => {
     if (!jersey) return 0;
     return calculateCustomizationPrice({
-      hasNameNumber: !!(customization.customName || customization.customNumber),
+      hasNameNumber: isMystery ? nameNumberOpen : !!(customization.customName || customization.customNumber),
       hasPatch: customization.hasPatch,
       hasPants: customization.hasPants,
       isPlayerVersion: customization.isPlayerVersion,
     });
-  }, [customization, jersey]);
+  }, [customization, jersey, isMystery, nameNumberOpen]);
 
   const totalPrice = jersey ? jersey.price + extras : 0;
 
@@ -224,7 +228,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
       toast({ title: isHe ? 'בחר מידה' : 'Please select a size', variant: 'error' });
       return;
     }
-    if (nameNumberOpen && !customization.customName.trim() && !customization.customNumber.trim()) {
+    if (!isMystery && nameNumberOpen && !customization.customName.trim() && !customization.customNumber.trim()) {
       setNameNumberError(true);
       if (nameNumberErrorTimeoutRef.current) clearTimeout(nameNumberErrorTimeoutRef.current);
       nameNumberErrorTimeoutRef.current = setTimeout(() => setNameNumberError(false), 800);
@@ -234,7 +238,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
       });
       return;
     }
-    if (customization.hasPatch && !customization.patchText.trim()) {
+    if (!isMystery && customization.hasPatch && !customization.patchText.trim()) {
       setPatchError(true);
       if (patchErrorTimeoutRef.current) clearTimeout(patchErrorTimeoutRef.current);
       patchErrorTimeoutRef.current = setTimeout(() => setPatchError(false), 800);
@@ -299,15 +303,22 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
   const leagueName = LEAGUE_NAMES[jersey.league];
   const showBadge = BADGE_TYPES.has(jersey.type);
   const images = [jersey.imageUrl, ...jersey.additionalImages].filter(Boolean);
+  const mysteryAccent = isMystery ? MYSTERY_ACCENT[jersey.id] : null;
   const shippingPolicy = SHIPPING_POLICY.policy[isHe ? 'he' : 'en'];
 
   // Breadcrumbs
   const leagueSlug = jersey.league;
-  const breadcrumbs = [
-    { label: isHe ? 'בית' : 'Home', href: `/${locale}` },
-    { label: leagueName ? (isHe ? leagueName.he : leagueName.en) : jersey.league, href: `/${locale}/category/${leagueSlug}` },
-    { label: displayName },
-  ];
+  const breadcrumbs = isMystery
+    ? [
+        { label: isHe ? 'בית' : 'Home', href: `/${locale}` },
+        { label: isHe ? 'קופסת הפתעה' : 'Mystery Box', href: `/${locale}/mystery-box` },
+        { label: displayName },
+      ]
+    : [
+        { label: isHe ? 'בית' : 'Home', href: `/${locale}` },
+        { label: leagueName ? (isHe ? leagueName.he : leagueName.en) : jersey.league, href: `/${locale}/category/${leagueSlug}` },
+        { label: displayName },
+      ];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
@@ -315,9 +326,54 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
         <Breadcrumbs items={breadcrumbs} className="mb-6" />
 
         <div className="lg:flex lg:gap-12">
-          {/* ── LEFT: Image gallery ─────────────────────────────────── */}
+          {/* ── LEFT: Image gallery / Mystery visual ───────────────── */}
           <Reveal className="lg:w-[52%] shrink-0 mb-8 lg:mb-0">
-            <ProductGallery images={images} alt={displayName} />
+            {isMystery && mysteryAccent ? (
+              <div className="rounded-2xl overflow-hidden flex flex-col items-center justify-center relative"
+                style={{ aspectRatio: '3/4', backgroundColor: mysteryAccent.bg, border: `1px solid ${mysteryAccent.accent.replace(/[\d.]+\)$/, '0.2)')}` }}>
+                {/* Background glow */}
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: `radial-gradient(ellipse 80% 80% at 50% 50%, ${mysteryAccent.glow}, transparent 70%)` }} />
+                {/* Gift ribbon */}
+                <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2"
+                    style={{ background: `linear-gradient(to bottom, transparent, ${mysteryAccent.accent.replace(/[\d.]+\)$/, '0.15)')}, transparent)` }} />
+                  <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2"
+                    style={{ background: `linear-gradient(to right, transparent, ${mysteryAccent.accent.replace(/[\d.]+\)$/, '0.15)')}, transparent)` }} />
+                </div>
+                {/* Symbol */}
+                <span className="relative font-playfair font-black select-none z-10"
+                  style={{
+                    fontSize: 'clamp(8rem, 22vw, 14rem)', lineHeight: 1,
+                    background: `linear-gradient(135deg, ${mysteryAccent.accent} 0%, rgba(255,255,255,0.95) 100%)`,
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                    filter: `drop-shadow(0 0 40px ${mysteryAccent.glow})`,
+                  }}>
+                  {mysteryAccent.symbol}
+                </span>
+                {/* Sealed badge */}
+                <span className="relative z-10 mt-6 font-mono text-[10px] uppercase tracking-[0.25em] px-4 py-1.5 rounded-full"
+                  style={{
+                    border: `1px solid ${mysteryAccent.accent.replace(/[\d.]+\)$/, '0.45)')}`,
+                    color: mysteryAccent.accent,
+                    background: mysteryAccent.glow.replace(/[\d.]+\)$/, '0.1)'),
+                  }}>
+                  {isHe ? 'חתום · חדש עם תגיות' : 'Sealed · New with tags'}
+                </span>
+                {/* Inside hints */}
+                <ul className="relative z-10 mt-4 space-y-1.5 px-8">
+                  {(isHe ? mysteryAccent.insideHe : mysteryAccent.insideEn).map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs"
+                      style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ color: mysteryAccent.accent.replace(/[\d.]+\)$/, '0.7)'), fontSize: '7px' }}>◆</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <ProductGallery images={images} alt={displayName} />
+            )}
           </Reveal>
 
           {/* ── RIGHT: Product info ─────────────────────────────────── */}
@@ -444,6 +500,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
                 setPatchOpen={setPatchOpen}
                 patchError={patchError}
                 nameNumberError={nameNumberError}
+                hideTextInputs={isMystery}
               />
             </div>
 

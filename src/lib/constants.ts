@@ -11,6 +11,7 @@ export const PRICES = {
   world_cup: 90,
   other_products: 140,
   second_hand: 0, // manually priced per-jersey; 0 means "use stored price"
+  mystery: 90,
   customization: {
     nameAndNumber: 10,
     patch: 10,

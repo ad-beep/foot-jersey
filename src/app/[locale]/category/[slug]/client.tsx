@@ -2,18 +2,15 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SearchX, Package } from 'lucide-react';
+import { SearchX } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
-import { useCartStore } from '@/stores/cart-store';
-import { useToast } from '@/components/ui/toast';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductCardSkeleton } from '@/components/product/ProductCardSkeleton';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Reveal } from '@/components/ui/reveal';
-import { CATEGORIES, SPECIAL_SECTIONS, MYSTERY_BOX_OPTIONS, PRICES, CURRENCY } from '@/lib/constants';
-import { calculateCustomizationPrice } from '@/lib/utils';
+import { CATEGORIES, SPECIAL_SECTIONS } from '@/lib/constants';
+import { MAIN_MYSTERY_IDS } from '@/lib/mystery-jerseys';
 import type { Jersey, JerseyType } from '@/types';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -55,6 +52,7 @@ const TYPE_LABELS: Record<string, { en: string; he: string }> = {
   drip:    { en: 'Drip',    he: 'דריפ' },
   world_cup:       { en: 'World Cup', he: 'מונדיאל' },
   other_products:  { en: 'Other',    he: 'אחר' },
+  mystery:         { en: 'Mystery',  he: 'מיסטרי' },
 };
 
 const SORT_OPTIONS = [
@@ -71,7 +69,12 @@ function isLeagueSlug(slug: string): boolean {
 }
 
 function filterByCategory(jerseys: Jersey[], slug: string): Jersey[] {
-  // League categories
+  // Mystery box page — all mystery jerseys
+  if (slug === 'mystery-box') {
+    return jerseys.filter((j) => j.type === 'mystery');
+  }
+
+  // League categories — mystery jerseys with matching league are naturally included
   const cat = CATEGORIES.find((c) => c.slug === slug);
   if (cat) {
     return jerseys.filter((j) => j.league === cat.slug && !EXCLUSIVE_TYPES.includes(j.type));
@@ -81,238 +84,52 @@ function filterByCategory(jerseys: Jersey[], slug: string): Jersey[] {
   const section = SPECIAL_SECTIONS.find((s) => s.slug === slug);
   if (!section) return [];
 
+  let nonMystery: Jersey[] = [];
   switch (section.filterMode) {
     case 'type':
-      if (slug === 'other-products') return jerseys.filter((j) => j.type === 'other_products');
-      return jerseys.filter((j) => j.type === section.typeMatch);
+      if (slug === 'other-products') nonMystery = jerseys.filter((j) => j.type === 'other_products');
+      else nonMystery = jerseys.filter((j) => j.type === section.typeMatch);
+      break;
     case 'tag':
-      // For stussy-edition, also catch jerseys whose type was promoted to 'stussy'
       if (slug === 'stussy-edition') {
-        return jerseys.filter(
-          (j) => j.type === 'stussy' || j.tags.some((t) => t.toLowerCase().includes('stussy')),
-        );
+        nonMystery = jerseys.filter((j) => j.type === 'stussy' || j.tags.some((t) => t.toLowerCase().includes('stussy')));
+      } else if (slug === 'long-sleeve') {
+        nonMystery = jerseys.filter((j) => j.isLongSleeve || j.tags.some((t) => t.includes('ארוך') || t === 'long_sleeve'));
+      } else if (section.tagMatch) {
+        nonMystery = jerseys.filter((j) => j.tags.some((t) => t.includes(section.tagMatch!)));
       }
-      // For long-sleeve, use the dedicated isLongSleeve field + tag fallback
-      if (slug === 'long-sleeve') {
-        return jerseys.filter(
-          (j) => j.isLongSleeve || j.tags.some((t) => t.includes('ארוך') || t === 'long_sleeve'),
-        );
-      }
-      if (!section.tagMatch) return [];
-      return jerseys.filter((j) => j.tags.some((t) => t.includes(section.tagMatch!)));
+      break;
     case 'season':
-      return jerseys.filter((j) => j.type === 'regular' && j.season.includes('25/26'));
-    default:
-      return [];
+      nonMystery = jerseys.filter((j) => j.type === 'regular' && j.season.includes('25/26'));
+      break;
   }
+
+  // Prepend mystery jerseys tagged for this collection
+  const mysteryForSlug = jerseys.filter((j) => j.type === 'mystery' && j.tags.includes(`for:${slug}`));
+  return [...mysteryForSlug, ...nonMystery.filter((j) => j.type !== 'mystery')];
 }
 
 function sortJerseys(jerseys: Jersey[], sort: string): Jersey[] {
-  const sorted = [...jerseys];
+  // Mystery jerseys always stay at the top
+  const mystery = jerseys.filter((j) => j.type === 'mystery');
+  const rest = [...jerseys.filter((j) => j.type !== 'mystery')];
   switch (sort) {
     case 'price-asc':
-      return sorted.sort((a, b) => a.price - b.price);
+      rest.sort((a, b) => a.price - b.price);
+      break;
     case 'price-desc':
-      return sorted.sort((a, b) => b.price - a.price);
+      rest.sort((a, b) => b.price - a.price);
+      break;
     case 'name-az':
-      return sorted.sort((a, b) => a.teamName.localeCompare(b.teamName));
+      rest.sort((a, b) => a.teamName.localeCompare(b.teamName));
+      break;
     case 'newest':
     default:
-      return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      rest.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
+  return [...mystery, ...rest];
 }
 
-// ─── Mystery Box Card ────────────────────────────────────────────────────────
-
-function MysteryBoxCard({
-  box,
-  isHe,
-  isRtl,
-  index,
-}: {
-  box: typeof MYSTERY_BOX_OPTIONS[number];
-  isHe: boolean;
-  isRtl: boolean;
-  index: number;
-}) {
-  const addItem = useCartStore((s) => s.addItem);
-  const { toast } = useToast();
-
-  const [nameNumberOpen, setNameNumberOpen] = useState(false);
-  const [patchOpen, setPatchOpen] = useState(false);
-  const [customName, setCustomName] = useState('');
-  const [customNumber, setCustomNumber] = useState('');
-
-  const isPlayerVersion = box.slug === 'player-version-mystery';
-
-  const extras = calculateCustomizationPrice({
-    hasNameNumber: nameNumberOpen && !!(customName || customNumber),
-    hasPatch: patchOpen,
-    hasPants: false,
-    isPlayerVersion: false,
-  });
-  const totalPrice = box.price + extras;
-
-  const handleAdd = () => {
-    const jersey: Jersey = {
-      id: box.slug,
-      teamName: isHe ? box.labelHe : box.labelEn,
-      league: 'rest_of_world',
-      season: '',
-      type: 'regular',
-      category: 'mystery-box',
-      imageUrl: '',
-      additionalImages: [],
-      isWorldCup: false,
-      internationalTeam: '',
-      availableSizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      tags: [],
-      isLongSleeve: false,
-      createdAt: new Date().toISOString(),
-      price: box.price,
-      slug: box.slug,
-    };
-    addItem(jersey, 'M', {
-      customName: nameNumberOpen ? customName.trim() : '',
-      customNumber: nameNumberOpen ? customNumber.trim() : '',
-      hasPatch: patchOpen,
-      patchText: '',
-      hasPants: false,
-      isPlayerVersion,
-    });
-    toast({
-      title: isHe ? 'נוסף לסל' : 'Added to cart',
-      description: isHe ? box.labelHe : box.labelEn,
-      variant: 'success',
-    });
-    setNameNumberOpen(false);
-    setPatchOpen(false);
-    setCustomName('');
-    setCustomNumber('');
-  };
-
-  const inputStyle = {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    border: '1px solid var(--border)',
-  };
-
-  const toggleOptions = [
-    {
-      key: 'nameNumber' as const,
-      en: 'Name & Number',
-      he: 'שם ומספר',
-      price: PRICES.customization.nameAndNumber,
-      active: nameNumberOpen,
-      onToggle: () => {
-        if (nameNumberOpen) {
-          setNameNumberOpen(false);
-          setCustomName('');
-          setCustomNumber('');
-        } else {
-          setNameNumberOpen(true);
-        }
-      },
-    },
-    {
-      key: 'patch' as const,
-      en: 'Patch',
-      he: "פאצ'",
-      price: PRICES.customization.patch,
-      active: patchOpen,
-      onToggle: () => setPatchOpen(!patchOpen),
-    },
-  ];
-
-  return (
-    <Reveal delay={index * 100}>
-      <div
-        className="relative rounded-xl p-6 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.01]"
-        style={{
-          backgroundColor: 'var(--steel)',
-          border: '1px solid rgba(255,140,0,0.3)',
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-start gap-3">
-          <Package className="w-8 h-8 shrink-0 mt-0.5" style={{ color: 'var(--cta)' }} />
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-white">
-              {isHe ? box.labelHe : box.labelEn}
-            </h3>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              {isHe ? box.description.he : box.description.en}
-            </p>
-            <p className="text-2xl font-bold mt-2 font-mono" style={{ color: 'var(--gold)' }}>
-              {CURRENCY}{box.price}
-            </p>
-          </div>
-        </div>
-
-        {/* Customization toggles — same pattern as product page */}
-        <div>
-          <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
-            {isHe ? 'התאמה אישית' : 'Customize'}
-          </p>
-
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-            {toggleOptions.map((opt, i) => (
-              <div key={opt.key}>
-                {/* Toggle row */}
-                <button
-                  onClick={opt.onToggle}
-                  className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/[0.02]"
-                  aria-checked={opt.active}
-                  role="switch"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0"
-                      style={{ backgroundColor: opt.active ? 'var(--gold)' : 'rgba(255,255,255,0.1)' }}
-                    >
-                      <div
-                        className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200"
-                        style={{ [isRtl ? 'right' : 'left']: opt.active ? 18 : 2 }}
-                      />
-                    </div>
-                    <span className="text-sm text-white">{isHe ? opt.he : opt.en}</span>
-                  </div>
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    +{CURRENCY}{opt.price}
-                  </span>
-                </button>
-
-
-                {/* Divider */}
-                {i < toggleOptions.length - 1 && (
-                  <div style={{ borderBottom: '1px solid var(--border)' }} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA */}
-        <Button variant="primary" size="md" className="w-full mt-auto" onClick={handleAdd}>
-          {isHe ? `הוסף לסל` : 'ADD TO CART'}
-          <span className="mx-1">·</span>
-          {CURRENCY}{totalPrice}
-        </Button>
-      </div>
-    </Reveal>
-  );
-}
-
-// ─── Mystery Box Page ────────────────────────────────────────────────────────
-
-function MysteryBoxPage({ isHe, isRtl }: { isHe: boolean; isRtl: boolean }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {MYSTERY_BOX_OPTIONS.map((box, i) => (
-        <MysteryBoxCard key={box.slug} box={box} isHe={isHe} isRtl={isRtl} index={i} />
-      ))}
-    </div>
-  );
-}
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -495,9 +312,34 @@ export function CategoryPageClient({ slug, initialJerseys }: CategoryPageClientP
           )}
         </div>
 
-        {/* Mystery Box — special layout */}
+        {/* Mystery Box — main 6 prominently, then divider, then more specific boxes */}
         {isMysteryBox ? (
-          <MysteryBoxPage isHe={isHe} isRtl={isRtl} />
+          <div>
+            {/* Main 6 */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
+              {categoryJerseys.filter((j) => MAIN_MYSTERY_IDS.has(j.id)).map((jersey, i) => (
+                <Reveal key={jersey.id} delay={Math.min(i * 60, 300)}>
+                  <ProductCard jersey={jersey} priority={i < 6} imageSizes="(max-width: 640px) 50vw, 33vw" />
+                </Reveal>
+              ))}
+            </div>
+            {/* Divider */}
+            <div className="my-8 flex items-center gap-4">
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] shrink-0" style={{ color: 'var(--muted)' }}>
+                {isHe ? 'ספציפי לליגה' : 'League-specific'}
+              </span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
+            </div>
+            {/* League-specific mystery boxes */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {categoryJerseys.filter((j) => !MAIN_MYSTERY_IDS.has(j.id)).map((jersey, i) => (
+                <Reveal key={jersey.id} delay={Math.min(i * 60, 300)}>
+                  <ProductCard jersey={jersey} imageSizes="(max-width: 640px) 50vw, 33vw" />
+                </Reveal>
+              ))}
+            </div>
+          </div>
         ) : loading ? (
           /* Loading skeleton */
           <div>
