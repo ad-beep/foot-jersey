@@ -22,7 +22,7 @@ interface Discount {
 function UsageChart({ discounts }: { discounts: Discount[] }) {
   const withData = discounts.filter((d) => d.code);
   if (withData.length === 0) return null;
-  const maxUses = Math.max(...withData.map((d) => d.firestore_uses ?? parseInt(d.current_uses) || 0), 1);
+  const maxUses = Math.max(...withData.map((d) => d.firestore_uses ?? (parseInt(d.current_uses) || 0)), 1);
   return (
     <div className="mb-8 p-5 rounded-xl border border-white/10 bg-white/[0.02]">
       <p className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -31,7 +31,7 @@ function UsageChart({ discounts }: { discounts: Discount[] }) {
       </p>
       <div className="space-y-3">
         {withData.map((d) => {
-          const uses = d.firestore_uses ?? parseInt(d.current_uses) || 0;
+          const uses = d.firestore_uses ?? (parseInt(d.current_uses) || 0);
           const pct = Math.round((uses / maxUses) * 100);
           return (
             <div key={d.code}>

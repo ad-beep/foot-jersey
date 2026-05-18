@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
         const emailsSent: string[] = data.emailsSent ?? [];
         const capturedAt: number =
-          data.capturedAt?.toMillis?.() ?? data.capturedAt?.seconds * 1000 ?? 0;
+          data.capturedAt?.toMillis?.() ?? (data.capturedAt?.seconds ?? 0) * 1000;
         if (!capturedAt) return;
 
         const daysSince = (now - capturedAt) / DAY_MS;
