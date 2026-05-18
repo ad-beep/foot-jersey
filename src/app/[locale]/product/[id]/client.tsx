@@ -248,12 +248,17 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
       });
       return;
     }
-    addItem(jersey, selectedSize, customization);
+    // For mystery boxes, name/number has no text input — inject a placeholder so the cart
+    // registers the +₪10 add-on and shows it in the order summary.
+    const cartCustomization = isMystery && nameNumberOpen
+      ? { ...customization, customName: '+name', customNumber: '' }
+      : customization;
+    addItem(jersey, selectedSize, cartCustomization);
     recordCartAdd(jersey.id);
     recordInteraction(jersey.id, 'cart');
     const displayName = getJerseyName(jersey, locale);
     toast({ title: isHe ? 'נוסף לסל!' : 'Added to cart!', description: displayName, variant: 'success' });
-  }, [jersey, selectedSize, customization, nameNumberOpen, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
+  }, [jersey, selectedSize, customization, nameNumberOpen, isMystery, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
 
   const handleToggleFavorite = useCallback(() => {
     // Read state BEFORE toggling so we know which direction we're going

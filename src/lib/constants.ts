@@ -2,14 +2,14 @@ import type { League, LocaleConfig } from '@/types';
 
 // ─── Pricing ─────────────────────────────────────────────────
 export const PRICES = {
-  regular: 90,
-  retro: 100,
-  kids: 90,
-  special: 90,
-  stussy: 115,
-  drip: 100,
-  world_cup: 90,
-  other_products: 140,
+  regular: 100,
+  retro: 110,
+  kids: 100,
+  special: 100,
+  stussy: 125,
+  drip: 110,
+  world_cup: 100,
+  other_products: 150,
   second_hand: 0, // manually priced per-jersey; 0 means "use stored price"
   mystery: 90,
   customization: {
