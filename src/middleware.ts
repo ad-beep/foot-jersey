@@ -19,9 +19,15 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/images/') ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml' ||
+    pathname === '/sitemap-0.xml' ||
     pathname === '/favicon.ico' ||
     pathname === '/favicon.svg' ||
     pathname === '/og-default.jpg' ||
+    pathname === '/manifest.json' ||
+    pathname === '/site.webmanifest' ||
+    pathname.startsWith('/apple-') ||
+    pathname.startsWith('/android-') ||
+    pathname.startsWith('/mstile-') ||
     (pathname.includes('.') && !pathname.startsWith('/.'))
   ) {
     return NextResponse.next();

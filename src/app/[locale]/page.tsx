@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { isValidLocale } from '@/i18n/config';
 import { DEFAULT_LOCALE, SITE_URL } from '@/lib/constants';
 import { fetchJerseys } from '@/lib/google-sheets';
@@ -31,7 +32,8 @@ export default async function HomePage({
 }: {
   params: { locale: string };
 }) {
-  const locale: Locale = isValidLocale(params.locale) ? params.locale : DEFAULT_LOCALE;
+  if (!isValidLocale(params.locale)) notFound();
+  const locale: Locale = params.locale as Locale;
 
   let jerseys: Jersey[] = [];
   try {
