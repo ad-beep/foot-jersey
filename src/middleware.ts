@@ -82,9 +82,8 @@ export const config = {
      * - api routes
      * - admin panel
      * - _next (Next.js internals)
-     * - static files with extensions
-     * - favicon.ico / favicon.svg
+     * - any path containing a dot (static file extensions: .png, .jpg, .svg, .txt, .xml, .json, …)
      */
-    '/((?!api|admin|_next/static|_next/image|favicon\\.ico|favicon\\.svg|og-default\\.jpg|images|sitemap\\.xml|robots\\.txt).*)',
+    '/((?!api|admin|_next/static|_next/image|.*\\.[a-zA-Z0-9]{1,6}(?:[?#].*)?$).*)',
   ],
 };

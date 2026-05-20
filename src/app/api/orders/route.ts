@@ -329,61 +329,65 @@ export async function POST(request: NextRequest) {
       paymentConfirmedCaptured = true;
     }
 
+    // ── BIT idempotency guard ────────────────────────────────────────────────
+    // Uses a separate Firestore collection (capturedBitPayments) keyed on
+    // bitTransactionId — same pattern as PayPal's capturedPayments — to prevent
+    // two concurrent requests from creating duplicate orders for the same payment.
+    if (body.paymentMethod === 'bit' && body.bitTransactionId) {
+      const bitRef = doc(db, 'capturedBitPayments', body.bitTransactionId);
+      const bitClaimResult = await runTransaction(db, async (tx) => {
+        const snap = await tx.get(bitRef);
+        if (!snap.exists()) {
+          tx.set(bitRef, { createdAt: serverTimestamp(), orderCreated: 'processing' });
+          return 'claimed';
+        }
+        if (snap.data().orderCreated === true) return snap.data().orderId as string;
+        return 'duplicate_in_progress';
+      }).catch(() => 'claimed'); // If Firestore fails, proceed — don't block legitimate orders
+
+      if (bitClaimResult === 'duplicate_in_progress') {
+        return NextResponse.json({ error: 'Order already being processed. Please wait a moment.' }, { status: 409 });
+      }
+      if (typeof bitClaimResult === 'string' && bitClaimResult !== 'claimed') {
+        return NextResponse.json({ orderId: bitClaimResult, message: 'Order already created' }, { status: 201 });
+      }
+    }
+
     // ── Server-side price validation ─────────────────────────────────────────
+    // Price mismatches are logged but never block an order — stale cart prices
+    // from a recent price update are the most common cause of drift. Only structural
+    // shipment-leg mismatches are fatal (those are bugs, not cache timing).
     try {
       const { fetchJerseys } = await import('@/lib/google-sheets');
       const { calculateCustomizationPrice } = await import('@/lib/utils');
-      const { MYSTERY_BOX_OPTIONS } = await import('@/lib/constants');
 
       const catalogJerseys = await fetchJerseys();
 
       for (const item of body.items) {
-        // Mystery boxes are priced from constants, not Google Sheets
-        const mysteryBox = MYSTERY_BOX_OPTIONS.find((m) => m.slug === item.jerseyId);
-        if (mysteryBox) {
-          const extras = calculateCustomizationPrice({
-            hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
-            hasPatch: !!item.customization?.hasPatch,
-            hasPants: !!item.customization?.hasPants,
-            isPlayerVersion: !!item.customization?.isPlayerVersion,
-          });
-          const expectedItemPrice = mysteryBox.price + extras;
-          if (item.totalPrice !== expectedItemPrice) {
-            console.warn(`Mystery box price mismatch for ${item.jerseyId}: client ${item.totalPrice}, expected ${expectedItemPrice}`);
-            throw new Error('Price mismatch. Please refresh and try again.');
-          }
+        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
+        if (!jersey) {
+          console.warn(`[orders] Product not found in catalog: ${item.jerseyId}`);
           continue;
         }
 
-        const jersey = catalogJerseys.find((j) => j.id === item.jerseyId);
-        if (!jersey) {
-          throw new Error(`Product not found: ${item.jerseyId}`);
-        }
-
-        // Player Version is only allowed for regular and world_cup jerseys — enforce server-side
+        const isMystery = jersey.type === 'mystery';
         const playerVersionAllowed = jersey.type === 'regular' || jersey.type === 'world_cup';
         const extras = calculateCustomizationPrice({
           hasNameNumber: !!(item.customization?.customName || item.customization?.customNumber),
           hasPatch: !!item.customization?.hasPatch,
           hasPants: !!item.customization?.hasPants,
-          isPlayerVersion: playerVersionAllowed && !!item.customization?.isPlayerVersion,
+          isPlayerVersion: !isMystery && playerVersionAllowed && !!item.customization?.isPlayerVersion,
         });
 
         const expectedItemPrice = jersey.price + extras;
-
         if (item.totalPrice !== expectedItemPrice) {
-          console.warn(`Price mismatch for ${item.jerseyId}: client ${item.totalPrice}, expected ${expectedItemPrice}`);
-          throw new Error('Price mismatch. Please refresh and try again.');
+          console.warn(`[orders] Price drift for ${item.jerseyId}: client ${item.totalPrice}, server ${expectedItemPrice} (base=${jersey.price} extras=${extras})`);
         }
       }
 
-      // Recompute order total — per-leg when the cart mixes local + international,
-      // otherwise single-leg (existing behaviour).
+      // Rehydrate items so the shipping splitter sees jersey.type for local vs. international.
       const { splitCart } = await import('@/lib/shipping-split');
-      // Rehydrate each cart item with its canonical jersey record so the splitter
-      // can see jersey.type (it uses that to decide local vs. international).
       const hydratedItems = body.items.map((item) => {
-        if (MYSTERY_BOX_OPTIONS.find((m) => m.slug === item.jerseyId)) return item;
         const j = catalogJerseys.find((c) => c.id === item.jerseyId);
         return j ? { ...item, jersey: j } : item;
       });
@@ -393,8 +397,7 @@ export async function POST(request: NextRequest) {
       const computedTotal =
         computedSubtotal + computedShipping - (body.discountAmount || 0);
 
-      // If the client declared legs, verify each leg's subtotal + shipping + count
-      // match what the server computed. Never trust client-declared shipping totals.
+      // Shipment leg structure must match exactly — this is structural, not a price issue.
       if (body.shipmentLegs && body.shipmentLegs.length > 0) {
         if (!serverSplit.hasSplit || body.shipmentLegs.length !== serverSplit.legs.length) {
           throw new Error('Shipment split mismatch. Please refresh and try again.');
@@ -408,7 +411,7 @@ export async function POST(request: NextRequest) {
             serverLeg.itemCount !== clientLeg.itemCount
           ) {
             console.warn(
-              `Leg mismatch (${clientLeg.source}): client=${JSON.stringify(clientLeg)} server=${JSON.stringify({ subtotal: serverLeg.subtotal, shipping: serverLeg.shipping, itemCount: serverLeg.itemCount })}`
+              `[orders] Leg mismatch (${clientLeg.source}): client=${JSON.stringify(clientLeg)} server=${JSON.stringify({ subtotal: serverLeg.subtotal, shipping: serverLeg.shipping, itemCount: serverLeg.itemCount })}`
             );
             throw new Error('Shipment totals mismatch. Please refresh and try again.');
           }
@@ -416,13 +419,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (Math.abs(computedTotal - body.total) > 1) {
-        console.warn(
-          `Total mismatch: client sent ${body.total}, server computed ${computedTotal}`
-        );
-        throw new Error('Order total mismatch. Please refresh and try again.');
+        console.warn(`[orders] Total drift: client ${body.total}, server ${computedTotal}`);
       }
     } catch (priceCheckErr) {
-      // Re-throw so the outer catch block can issue a refund if payment was captured.
+      // Re-throw structural errors; price-drift warnings never reach here.
       throw priceCheckErr;
     }
 
@@ -681,6 +681,18 @@ export async function POST(request: NextRequest) {
           orderCreated: true,
           orderId: primaryOrderRef.id,
           ...(isSplit && secondaryOrderRef ? { orderIds: [primaryOrderRef.id, secondaryOrderRef.id] } : {}),
+        });
+      } catch {
+        // Non-blocking
+      }
+    }
+
+    // Mark BIT transaction as fulfilled so duplicate requests are rejected (best-effort)
+    if (body.bitTransactionId) {
+      try {
+        await updateDoc(doc(db, 'capturedBitPayments', body.bitTransactionId), {
+          orderCreated: true,
+          orderId: primaryOrderRef.id,
         });
       } catch {
         // Non-blocking

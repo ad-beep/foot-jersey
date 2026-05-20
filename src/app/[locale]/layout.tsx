@@ -1,5 +1,6 @@
 import { Playfair_Display, Inter_Tight, JetBrains_Mono, Heebo } from 'next/font/google';
 import dynamic from 'next/dynamic';
+import { notFound } from 'next/navigation';
 import { isValidLocale, getDirection } from '@/i18n/config';
 import { ExitIntentPopup } from '@/components/ui/ExitIntentPopup';
 import { getDictionary } from '@/i18n/dictionaries';
@@ -70,7 +71,8 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  const locale: Locale = isValidLocale(params.locale) ? params.locale : DEFAULT_LOCALE;
+  if (!isValidLocale(params.locale)) notFound();
+  const locale: Locale = params.locale as Locale;
   const direction      = getDirection(locale);
   const dict           = await getDictionary(locale);
 
