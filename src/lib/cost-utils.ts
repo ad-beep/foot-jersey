@@ -64,7 +64,7 @@ export function getItemCostDetail(item: CostItem, productMap: Map<string, Produc
   } else if (jerseyType === 'special')   { baseCostUSD = 8;  displayType = 'Special Edition'; }
   else if (jerseyType === 'drip')        { baseCostUSD = 8;  displayType = 'Drip'; }
   else if (jerseyType === 'world_cup')   { baseCostUSD = 8;  displayType = 'World Cup'; }
-  else if (jerseyType === 'stussy')      { baseCostUSD = 8;  displayType = 'Stussy'; }
+  else if (jerseyType === 'stussy')      { baseCostUSD = 11; displayType = 'Stussy'; }
   else {
     // regular
     if (isPlayer && isLongSleeve)  { baseCostUSD = 15; displayType = 'Long Sleeve Player'; }
