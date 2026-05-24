@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { sendMarketingDay3Email, sendMarketingDay7Email } from '@/lib/email';
+import { collection, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
+import { sendMarketingDay3Email, sendMarketingDay7Email, sendMarketingBlastEmail } from '@/lib/email';
+
+// How many days must pass before we send another blast to the same person
+const BLAST_INTERVAL_DAYS = 5;
+// Max blast emails per daily cron run (stays within free-plan Gmail limits)
+const BLAST_LIMIT = 50;
 
 export async function GET(request: NextRequest) {
   const secret = request.headers.get('authorization');
@@ -11,49 +16,82 @@ export async function GET(request: NextRequest) {
 
   const now = Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const dayIndex = Math.floor(now / DAY_MS); // monotonically increasing integer per day
 
   let day3Sent = 0;
   let day7Sent = 0;
+  let blastSent = 0;
   let errors = 0;
 
-  try {
-    const snap = await getDocs(collection(db, 'exitIntentLeads'));
+  const snap = await getDocs(collection(db, 'exitIntentLeads'));
 
-    await Promise.all(
-      snap.docs.map(async (leadDoc) => {
-        const data = leadDoc.data();
-        if (data.convertedAt) return;
+  // ── Welcome sequences (unchanged logic, now skips unsubscribed) ──────────────
+  await Promise.all(
+    snap.docs.map(async (leadDoc) => {
+      const data = leadDoc.data();
 
-        const emailsSent: string[] = data.emailsSent ?? [];
-        const capturedAt: number =
-          data.capturedAt?.toMillis?.() ?? (data.capturedAt?.seconds ?? 0) * 1000;
-        if (!capturedAt) return;
+      // Skip unsubscribed and converted leads
+      if (data.unsubscribedAt || data.convertedAt) return;
 
-        const daysSince = (now - capturedAt) / DAY_MS;
-        const discountCode: string = data.discountCode ?? 'STAY10';
-        const to: string = data.email;
-        const ref = doc(db, 'exitIntentLeads', leadDoc.id);
+      const emailsSent: string[] = data.emailsSent ?? [];
+      const capturedAt: number =
+        data.capturedAt?.toMillis?.() ?? (data.capturedAt?.seconds ?? 0) * 1000;
+      if (!capturedAt) return;
 
-        try {
-          if (daysSince >= 7 && emailsSent.includes('day3') && !emailsSent.includes('day7')) {
-            await sendMarketingDay7Email({ to, discountCode });
-            await updateDoc(ref, { emailsSent: [...emailsSent, 'day7'] });
-            day7Sent++;
-          } else if (daysSince >= 3 && emailsSent.includes('welcome') && !emailsSent.includes('day3')) {
-            await sendMarketingDay3Email({ to, discountCode });
-            await updateDoc(ref, { emailsSent: [...emailsSent, 'day3'] });
-            day3Sent++;
-          }
-        } catch (err) {
-          console.error(`[marketing-seq] failed for ${to}:`, err);
-          errors++;
+      const daysSince = (now - capturedAt) / DAY_MS;
+      const discountCode: string = data.discountCode ?? 'STAY10';
+      const to: string = data.email;
+      const ref = doc(db, 'exitIntentLeads', leadDoc.id);
+
+      try {
+        if (daysSince >= 7 && emailsSent.includes('day3') && !emailsSent.includes('day7')) {
+          await sendMarketingDay7Email({ to, discountCode });
+          await updateDoc(ref, { emailsSent: [...emailsSent, 'day7'] });
+          day7Sent++;
+        } else if (daysSince >= 3 && emailsSent.includes('welcome') && !emailsSent.includes('day3')) {
+          await sendMarketingDay3Email({ to, discountCode });
+          await updateDoc(ref, { emailsSent: [...emailsSent, 'day3'] });
+          day3Sent++;
         }
-      }),
-    );
+      } catch (err) {
+        console.error(`[marketing-seq] failed for ${to}:`, err);
+        errors++;
+      }
+    }),
+  );
 
-    return NextResponse.json({ ok: true, day3Sent, day7Sent, errors });
-  } catch (err) {
-    console.error('[marketing-seq] fatal:', err);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  // ── Daily blast — 50 per day, rotating through all active subscribers ────────
+  const blastCutoff = now - BLAST_INTERVAL_DAYS * DAY_MS;
+
+  // Collect eligible leads: not unsubscribed, not converted, not blasted recently
+  const eligible = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() } as Record<string, any>))
+    .filter((d) => {
+      if (d.unsubscribedAt || d.convertedAt) return false;
+      if (!d.email) return false;
+      const lastBlast: number = d.lastBlastAt?.toMillis?.() ?? d.lastBlastAt?.seconds * 1000 ?? 0;
+      return lastBlast < blastCutoff;
+    })
+    // Sort: never-blasted (lastBlastAt = 0) first, then oldest blast first
+    .sort((a, b) => {
+      const aT = a.lastBlastAt?.toMillis?.() ?? 0;
+      const bT = b.lastBlastAt?.toMillis?.() ?? 0;
+      return aT - bT;
+    })
+    .slice(0, BLAST_LIMIT);
+
+  for (const lead of eligible) {
+    try {
+      await sendMarketingBlastEmail({ to: lead.email, dayIndex });
+      await updateDoc(doc(db, 'exitIntentLeads', lead.id), {
+        lastBlastAt: Timestamp.now(),
+      });
+      blastSent++;
+    } catch (err) {
+      console.error(`[marketing-blast] failed for ${lead.email}:`, err);
+      errors++;
+    }
   }
+
+  return NextResponse.json({ ok: true, day3Sent, day7Sent, blastSent, errors });
 }

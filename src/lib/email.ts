@@ -63,8 +63,14 @@ interface SendBitPendingOptions {
   siblingOrderNumber?: number;
 }
 
+// ─── Unsubscribe URL helper ───────────────────────────────────────────────────
+function unsubscribeUrl(email: string): string {
+  const token = Buffer.from(email).toString('base64url');
+  return `${SITE_URL}/api/unsubscribe?t=${token}`;
+}
+
 // ─── Shared HTML wrapper ──────────────────────────────────────────────────────
-function wrapEmail(content: string, title: string): string {
+function wrapEmail(content: string, title: string, unsubUrl?: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,6 +124,7 @@ function wrapEmail(content: string, title: string): string {
       <div class="footer">
         <p>FootJersey · <a href="${SITE_URL}">shopfootjersey.com</a></p>
         <p>Questions? Reply to this email or WhatsApp us.</p>
+        ${unsubUrl ? `<p style="margin-top:8px;"><a href="${unsubUrl}" style="color:#555;font-size:11px;">Unsubscribe from marketing emails</a></p>` : ''}
       </div>
     </div>
   </div>
@@ -573,7 +580,7 @@ export async function sendMarketingWelcomeEmail(opts: {
     await sendMail({
       to: opts.to,
       subject: `Your 10% discount is inside 🎽 — FootJersey`,
-      html: wrapEmail(content, 'Welcome to FootJersey'),
+      html: wrapEmail(content, 'Welcome to FootJersey', unsubscribeUrl(opts.to)),
     });
   } catch (err) {
     console.error('[Email] Failed to send marketing welcome email:', err);
@@ -648,7 +655,7 @@ export async function sendMarketingDay3Email(opts: {
     await sendMail({
       to: opts.to,
       subject: `Still looking for your jersey? ⚽ Your discount is waiting`,
-      html: wrapEmail(content, 'Still Shopping — FootJersey'),
+      html: wrapEmail(content, 'Still Shopping — FootJersey', unsubscribeUrl(opts.to)),
     });
   } catch (err) {
     console.error('[Email] Failed to send marketing day-3 email:', err);
@@ -695,10 +702,76 @@ export async function sendMarketingDay7Email(opts: {
     await sendMail({
       to: opts.to,
       subject: `⏰ Last chance — your FootJersey discount expires soon`,
-      html: wrapEmail(content, 'Last Chance — FootJersey'),
+      html: wrapEmail(content, 'Last Chance — FootJersey', unsubscribeUrl(opts.to)),
     });
   } catch (err) {
     console.error('[Email] Failed to send marketing day-7 email:', err);
     throw err;
   }
+}
+
+// ─── Marketing — Periodic Blast ───────────────────────────────────────────────
+const BLAST_SUBJECTS = [
+  '⚽ New jerseys just dropped — check what\'s in stock',
+  '🏆 World Cup 2026 — 48 nations ready to ship',
+  '👕 Retro classics + 25/26 season kits are in',
+  '🔥 Top sellers this week at FootJersey',
+  '🎽 Your next jersey is waiting — shop now',
+];
+
+export async function sendMarketingBlastEmail(opts: { to: string; dayIndex: number }): Promise<void> {
+  const subject = BLAST_SUBJECTS[opts.dayIndex % BLAST_SUBJECTS.length];
+
+  const content = `
+    <div class="body">
+      <h1 class="title">Football jerseys for every fan ⚽</h1>
+      <p class="subtitle">300+ jerseys in stock — retro classics, current season &amp; World Cup 2026.</p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+        <tr>
+          <td width="50%" style="padding:5px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:12px;padding:16px;text-align:center;">
+              <p style="font-size:22px;margin:0 0 8px;">🏆</p>
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">World Cup 2026</p>
+              <p style="font-size:11px;color:#555;margin:0;">48 national teams in stock</p>
+            </div>
+          </td>
+          <td width="50%" style="padding:5px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:12px;padding:16px;text-align:center;">
+              <p style="font-size:22px;margin:0 0 8px;">🕹️</p>
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">Retro Classics</p>
+              <p style="font-size:11px;color:#555;margin:0;">Archive kits 1990–2010</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td width="50%" style="padding:5px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:12px;padding:16px;text-align:center;">
+              <p style="font-size:22px;margin:0 0 8px;">✨</p>
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">25/26 Season Kits</p>
+              <p style="font-size:11px;color:#555;margin:0;">Latest drops just landed</p>
+            </div>
+          </td>
+          <td width="50%" style="padding:5px;">
+            <div style="background:#111;border:1px solid #1f1f1f;border-radius:12px;padding:16px;text-align:center;">
+              <p style="font-size:22px;margin:0 0 8px;">⭐</p>
+              <p style="font-size:13px;font-weight:700;color:#fff;margin:0 0 4px;">Player Versions</p>
+              <p style="font-size:11px;color:#555;margin:0;">Same kit as the pros</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="info-box success" style="margin-bottom:24px;">
+        🚚 Free shipping on 3+ jerseys &nbsp;·&nbsp; PayPal &amp; BIT accepted &nbsp;·&nbsp; Ships to Israel &amp; worldwide
+      </div>
+
+      <a href="${SITE_URL}" class="cta-button">Shop All Jerseys</a>
+    </div>`;
+
+  await sendMail({
+    to: opts.to,
+    subject,
+    html: wrapEmail(content, 'FootJersey — New Arrivals', unsubscribeUrl(opts.to)),
+  });
 }
