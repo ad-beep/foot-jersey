@@ -82,6 +82,26 @@ const SIZE_GUIDE = {
   },
 };
 
+const KIDS_SIZE_GUIDE = {
+  headers: {
+    en: ['Size', 'Age', 'Height (cm)', '½ Chest (cm)', 'Jersey Length (cm)'],
+    he: ['מידה', 'גיל', 'גובה (ס"מ)', '½ חזה (ס"מ)', 'אורך חולצה (ס"מ)'],
+  },
+  rows: [
+    { size: '16', age: '3–4',   height: '95–105',  chest: '35', length: '44' },
+    { size: '18', age: '4–5',   height: '105–115', chest: '37', length: '47' },
+    { size: '20', age: '5–6',   height: '115–125', chest: '39', length: '50' },
+    { size: '22', age: '7–8',   height: '125–135', chest: '41', length: '53' },
+    { size: '24', age: '8–9',   height: '135–145', chest: '43', length: '56' },
+    { size: '26', age: '10–11', height: '145–155', chest: '45', length: '59' },
+    { size: '28', age: '12–13', height: '155–165', chest: '47', length: '62' },
+  ],
+  note: {
+    en: 'Measurements are approximate. 1–2 cm variance is normal due to elastic materials.',
+    he: 'המידות משוערות. סטייה של 1–2 ס"מ אפשרית בגלל חומרי אלסטיק.',
+  },
+};
+
 // ─── Accordion ───────────────────────────────────────────────────────────────
 
 function Accordion({
@@ -587,37 +607,72 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
               </Accordion>
 
               <Accordion
-                title={isHe ? 'מדריך מידות' : 'Size Guide'}
+                title={isHe ? 'טבלת מידות' : 'Size Chart'}
                 id="size-guide-accordion"
                 openSignal={sizeGuideSignal}
               >
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr>
-                        {SIZE_GUIDE.headers[isHe ? 'he' : 'en'].map((h) => (
-                          <th key={h} className="text-start py-2 pe-4 font-medium text-white">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {SIZE_GUIDE.rows.map((row) => (
-                        <tr key={row.size} style={{ borderTop: '1px solid var(--border)' }}>
-                          <td className="py-2 pe-4 font-medium text-white">{row.size}</td>
-                          <td className="py-2 pe-4">{row.height}</td>
-                          <td className="py-2 pe-4">{row.weight}</td>
-                          <td className="py-2">{row.chest}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p
-                  className="mt-3 p-3 rounded-lg text-xs font-mono uppercase tracking-wide"
-                  style={{ backgroundColor: 'rgba(200,162,75,0.08)', color: 'rgba(200,162,75,0.8)', border: '1px solid rgba(200,162,75,0.15)' }}
-                >
-                  {SIZE_GUIDE.playerVersionNote[isHe ? 'he' : 'en']}
-                </p>
+                {jersey.type === 'kids' ? (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr>
+                            {KIDS_SIZE_GUIDE.headers[isHe ? 'he' : 'en'].map((h) => (
+                              <th key={h} className="text-start py-2 pe-4 font-medium text-white">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {KIDS_SIZE_GUIDE.rows.map((row) => (
+                            <tr key={row.size} style={{ borderTop: '1px solid var(--border)' }}>
+                              <td className="py-2 pe-4 font-medium text-white">{row.size}</td>
+                              <td className="py-2 pe-4" style={{ color: 'var(--muted)' }}>{row.age}</td>
+                              <td className="py-2 pe-4" style={{ color: 'var(--muted)' }}>{row.height}</td>
+                              <td className="py-2 pe-4" style={{ color: 'var(--muted)' }}>{row.chest}</td>
+                              <td className="py-2" style={{ color: 'var(--muted)' }}>{row.length}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p
+                      className="mt-3 p-3 rounded-lg text-xs"
+                      style={{ backgroundColor: 'rgba(200,162,75,0.08)', color: 'rgba(200,162,75,0.8)', border: '1px solid rgba(200,162,75,0.15)' }}
+                    >
+                      {KIDS_SIZE_GUIDE.note[isHe ? 'he' : 'en']}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr>
+                            {SIZE_GUIDE.headers[isHe ? 'he' : 'en'].map((h) => (
+                              <th key={h} className="text-start py-2 pe-4 font-medium text-white">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {SIZE_GUIDE.rows.map((row) => (
+                            <tr key={row.size} style={{ borderTop: '1px solid var(--border)' }}>
+                              <td className="py-2 pe-4 font-medium text-white">{row.size}</td>
+                              <td className="py-2 pe-4">{row.height}</td>
+                              <td className="py-2 pe-4">{row.weight}</td>
+                              <td className="py-2">{row.chest}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p
+                      className="mt-3 p-3 rounded-lg text-xs font-mono uppercase tracking-wide"
+                      style={{ backgroundColor: 'rgba(200,162,75,0.08)', color: 'rgba(200,162,75,0.8)', border: '1px solid rgba(200,162,75,0.15)' }}
+                    >
+                      {SIZE_GUIDE.playerVersionNote[isHe ? 'he' : 'en']}
+                    </p>
+                  </>
+                )}
               </Accordion>
             </div>
           </Reveal>

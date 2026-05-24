@@ -103,7 +103,7 @@ export default function SizeGuidePage({ params }: { params: { locale: string } }
                     isHe ? 'מידה' : 'Size',
                     isHe ? 'גיל מוערך' : 'Age (approx)',
                     isHe ? 'גובה (ס"מ)' : 'Height (cm)',
-                    isHe ? 'סביבת חזה (ס"מ)' : 'Chest (cm)',
+                    isHe ? '½ חזה (ס"מ)' : '½ Chest (cm)',
                   ].map((h, i) => (
                     <th
                       key={i}
@@ -117,13 +117,13 @@ export default function SizeGuidePage({ params }: { params: { locale: string } }
               </thead>
               <tbody>
                 {[
-                  { size: '16', age: '4–5',   height: '104–110', chest: '57–60' },
-                  { size: '18', age: '6–7',   height: '116–122', chest: '60–64' },
-                  { size: '20', age: '8–9',   height: '128–134', chest: '64–68' },
-                  { size: '22', age: '10–11', height: '140–146', chest: '68–72' },
-                  { size: '24', age: '12–13', height: '152–158', chest: '72–76' },
-                  { size: '26', age: '13–14', height: '158–164', chest: '76–80' },
-                  { size: '28', age: '14–15', height: '164–170', chest: '80–84' },
+                  { size: '16', age: '3–4',   height: '95–105',  chest: '35' },
+                  { size: '18', age: '4–5',   height: '105–115', chest: '37' },
+                  { size: '20', age: '5–6',   height: '115–125', chest: '39' },
+                  { size: '22', age: '7–8',   height: '125–135', chest: '41' },
+                  { size: '24', age: '8–9',   height: '135–145', chest: '43' },
+                  { size: '26', age: '10–11', height: '145–155', chest: '45' },
+                  { size: '28', age: '12–13', height: '155–165', chest: '47' },
                 ].map((row, i) => (
                   <tr
                     key={i}

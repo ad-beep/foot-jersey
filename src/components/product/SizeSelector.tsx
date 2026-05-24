@@ -33,7 +33,11 @@ export function SizeSelector({
   // a back-in-stock alert.
   const allSizes = isKids ? ([...KIDS_SIZES] as unknown as Size[]) : ([...ALL_SIZES] as unknown as Size[]);
   const availableSet = new Set(availableSizes);
-  const sizes = availableSizes.length > 0 ? allSizes : allSizes;
+  const sizes = allSizes;
+
+  // For kids: if the spreadsheet has no numeric kids sizes (e.g. defaulted to adult S/M/L),
+  // treat every kids size as in stock rather than showing all as out-of-stock.
+  const hasKidsSizeData = isKids && availableSizes.some((s) => /^\d{2}$/.test(String(s)));
 
   return (
     <div className={cn(shake && 'animate-[shake_0.4s_ease-in-out]')}>
@@ -46,7 +50,9 @@ export function SizeSelector({
         {sizes.map((size) => {
           const selected = selectedSize === size;
           const inStock = availableSet.has(size);
-          const outOfStock = !inStock && availableSizes.length > 0;
+          const outOfStock = isKids
+            ? (hasKidsSizeData ? !inStock : false)
+            : (!inStock && availableSizes.length > 0);
           return (
             <button
               key={size}
