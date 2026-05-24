@@ -69,13 +69,15 @@ export async function GET(request: NextRequest) {
     .filter((d) => {
       if (d.unsubscribedAt || d.convertedAt) return false;
       if (!d.email) return false;
-      const lastBlast: number = d.lastBlastAt?.toMillis?.() ?? d.lastBlastAt?.seconds * 1000 ?? 0;
+      const lastBlast: number = d.lastBlastAt
+        ? (d.lastBlastAt.toMillis?.() ?? (d.lastBlastAt.seconds ?? 0) * 1000)
+        : 0;
       return lastBlast < blastCutoff;
     })
     // Sort: never-blasted (lastBlastAt = 0) first, then oldest blast first
     .sort((a, b) => {
-      const aT = a.lastBlastAt?.toMillis?.() ?? 0;
-      const bT = b.lastBlastAt?.toMillis?.() ?? 0;
+      const aT = a.lastBlastAt ? (a.lastBlastAt.toMillis?.() ?? (a.lastBlastAt.seconds ?? 0) * 1000) : 0;
+      const bT = b.lastBlastAt ? (b.lastBlastAt.toMillis?.() ?? (b.lastBlastAt.seconds ?? 0) * 1000) : 0;
       return aT - bT;
     })
     .slice(0, BLAST_LIMIT);
