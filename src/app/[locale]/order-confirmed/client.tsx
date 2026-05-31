@@ -377,8 +377,8 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
 
             steps.push({
               text: isHe
-                ? <><strong style={{ color: '#fff' }}>נשלח תוך כשבוע</strong> — אנחנו מכינים את ההזמנה ושולחים בערך תוך שבוע. תקבל אימייל ברגע שהחבילה יוצאת לדרך.</>
-                : <><strong style={{ color: '#fff' }}>Shipped in about a week</strong> — We&apos;re prepping your order and shipping within roughly a week. You&apos;ll get an email the moment it leaves our hands.</>,
+                ? <><strong style={{ color: '#fff' }}>נשלח תוך כשבוע</strong> — אנחנו מכינים ושולחים את ההזמנה בערך תוך שבוע. ההזמנה מגיעה תוך 2–4 שבועות מהיום. תקבל אימייל ברגע שהחבילה יוצאת לדרך.</>
+                : <><strong style={{ color: '#fff' }}>Ships in about a week</strong> — We prep and ship within roughly a week. Total delivery takes 2–4 weeks from today. You&apos;ll get an email the moment your package leaves our hands.</>,
             });
 
             steps.push({

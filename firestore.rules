@@ -54,5 +54,35 @@ service cloud.firestore {
     match /discountUsage/{code} {
       allow read, write: if true;
     }
+
+    // ── Captured BIT Payments (idempotency guard for BIT orders) ──────────────
+    // Same pattern as capturedPayments. Server-side orders route writes here
+    // with no auth; admin can audit / clean up.
+    match /capturedBitPayments/{docId} {
+      allow create, update: if true;
+      allow read, delete: if isAdmin();
+    }
+
+    // ── Exit-intent Leads (email captures from the discount popup) ────────────
+    // Created/updated by /api/exit-intent/capture and /api/marketing/send-sequences
+    // (both server-side, no auth). Admin reads them on the Marketing page.
+    match /exitIntentLeads/{leadId} {
+      allow create, update: if true;
+      allow read, delete: if isAdmin();
+    }
+
+    // ── Abandoned Carts (cart contents + email for reminders) ─────────────────
+    // Created/updated by /api/abandoned-cart/save (server-side, no auth).
+    // Admin reads them on the Marketing page.
+    match /abandonedCarts/{cartId} {
+      allow create, update, delete: if true;
+      allow read: if isAdmin();
+    }
+
+    // ── Marketing Spends (admin-logged ad-spend entries) ──────────────────────
+    // Owned entirely by the admin — no public access.
+    match /marketingSpends/{spendId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

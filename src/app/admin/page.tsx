@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { collection, query, orderBy, onSnapshot, Timestamp, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Loader2, TrendingUp, ShoppingBag, Monitor, Megaphone, Plus, Trash2 } from 'lucide-react';
+import { Loader2, TrendingUp, ShoppingBag, Monitor } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import {
   USD_TO_ILS,
@@ -39,13 +39,6 @@ interface Order {
   paymentMethod: string;
   status: string;
   createdAt: Timestamp | null;
-}
-
-interface MarketingSpend {
-  id: string;
-  amount: number;
-  note: string;
-  spentAt: Timestamp | null;
 }
 
 type TimeRange = 'day' | 'week' | 'month';
@@ -160,10 +153,6 @@ export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
   const [visits, setVisits] = useState<number | null>(null);
   const [orphanedCount, setOrphanedCount] = useState<number>(0);
-  const [marketingSpends, setMarketingSpends] = useState<MarketingSpend[]>([]);
-  const [spendAmount, setSpendAmount] = useState('');
-  const [spendNote, setSpendNote] = useState('');
-  const [spendSaving, setSpendSaving] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -172,41 +161,6 @@ export default function AdminDashboard() {
       setLoading(false);
     });
   }, []);
-
-  useEffect(() => {
-    const q = query(collection(db, 'marketingSpends'), orderBy('spentAt', 'desc'));
-    return onSnapshot(q, (snap) => {
-      setMarketingSpends(snap.docs.map((d) => ({ id: d.id, ...d.data() } as MarketingSpend)));
-    });
-  }, []);
-
-  const logMarketingSpend = async () => {
-    const amount = parseFloat(spendAmount);
-    if (!Number.isFinite(amount) || amount <= 0) return;
-    setSpendSaving(true);
-    try {
-      await addDoc(collection(db, 'marketingSpends'), {
-        amount,
-        note: spendNote.trim() || '',
-        spentAt: serverTimestamp(),
-      });
-      setSpendAmount('');
-      setSpendNote('');
-    } catch (err) {
-      console.error('Failed to log marketing spend:', err);
-    } finally {
-      setSpendSaving(false);
-    }
-  };
-
-  const deleteMarketingSpend = async (id: string) => {
-    if (!confirm('Delete this marketing spend entry?')) return;
-    try {
-      await deleteDoc(doc(db, 'marketingSpends', id));
-    } catch (err) {
-      console.error('Failed to delete marketing spend:', err);
-    }
-  };
 
   useEffect(() => {
     fetch('/api/products')
@@ -299,16 +253,6 @@ export default function AdminDashboard() {
     }
     return Object.entries(map).sort((a, b) => b[1].costILS - a[1].costILS);
   }, [orders, productMap]);
-
-  // ─── Marketing budget ──────────────────────────────────────
-  // Accrued = ₪15 × total jerseys sold (the per-jersey reinvestment).
-  // Spent  = sum of admin-logged spend entries.
-  // Available = accrued − spent (may go negative when admin overspends).
-  const marketingBudget = useMemo(() => {
-    const accrued = metrics.totalJerseys * MARKETING_PER_JERSEY;
-    const spent = marketingSpends.reduce((s, e) => s + (e.amount || 0), 0);
-    return { accrued, spent, available: accrued - spent };
-  }, [metrics.totalJerseys, marketingSpends]);
 
   // ─── Revenue chart ─────────────────────────────────────────
   const chartData = useMemo(() => buildChartData(orders, timeRange), [orders, timeRange]);
@@ -517,105 +461,6 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ── Card 4: Marketing Budget (full width below row) ── */}
-        <div className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.03] p-5 flex flex-col gap-4 lg:col-span-3 lg:order-last">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-purple-300/70 mb-1 flex items-center gap-1.5">
-                <Megaphone className="w-3 h-3" /> Marketing Budget
-              </p>
-              <p className={`text-2xl font-extrabold tracking-tight ${marketingBudget.available >= 0 ? 'text-purple-300' : 'text-red-400'}`}>
-                ₪{fmt(marketingBudget.available)}
-              </p>
-              <p className="text-[10px] text-gray-600 mt-1">available to spend on ads</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-gray-500">Accrued <span className="text-purple-300 font-bold">₪{fmt(marketingBudget.accrued)}</span></p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Spent <span className="text-orange-300 font-bold">₪{fmt(marketingBudget.spent)}</span></p>
-              <p className="text-[10px] text-gray-700 mt-0.5">₪{MARKETING_PER_JERSEY}/jersey · {metrics.totalJerseys} jerseys</p>
-            </div>
-          </div>
-
-          {/* Progress bar — fill clamped 0..100, red overlay if overspent */}
-          <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden relative">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.min(100, marketingBudget.accrued > 0 ? (marketingBudget.spent / marketingBudget.accrued) * 100 : 0)}%`,
-                background: marketingBudget.available >= 0
-                  ? 'linear-gradient(90deg,#a855f7,#c084fc)'
-                  : 'linear-gradient(90deg,#dc2626,#f87171)',
-              }}
-            />
-          </div>
-
-          {/* Log new spend */}
-          <div className="flex gap-2 items-end flex-wrap">
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] text-gray-600 uppercase tracking-wider">Amount (₪)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                value={spendAmount}
-                onChange={(e) => setSpendAmount(e.target.value)}
-                placeholder="100"
-                className="w-24 px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50"
-              />
-            </div>
-            <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-              <label className="text-[9px] text-gray-600 uppercase tracking-wider">Note (optional)</label>
-              <input
-                type="text"
-                value={spendNote}
-                onChange={(e) => setSpendNote(e.target.value)}
-                placeholder="Meta ads, TikTok boost…"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/[0.04] text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50"
-              />
-            </div>
-            <button
-              onClick={logMarketingSpend}
-              disabled={spendSaving || !spendAmount || parseFloat(spendAmount) <= 0}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 text-sm font-semibold hover:bg-purple-500/25 disabled:opacity-40 transition-colors"
-            >
-              {spendSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-              Log Spend
-            </button>
-          </div>
-
-          {/* Recent spends */}
-          {marketingSpends.length > 0 && (
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-700 mb-2">
-                Recent Spends ({marketingSpends.length})
-              </p>
-              <div className="flex flex-col gap-0 max-h-44 overflow-y-auto pr-1">
-                {marketingSpends.map((s) => {
-                  const when = s.spentAt?.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) ?? '—';
-                  return (
-                    <div key={s.id} className="flex justify-between items-center py-1.5 border-b border-white/[0.04] last:border-0 gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] text-gray-600 font-mono shrink-0 w-12">{when}</span>
-                        <span className="text-[11px] text-gray-400 truncate">{s.note || '—'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[11px] font-bold text-orange-300">₪{fmt(s.amount)}</span>
-                        <button
-                          onClick={() => deleteMarketingSpend(s.id)}
-                          className="p-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                          aria-label="Delete spend"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ── Card 3: Order Quantity ── */}

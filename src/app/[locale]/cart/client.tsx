@@ -324,7 +324,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
     if (!form.city.trim()) e.city = isHe ? 'עיר היא שדה חובה' : 'City is required';
     if (!form.street.trim()) e.street = isHe ? 'רחוב הוא שדה חובה' : 'Street is required';
     if (!form.zip.trim()) e.zip = isHe ? 'מיקוד הוא שדה חובה' : 'Zip code is required';
-    else if (!/^[a-zA-Z0-9][a-zA-Z0-9\- ]{1,11}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד לא תקין' : 'Invalid postal code';
+    else if (!/^\d{7}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד חייב להיות 7 ספרות בדיוק' : 'Zip code must be exactly 7 digits';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -592,14 +592,15 @@ function CheckoutSection({ isHe, isRtl, split }: {
           </div>
           <div className="sm:w-32">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              {isHe ? 'מיקוד *' : 'Zip Code *'}
+              {isHe ? 'מיקוד * (7 ספרות)' : 'Zip Code * (7 digits)'}
             </label>
             <input
               type="text"
+              inputMode="numeric"
               value={form.zip}
-              onChange={(e) => set('zip', e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10))}
+              onChange={(e) => set('zip', e.target.value.replace(/\D/g, '').slice(0, 7))}
               placeholder="6100000"
-              maxLength={10}
+              maxLength={7}
               className={inputClass}
               style={{ ...inputStyle(!!errors.zip), direction: 'ltr' }}
             />
