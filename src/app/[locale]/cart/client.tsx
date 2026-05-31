@@ -324,7 +324,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
     if (!form.city.trim()) e.city = isHe ? 'עיר היא שדה חובה' : 'City is required';
     if (!form.street.trim()) e.street = isHe ? 'רחוב הוא שדה חובה' : 'Street is required';
     if (!form.zip.trim()) e.zip = isHe ? 'מיקוד הוא שדה חובה' : 'Zip code is required';
-    else if (!/^\d{7}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד חייב להיות 7 ספרות בדיוק' : 'Zip code must be exactly 7 digits';
+    else if (!/^[a-zA-Z0-9][a-zA-Z0-9\- ]{1,11}$/.test(form.zip.trim())) e.zip = isHe ? 'מיקוד לא תקין' : 'Invalid postal code';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -388,19 +388,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         });
 
         if (!response.ok) {
-          // Surface the server's user-facing error message when available so
-          // the customer sees "try again" rather than a generic failure.
-          let serverMessage = '';
-          try {
-            const errBody = await response.json();
-            serverMessage = errBody?.error || '';
-          } catch { /* response had no JSON body */ }
-          throw new Error(
-            serverMessage ||
-              (isHe
-                ? 'נתקלנו בבעיה בשמירת ההזמנה. נסה שוב — לא נחייב אותך פעמיים.'
-                : "We had trouble saving your order. Please try again — you won't be charged twice."),
-          );
+          throw new Error('Failed to save order');
         }
 
         return await response.json();
@@ -409,7 +397,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         throw error;
       }
     },
-    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs, isHe]
+    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs]
   );
 
   const handlePaymentSuccess = useCallback(
@@ -592,15 +580,14 @@ function CheckoutSection({ isHe, isRtl, split }: {
           </div>
           <div className="sm:w-32">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              {isHe ? 'מיקוד * (7 ספרות)' : 'Zip Code * (7 digits)'}
+              {isHe ? 'מיקוד *' : 'Zip Code *'}
             </label>
             <input
               type="text"
-              inputMode="numeric"
               value={form.zip}
-              onChange={(e) => set('zip', e.target.value.replace(/\D/g, '').slice(0, 7))}
+              onChange={(e) => set('zip', e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10))}
               placeholder="6100000"
-              maxLength={7}
+              maxLength={10}
               className={inputClass}
               style={{ ...inputStyle(!!errors.zip), direction: 'ltr' }}
             />
