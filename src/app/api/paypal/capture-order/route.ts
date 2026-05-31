@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 10;
+
 const PAYPAL_API_BASE = 'https://api.paypal.com';
 
 async function getPayPalAccessToken() {
@@ -19,6 +21,7 @@ async function getPayPalAccessToken() {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=client_credentials',
+    signal: AbortSignal.timeout(4000),
   });
 
   if (!response.ok) {
@@ -53,6 +56,7 @@ export async function POST(request: NextRequest) {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(4000),
       }
     );
 
@@ -76,6 +80,7 @@ export async function POST(request: NextRequest) {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(6000),
       }
     );
 

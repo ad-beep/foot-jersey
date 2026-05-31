@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Cap at 30 saves/minute per IP. The cart auto-saves while the customer
+    // types — a legit shopper hits this maybe 5 times. 30 leaves headroom
+    // for the chatty `onBlur` re-saves, but blocks bots draining Firebase.
+    const ip = getClientIp(request);
+    const limit = rateLimit({ key: `abandoned:${ip}`, windowMs: 60_000, max: 30 });
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } },
+      );
+    }
+
     const { sessionId, email, items, locale } = await request.json();
     if (!sessionId || !email) {
       return NextResponse.json({ error: 'Missing sessionId or email' }, { status: 400 });

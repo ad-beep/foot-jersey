@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
       { data, error: null, timestamp: Date.now() },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          // Vercel edge cache for 5 min, serve stale up to 1h while revalidating.
+          // Under a traffic spike this keeps Google Sheets at ~1 read / 5 min /
+          // edge region, not once per visitor.
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
         },
       }
     );
