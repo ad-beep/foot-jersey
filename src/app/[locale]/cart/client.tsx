@@ -388,7 +388,19 @@ function CheckoutSection({ isHe, isRtl, split }: {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to save order');
+          // Surface the server's user-facing error message when available so
+          // the customer sees "try again" rather than a generic failure.
+          let serverMessage = '';
+          try {
+            const errBody = await response.json();
+            serverMessage = errBody?.error || '';
+          } catch { /* response had no JSON body */ }
+          throw new Error(
+            serverMessage ||
+              (isHe
+                ? 'נתקלנו בבעיה בשמירת ההזמנה. נסה שוב — לא נחייב אותך פעמיים.'
+                : "We had trouble saving your order. Please try again — you won't be charged twice."),
+          );
         }
 
         return await response.json();
@@ -397,7 +409,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         throw error;
       }
     },
-    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs]
+    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs, isHe]
   );
 
   const handlePaymentSuccess = useCallback(

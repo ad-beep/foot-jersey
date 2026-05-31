@@ -16,9 +16,14 @@ export async function POST(request: NextRequest) {
       discountCode: 'STAY10',
       emailsSent: [],
     });
-    sendMarketingWelcomeEmail({ to: email, discountCode: 'STAY10' })
-      .then(() => updateDoc(docRef, { emailsSent: ['welcome'] }))
-      .catch((err) => console.error('[exit-intent] welcome email failed:', err));
+    // Awaiting the send here is intentional: on Vercel serverless, fire-and-forget
+    // work after the response returns may be terminated before the email goes out.
+    try {
+      await sendMarketingWelcomeEmail({ to: email, discountCode: 'STAY10' });
+      await updateDoc(docRef, { emailsSent: ['welcome'] });
+    } catch (err) {
+      console.error('[exit-intent] welcome email failed:', err);
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('exit-intent capture error:', err);

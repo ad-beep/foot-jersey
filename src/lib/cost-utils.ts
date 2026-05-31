@@ -1,7 +1,7 @@
 // ─── Owner cost calculation utilities ────────────────────────────────────────
 // Used by admin dashboard and order detail page to calculate profit/cost.
 
-export const USD_TO_ILS = 3.4;
+export const USD_TO_ILS = 3.0;
 export const MARKETING_PER_JERSEY = 15;   // ₪15 per jersey sold (paid to marketing person)
 export const PAYPAL_RATE = 0.05;           // 5% PayPal commission
 export const SHIPPING_COST_USD = 5;        // $5 per order

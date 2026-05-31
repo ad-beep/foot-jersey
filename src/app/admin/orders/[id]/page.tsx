@@ -71,13 +71,16 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 async function callUpdateStatus(orderId: string, status: string, order?: Order) {
-  const orderData = (status === 'processing' && order) ? {
-    email: order.shippingInfo.email,
-    customerName: order.shippingInfo.name,
-    total: order.total,
-    subtotal: order.subtotal,
-    shipping: order.shipping ?? 0,
-    items: order.items.map((item) => ({
+  // Both 'processing' (BIT-approved → send approved email) and 'shipped'
+  // (→ send shipped email) need customer details server-side.
+  const needsCustomerData = order && (status === 'processing' || status === 'shipped');
+  const orderData = needsCustomerData ? {
+    email: order!.shippingInfo.email,
+    customerName: order!.shippingInfo.name,
+    total: order!.total,
+    subtotal: order!.subtotal,
+    shipping: order!.shipping ?? 0,
+    items: order!.items.map((item) => ({
       teamName: item.teamName,
       size: item.size,
       quantity: item.quantity || 1,
@@ -85,11 +88,13 @@ async function callUpdateStatus(orderId: string, status: string, order?: Order) 
       customization: item.customization,
     })),
     shippingAddress: {
-      street: order.shippingInfo.street,
-      city: order.shippingInfo.city,
-      zip: order.shippingInfo.zip,
-      country: order.shippingInfo.country,
+      street: order!.shippingInfo.street,
+      city: order!.shippingInfo.city,
+      zip: order!.shippingInfo.zip,
+      country: order!.shippingInfo.country,
     },
+    trackingNumber: order!.trackingNumber ?? null,
+    trackingCarrier: order!.trackingCarrier ?? null,
   } : undefined;
 
   const currentUser = getAuth().currentUser;

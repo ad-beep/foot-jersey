@@ -88,14 +88,22 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
       return;
     }
 
+    // We got an orderId from the /api/orders 201 response, so the order DID save
+    // on the server. Firestore client-side reads can lag a bit (network, cold
+    // starts, replica propagation). Keep retrying patiently rather than scaring
+    // the customer — only stop after a real timeout (~30s), and only show the
+    // softer "try again" screen on genuine read failures.
     let attempts = 0;
-    const MAX_ATTEMPTS = 5;
+    const MAX_ATTEMPTS = 20;
     const RETRY_DELAY_MS = 1500;
+    let cancelled = false;
 
     function tryFetch() {
+      if (cancelled) return;
       attempts += 1;
       getDoc(doc(db, 'orders', orderId!))
         .then((snap) => {
+          if (cancelled) return;
           if (snap.exists()) {
             setOrder({ id: snap.id, ...snap.data() } as Order);
             setLoading(false);
@@ -107,6 +115,7 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
           }
         })
         .catch(() => {
+          if (cancelled) return;
           if (attempts < MAX_ATTEMPTS) {
             setTimeout(tryFetch, RETRY_DELAY_MS);
           } else {
@@ -117,6 +126,9 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
     }
 
     tryFetch();
+    return () => {
+      cancelled = true;
+    };
   }, [orderId, locale, router]);
 
   if (loading) {
@@ -132,29 +144,29 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
     return (
       <div style={{ backgroundColor: 'var(--ink)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
         <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(200,162,75,0.10)', border: '2px solid rgba(200,162,75,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            <CheckCircle2 style={{ width: 28, height: 28, color: '#C8A24B' }} />
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(255,190,50,0.10)', border: '2px solid rgba(255,190,50,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <Clock style={{ width: 28, height: 28, color: '#FFBE32' }} />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 12, fontFamily: 'Playfair Display, Georgia, serif' }}>
-            {isHe ? 'התשלום התקבל' : 'Payment Received'}
+            {isHe ? 'ההזמנה בטעינה' : 'Loading your order'}
           </h1>
           <p style={{ fontSize: 14, color: '#888', lineHeight: 1.7, marginBottom: 20 }}>
             {isHe
-              ? 'תשלומך עבר בהצלחה, אך יש לנו קושי זמני בטעינת פרטי ההזמנה. ההזמנה שלך נשמרה — צור קשר עם התמיכה עם קוד ההפניה שלהלן.'
-              : 'Your payment went through, but we\'re having trouble loading your order details. Your order is saved — please contact support with the reference below.'}
+              ? 'אנחנו עדיין טוענים את פרטי ההזמנה שלך. רענן את הדף בעוד רגע — אם תקבל אימייל אישור, ההזמנה נשמרה בהצלחה.'
+              : 'We\'re still loading your order details. Please refresh in a moment — if you receive a confirmation email, your order is safely saved.'}
           </p>
           {supportRef && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(200,162,75,0.10)', border: '1px solid rgba(200,162,75,0.22)', borderRadius: 100, padding: '8px 20px', fontSize: 13, fontFamily: 'monospace', color: '#C8A24B', marginBottom: 24 }}>
-              {isHe ? 'קוד הפניה:' : 'Reference:'} {supportRef}
+              {isHe ? 'קוד הזמנה:' : 'Order ref:'} {supportRef}
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <a
-              href={`mailto:support@shopfootjersey.com?subject=${encodeURIComponent(isHe ? `עזרה עם הזמנה ${supportRef || ''}` : `Order help - ref ${supportRef || ''}`)}`}
-              style={{ display: 'block', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
+            <button
+              onClick={() => window.location.reload()}
+              style={{ display: 'block', backgroundColor: 'var(--flare)', color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, border: 'none', cursor: 'pointer', boxShadow: '0 0 24px rgba(255,77,46,0.3)' }}
             >
-              {isHe ? 'צור קשר עם תמיכה' : 'Contact Support'}
-            </a>
+              {isHe ? 'רענן' : 'Refresh'}
+            </button>
             <Link
               href={`/${locale}`}
               style={{ display: 'block', backgroundColor: 'transparent', color: '#555', fontSize: 13, padding: '10px', borderRadius: 12, textDecoration: 'none' }}
@@ -349,26 +361,58 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
             </div>
           </div>
 
-          {/* What's next */}
-          <div style={{ backgroundColor: sectionBg, border: `1px solid ${sectionBord}`, borderRadius: 12, padding: '18px 20px', marginBottom: 24 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: sectionLabel, marginBottom: 12 }}>
-              {isHe ? 'מה קורה עכשיו?' : 'What happens next'}
-            </div>
-            {(isPending ? [
-              { n: 1, text: isHe ? <><strong style={{color:'#bbb'}}>אישור תשלום</strong> — נאמת את ההעברה שלך ב-BIT בתוך מספר שעות.</> : <><strong style={{color:'#bbb'}}>Payment verification</strong> — We&apos;ll confirm your BIT transfer within a few hours.</> },
-              { n: 2, text: isHe ? <><strong style={{color:'#bbb'}}>אישור הזמנה</strong> — לאחר האישור תקבל אימייל עם פרטי ההזמנה המלאים.</> : <><strong style={{color:'#bbb'}}>Order confirmed</strong> — Once approved, you&apos;ll receive a second email with your full receipt.</> },
-              { n: 3, text: isHe ? <><strong style={{color:'#bbb'}}>משלוח</strong> — הגופיות שלך נשלחות תוך 2–4 שבועות לאחר האישור.</> : <><strong style={{color:'#bbb'}}>Shipped</strong> — Your jerseys ship within 2–4 weeks after approval.</> },
-            ] : [
-              { n: 1, text: isHe ? <><strong style={{color:'#bbb'}}>הזמנה אושרה</strong> — קיבלנו את התשלום ומתחילים לעבוד.</> : <><strong style={{color:'#bbb'}}>Order confirmed</strong> — We&apos;ve received your payment and are on it.</> },
-              { n: 2, text: isHe ? <><strong style={{color:'#bbb'}}>הכנה</strong> — הגופיות שלך מודפסות ומוכנות. זה לוקח 2–4 שבועות.</> : <><strong style={{color:'#bbb'}}>Production</strong> — Your jerseys are printed and prepared. This takes 2–4 weeks.</> },
-              { n: 3, text: isHe ? <><strong style={{color:'#bbb'}}>משלוח</strong> — תקבל אימייל עם פרטי מעקב כשהחבילה בדרך.</> : <><strong style={{color:'#bbb'}}>Shipped</strong> — You&apos;ll get a tracking email once your order is on the way.</> },
-            ]).map(({ n, text }) => (
-              <div key={n} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: n < 3 ? 10 : 0 }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: heroAccentBg, border: `1px solid ${heroAccentBord}`, color: heroIconColor, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
-                <div style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>{text}</div>
+          {/* What's next — full timeline with BIT note + pickup + help + tiktok */}
+          {(() => {
+            // Build the step list: BIT-pending orders start with a payment-verification step
+            type Step = { text: React.ReactNode };
+            const steps: Step[] = [];
+
+            if (isBit) {
+              steps.push({
+                text: isHe
+                  ? <><strong style={{ color: '#fff' }}>ודא שביצעת את התשלום ב-BIT</strong> — אם עוד לא העברת, פתח את אפליקציית BIT והעבר את הסכום למספר <span style={{ fontFamily: 'monospace', color: gold }}>054-682-0210</span>. תקבל אימייל קצר ברגע שנאמת את התשלום.</>
+                  : <><strong style={{ color: '#fff' }}>Make sure you completed the BIT payment</strong> — if you haven&apos;t transferred yet, open BIT and send the amount to <span style={{ fontFamily: 'monospace', color: gold }}>054-682-0210</span>. You&apos;ll get a short email as soon as we verify your transfer.</>,
+              });
+            }
+
+            steps.push({
+              text: isHe
+                ? <><strong style={{ color: '#fff' }}>נשלח תוך כשבוע</strong> — אנחנו מכינים את ההזמנה ושולחים בערך תוך שבוע. תקבל אימייל ברגע שהחבילה יוצאת לדרך.</>
+                : <><strong style={{ color: '#fff' }}>Shipped in about a week</strong> — We&apos;re prepping your order and shipping within roughly a week. You&apos;ll get an email the moment it leaves our hands.</>,
+            });
+
+            steps.push({
+              text: isHe
+                ? <><strong style={{ color: '#fff' }}>הודעה על איסוף</strong> — תקבל הודעה עם פרטים על איך לאסוף את החבילה מנקודת האיסוף הקרובה אליך.</>
+                : <><strong style={{ color: '#fff' }}>Pickup notification</strong> — You&apos;ll get a message with details on how to collect your package from your nearest pickup point.</>,
+            });
+
+            steps.push({
+              text: isHe
+                ? <>צריך עזרה במשהו? <a href="https://wa.me/972584140508" target="_blank" rel="noopener noreferrer" style={{ color: gold, textDecoration: 'none', fontWeight: 700 }}>פנה אלינו ב-WhatsApp</a> — אנחנו עונים מהר.</>
+                : <>Need help with anything? <a href="https://wa.me/972584140508" target="_blank" rel="noopener noreferrer" style={{ color: gold, textDecoration: 'none', fontWeight: 700 }}>Message us on WhatsApp</a> — we reply fast.</>,
+            });
+
+            steps.push({
+              text: isHe
+                ? <>אל תשכח לעקוב אחרינו ב-<a href="https://www.tiktok.com/@foot.jerseys4" target="_blank" rel="noopener noreferrer" style={{ color: gold, textDecoration: 'none', fontWeight: 700 }}>TikTok</a> — דרופים חדשים והנחות.</>
+                : <>Don&apos;t forget to follow us on <a href="https://www.tiktok.com/@foot.jerseys4" target="_blank" rel="noopener noreferrer" style={{ color: gold, textDecoration: 'none', fontWeight: 700 }}>TikTok</a> for new drops and offers.</>,
+            });
+
+            return (
+              <div style={{ backgroundColor: sectionBg, border: `1px solid ${sectionBord}`, borderRadius: 12, padding: '18px 20px', marginBottom: 24 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: sectionLabel, marginBottom: 12 }}>
+                  {isHe ? 'מה הלאה' : "What's Next"}
+                </div>
+                {steps.map((step, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: i < steps.length - 1 ? 10 : 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: heroAccentBg, border: `1px solid ${heroAccentBord}`, color: heroIconColor, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
+                    <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.6 }}>{step.text}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
 
           {/* CTA */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

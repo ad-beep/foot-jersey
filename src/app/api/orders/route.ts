@@ -14,7 +14,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
-import { sendOrderConfirmation, sendBitPendingEmail, sendOrderFailedRefundEmail } from '@/lib/email';
+import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
 
 const PAYPAL_API_BASE = 'https://api.paypal.com';
@@ -31,20 +31,6 @@ async function getPayPalAccessToken(): Promise<string> {
   });
   if (!res.ok) throw new Error('Failed to get PayPal access token');
   return (await res.json()).access_token;
-}
-
-async function issuePayPalRefund(captureId: string): Promise<boolean> {
-  try {
-    const accessToken = await getPayPalAccessToken();
-    const res = await fetch(`${PAYPAL_API_BASE}/v2/payments/captures/${captureId}/refund`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: '{}',
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
 }
 
 // Retry helper with exponential backoff
@@ -210,20 +196,13 @@ async function markLeadConverted(email: string) {
 }
 
 export async function POST(request: NextRequest) {
-  // These are set progressively so the catch block can refund/notify without body in scope.
+  // Surfaced in the failure response so the customer can quote it to support if needed.
   let paypalOrderIdForRecovery: string | undefined;
-  let paypalCaptureIdForRefund: string | undefined;
-  let paymentConfirmedCaptured = false;
-  let catchEmail: string | undefined;
-  let catchName: string | undefined;
-  let catchTotal: number | undefined;
 
   try {
     const body = (await request.json()) as OrderData;
 
     paypalOrderIdForRecovery = body.paypalOrderId;
-    catchEmail = body.shippingInfo?.email;
-    catchTotal = body.total;
 
     // Validate required fields
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -262,7 +241,6 @@ export async function POST(request: NextRequest) {
           if (snap.data().orderCreated === 'processing') return 'duplicate_in_progress';
           // Atomically mark as processing so no other request can claim it
           tx.update(capturedRef, { orderCreated: 'processing' });
-          paypalCaptureIdForRefund = snap.data().captureId || undefined;
           return 'claimed';
         });
 
@@ -293,7 +271,6 @@ export async function POST(request: NextRequest) {
             if (paypalOrder.status === 'COMPLETED') {
               captureVerified = true;
               const captureId: string | undefined = paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.id;
-              paypalCaptureIdForRefund = captureId;
               try {
                 const capturedAmount = parseFloat(
                   paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
@@ -324,9 +301,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-
-      // From this point on, any thrown error will trigger auto-refund in the catch block.
-      paymentConfirmedCaptured = true;
     }
 
     // ── BIT idempotency guard ────────────────────────────────────────────────
@@ -353,10 +327,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Server-side price validation ─────────────────────────────────────────
-    // Price mismatches are logged but never block an order — stale cart prices
-    // from a recent price update are the most common cause of drift. Only structural
-    // shipment-leg mismatches are fatal (those are bugs, not cache timing).
+    // ── Server-side price/discount sanity checks ─────────────────────────────
+    // These are ADVISORY ONLY. Once payment is captured we MUST save the order.
+    // Anything suspicious is flagged on the order doc (priceWarning / discountWarning)
+    // so admin can review in the dashboard, but never blocks the save.
+    let priceWarning: string | null = null;
+    let discountWarning: string | null = null;
     try {
       const { fetchJerseys } = await import('@/lib/google-sheets');
       const { calculateCustomizationPrice } = await import('@/lib/utils');
@@ -382,51 +358,53 @@ export async function POST(request: NextRequest) {
         const expectedItemPrice = jersey.price + extras;
         if (item.totalPrice !== expectedItemPrice) {
           console.warn(`[orders] Price drift for ${item.jerseyId}: client ${item.totalPrice}, server ${expectedItemPrice} (base=${jersey.price} extras=${extras})`);
+          priceWarning = `Price drift on ${item.jerseyId}: paid ₪${item.totalPrice}, catalog ₪${expectedItemPrice}`;
         }
       }
 
-      // Rehydrate items so the shipping splitter sees jersey.type for local vs. international.
       const { splitCart } = await import('@/lib/shipping-split');
       const hydratedItems = body.items.map((item) => {
         const j = catalogJerseys.find((c) => c.id === item.jerseyId);
         return j ? { ...item, jersey: j } : item;
       });
       const serverSplit = splitCart(hydratedItems);
-      const computedSubtotal = serverSplit.subtotal;
-      const computedShipping = serverSplit.shipping;
       const computedTotal =
-        computedSubtotal + computedShipping - (body.discountAmount || 0);
+        serverSplit.subtotal + serverSplit.shipping - (body.discountAmount || 0);
 
-      // Shipment leg structure must match exactly — this is structural, not a price issue.
       if (body.shipmentLegs && body.shipmentLegs.length > 0) {
         if (!serverSplit.hasSplit || body.shipmentLegs.length !== serverSplit.legs.length) {
-          throw new Error('Shipment split mismatch. Please refresh and try again.');
-        }
-        for (const clientLeg of body.shipmentLegs) {
-          const serverLeg = serverSplit.legs.find((l) => l.source === clientLeg.source);
-          if (!serverLeg) throw new Error(`Unknown shipment source: ${clientLeg.source}`);
-          if (
-            Math.abs(serverLeg.subtotal - clientLeg.subtotal) > 1 ||
-            serverLeg.shipping !== clientLeg.shipping ||
-            serverLeg.itemCount !== clientLeg.itemCount
-          ) {
-            console.warn(
-              `[orders] Leg mismatch (${clientLeg.source}): client=${JSON.stringify(clientLeg)} server=${JSON.stringify({ subtotal: serverLeg.subtotal, shipping: serverLeg.shipping, itemCount: serverLeg.itemCount })}`
-            );
-            throw new Error('Shipment totals mismatch. Please refresh and try again.');
+          priceWarning = (priceWarning ? priceWarning + ' | ' : '') + 'Shipment split mismatch';
+        } else {
+          for (const clientLeg of body.shipmentLegs) {
+            const serverLeg = serverSplit.legs.find((l) => l.source === clientLeg.source);
+            if (!serverLeg) {
+              priceWarning = (priceWarning ? priceWarning + ' | ' : '') + `Unknown shipment source: ${clientLeg.source}`;
+              continue;
+            }
+            if (
+              Math.abs(serverLeg.subtotal - clientLeg.subtotal) > 1 ||
+              serverLeg.shipping !== clientLeg.shipping ||
+              serverLeg.itemCount !== clientLeg.itemCount
+            ) {
+              console.warn(
+                `[orders] Leg mismatch (${clientLeg.source}): client=${JSON.stringify(clientLeg)} server=${JSON.stringify({ subtotal: serverLeg.subtotal, shipping: serverLeg.shipping, itemCount: serverLeg.itemCount })}`
+              );
+              priceWarning = (priceWarning ? priceWarning + ' | ' : '') + `Leg ${clientLeg.source} totals mismatch`;
+            }
           }
         }
       }
 
       if (Math.abs(computedTotal - body.total) > 1) {
         console.warn(`[orders] Total drift: client ${body.total}, server ${computedTotal}`);
+        priceWarning = (priceWarning ? priceWarning + ' | ' : '') + `Total drift: paid ₪${body.total}, server ₪${computedTotal}`;
       }
     } catch (priceCheckErr) {
-      // Re-throw structural errors; price-drift warnings never reach here.
-      throw priceCheckErr;
+      // Even the price-check infrastructure failing is non-fatal — log and move on.
+      console.error('[orders] Price-check infrastructure error (non-fatal):', priceCheckErr);
     }
 
-    // ── Re-validate discount code at order time ──────────────────────────────
+    // ── Re-validate discount code at order time (non-fatal) ──────────────────
     if (body.discountCode) {
       try {
         const auth = getSheetsAuth();
@@ -444,67 +422,62 @@ export async function POST(request: NextRequest) {
             : -1;
 
           if (rowIndex === -1) {
-            throw new Error('Discount code is no longer valid. Please remove it and try again.');
-          }
-
-          const row = rows![rowIndex];
-          const maxUses = parseInt(row[4]) || 0;
-          const sheetsUses = parseInt(row[5]) || 0;
-          const expiryDate = row[6];
-          const isActive = row[7]?.toLowerCase() !== 'false';
-
-          let firestoreUses = 0;
-          try {
-            const usageSnap = await getDoc(doc(db, 'discountUsage', normalizedCode));
-            if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
-          } catch { /* fall back to Sheets count */ }
-          const currentUses = Math.max(sheetsUses, firestoreUses);
-
-          const codeInvalid =
-            !isActive ||
-            (expiryDate && new Date(expiryDate) < new Date()) ||
-            (maxUses > 0 && currentUses >= maxUses);
-
-          if (codeInvalid) {
-            throw new Error('Discount code is no longer valid. Please remove it and try again.');
-          }
-
-          // ── Server-side discount amount validation ───────────────────
-          // Recompute the discount amount from the sheet data and verify it
-          // matches what the client sent. Prevents discount amount manipulation.
-          const discountType = row[1]; // 'percentage' or 'fixed'
-          const discountValue = parseFloat(row[2]) || 0;
-          const minOrder = parseFloat(row[3]) || 0;
-
-          // Compute subtotal the same way the price-check block above did
-          const serverComputedSubtotal = body.items.reduce(
-            (sum, item) => sum + item.totalPrice * item.quantity,
-            0
-          );
-
-          if (minOrder > 0 && serverComputedSubtotal < minOrder) {
-            throw new Error('Discount code minimum order requirement not met.');
-          }
-
-          let serverDiscountAmount: number;
-          if (discountType === 'percentage') {
-            serverDiscountAmount = Math.floor((serverComputedSubtotal * discountValue) / 100);
+            discountWarning = `Discount code ${normalizedCode} not in sheet`;
           } else {
-            serverDiscountAmount = discountValue;
-          }
-          serverDiscountAmount = Math.min(serverDiscountAmount, serverComputedSubtotal);
+            const row = rows![rowIndex];
+            const maxUses = parseInt(row[4]) || 0;
+            const sheetsUses = parseInt(row[5]) || 0;
+            const expiryDate = row[6];
+            const isActive = row[7]?.toLowerCase() !== 'false';
 
-          const clientDiscountAmount = body.discountAmount || 0;
-          if (Math.abs(clientDiscountAmount - serverDiscountAmount) > 1) {
-            console.warn(
-              `Discount amount mismatch: client sent ${clientDiscountAmount}, server computed ${serverDiscountAmount} for code ${body.discountCode}`
-            );
-            throw new Error('Discount amount mismatch. Please refresh and try again.');
+            let firestoreUses = 0;
+            try {
+              const usageSnap = await getDoc(doc(db, 'discountUsage', normalizedCode));
+              if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
+            } catch { /* fall back to Sheets count */ }
+            const currentUses = Math.max(sheetsUses, firestoreUses);
+
+            const codeInvalid =
+              !isActive ||
+              (expiryDate && new Date(expiryDate) < new Date()) ||
+              (maxUses > 0 && currentUses >= maxUses);
+
+            if (codeInvalid) {
+              discountWarning = `Discount code ${normalizedCode} no longer valid (expired/exhausted/inactive)`;
+            } else {
+              const discountType = row[1];
+              const discountValue = parseFloat(row[2]) || 0;
+              const minOrder = parseFloat(row[3]) || 0;
+
+              const serverComputedSubtotal = body.items.reduce(
+                (sum, item) => sum + item.totalPrice * item.quantity,
+                0
+              );
+
+              if (minOrder > 0 && serverComputedSubtotal < minOrder) {
+                discountWarning = `Discount minimum-order not met (₪${serverComputedSubtotal} < ₪${minOrder})`;
+              } else {
+                let serverDiscountAmount: number;
+                if (discountType === 'percentage') {
+                  serverDiscountAmount = Math.floor((serverComputedSubtotal * discountValue) / 100);
+                } else {
+                  serverDiscountAmount = discountValue;
+                }
+                serverDiscountAmount = Math.min(serverDiscountAmount, serverComputedSubtotal);
+
+                const clientDiscountAmount = body.discountAmount || 0;
+                if (Math.abs(clientDiscountAmount - serverDiscountAmount) > 1) {
+                  console.warn(
+                    `Discount amount mismatch: client sent ${clientDiscountAmount}, server computed ${serverDiscountAmount} for code ${body.discountCode}`
+                  );
+                  discountWarning = `Discount amount drift: client ₪${clientDiscountAmount}, server ₪${serverDiscountAmount}`;
+                }
+              }
+            }
           }
         }
       } catch (discountCheckErr) {
-        // Re-throw so outer catch can refund if payment was already captured.
-        throw discountCheckErr;
+        console.error('[orders] Discount-check infrastructure error (non-fatal):', discountCheckErr);
       }
     }
 
@@ -512,7 +485,6 @@ export async function POST(request: NextRequest) {
     const customerName =
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
-    catchName = customerName;
 
     // 1. Write to Firestore with atomic order number.
     // ── Mixed shipment: write TWO linked orders sharing an orderGroupId ─────
@@ -599,6 +571,8 @@ export async function POST(request: NextRequest) {
             currency: body.currency,
             createdAt: serverTimestamp(),
             status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+            priceWarning: priceWarning || null,
+            discountWarning: discountWarning || null,
           });
           return;
         }
@@ -644,6 +618,8 @@ export async function POST(request: NextRequest) {
           currency: body.currency,
           createdAt: serverTimestamp(),
           status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+          priceWarning: priceWarning || null,
+          discountWarning: discountWarning || null,
         });
 
         transaction.set(secondaryOrderRef!, {
@@ -667,6 +643,8 @@ export async function POST(request: NextRequest) {
           currency: body.currency,
           createdAt: serverTimestamp(),
           status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+          priceWarning: priceWarning || null,
+          discountWarning: discountWarning || null,
         });
       });
     }, 3);
@@ -781,41 +759,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating order:', error);
 
-    // Auto-refund: if we confirmed the payment was captured but order creation failed,
-    // automatically refund the customer so no money is taken without an order.
-    if (paymentConfirmedCaptured && paypalCaptureIdForRefund) {
-      console.log(`[orders] Order creation failed after capture — attempting auto-refund of capture ${paypalCaptureIdForRefund}`);
-      const refunded = await withRetry(() => issuePayPalRefund(paypalCaptureIdForRefund!), 3).catch(() => false);
-      if (refunded) {
-        console.log(`[orders] Auto-refund succeeded for capture ${paypalCaptureIdForRefund}`);
-        try {
-          // Reset orderCreated so orphaned-payment check can detect it; mark as refunded
-          await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), {
-            status: 'refunded',
-            orderCreated: false,
-          });
-        } catch { /* best-effort */ }
-        // Notify the customer immediately so they know what happened
-        if (catchEmail) {
-          sendOrderFailedRefundEmail({
-            to: catchEmail,
-            customerName: catchName || 'Customer',
-            paypalOrderId: paypalOrderIdForRecovery!,
-            amount: catchTotal || 0,
-          }).catch((emailErr) => console.error('[orders] Failed to send refund notification email:', emailErr));
-        }
-        return NextResponse.json(
-          { error: 'Order processing failed. Your payment has been automatically refunded. Please try again in a few minutes.' },
-          { status: 500 }
-        );
-      } else {
-        console.error(`[orders] Auto-refund FAILED for capture ${paypalCaptureIdForRefund} — manual intervention required`);
-      }
-    }
-
+    // We DO NOT auto-refund. If the customer paid, the funds remain captured and
+    // the admin will see an orphaned payment in the dashboard to reconcile manually.
+    // The customer is told to try again — the second attempt's idempotency check
+    // (capturedPayments/capturedBitPayments) will detect their existing payment.
     return NextResponse.json(
       {
-        error: 'Failed to create order. If you were charged, please contact support with your order reference.',
+        error: 'We had trouble saving your order. Please try again — your payment will not be charged twice.',
         supportRef: paypalOrderIdForRecovery || undefined,
       },
       { status: 500 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { google } from 'googleapis';
-import { sendBitApprovedEmail } from '@/lib/email';
+import { sendBitApprovedEmail, sendOrderShippedEmail } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
 import { writeAuditLog } from '@/lib/audit-log';
 
@@ -94,6 +94,17 @@ export async function POST(request: NextRequest) {
         items: orderData.items,
         shippingAddress: orderData.shippingAddress,
       }).catch((e) => console.error('BIT approval email error:', e));
+    }
+
+    // Send shipping notification when admin marks an order as shipped.
+    if (status === 'shipped' && orderData?.email) {
+      await sendOrderShippedEmail({
+        to: orderData.email,
+        customerName: orderData.customerName || '',
+        orderId,
+        trackingNumber: orderData.trackingNumber || null,
+        trackingCarrier: orderData.trackingCarrier || null,
+      }).catch((e) => console.error('Shipped email error:', e));
     }
 
     return NextResponse.json({ success: true });
