@@ -17,11 +17,6 @@ import { google } from 'googleapis';
 import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
 
-// Vercel Hobby caps serverless functions at 10s. Make that explicit so a slow
-// PayPal call fails fast (and gets caught + reported) instead of timing out
-// silently mid-Firestore-transaction and leaving the order half-saved.
-export const maxDuration = 10;
-
 const PAYPAL_API_BASE = 'https://api.paypal.com';
 
 async function getPayPalAccessToken(): Promise<string> {
