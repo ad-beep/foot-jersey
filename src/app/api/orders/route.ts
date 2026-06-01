@@ -201,6 +201,13 @@ export async function POST(request: NextRequest) {
   let paypalOrderIdForRecovery: string | undefined;
   let paypalCaptureIdForRefund: string | undefined;
   let paymentConfirmedCaptured = false;
+  // Funding-source metadata pulled from capturedPayments / PayPal API.
+  // Hoisted to function scope so the order-write transaction can persist them.
+  // null for BIT orders or for legacy PayPal orders whose capturedPayments
+  // record predates this code.
+  let resolvedFundingSource: 'card' | 'paypal' | null = null;
+  let resolvedCardBrand: string | null = null;
+  let resolvedCardLast4: string | null = null;
 
   try {
     const body = (await request.json()) as OrderData;
@@ -245,6 +252,9 @@ export async function POST(request: NextRequest) {
           // Atomically mark as processing so no other request can claim it
           tx.update(capturedRef, { orderCreated: 'processing' });
           paypalCaptureIdForRefund = snap.data().captureId || undefined;
+          resolvedFundingSource = (snap.data().fundingSource as 'card' | 'paypal' | null) ?? null;
+          resolvedCardBrand = (snap.data().cardBrand as string | null) ?? null;
+          resolvedCardLast4 = (snap.data().cardLast4 as string | null) ?? null;
           return 'claimed';
         });
 
@@ -276,6 +286,10 @@ export async function POST(request: NextRequest) {
               captureVerified = true;
               const captureId: string | undefined = paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.id;
               paypalCaptureIdForRefund = captureId;
+              const ps = paypalOrder.payment_source ?? {};
+              resolvedFundingSource = ps.card ? 'card' : ps.paypal ? 'paypal' : null;
+              resolvedCardBrand = ps.card?.brand ?? null;
+              resolvedCardLast4 = ps.card?.last_digits ?? null;
               try {
                 const capturedAmount = parseFloat(
                   paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
@@ -289,6 +303,9 @@ export async function POST(request: NextRequest) {
                   captureId: captureId || null,
                   orderCreated: false,
                   recoveredViaPayPalApi: true,
+                  fundingSource: resolvedFundingSource,
+                  cardBrand: resolvedCardBrand,
+                  cardLast4: resolvedCardLast4,
                 });
               } catch (writeErr) {
                 console.error('[orders] Failed to recreate capturedPayments record:', writeErr);
@@ -580,6 +597,9 @@ export async function POST(request: NextRequest) {
             currency: body.currency,
             createdAt: serverTimestamp(),
             status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+            fundingSource: resolvedFundingSource,
+            cardBrand: resolvedCardBrand,
+            cardLast4: resolvedCardLast4,
           });
           return;
         }
@@ -625,6 +645,9 @@ export async function POST(request: NextRequest) {
           currency: body.currency,
           createdAt: serverTimestamp(),
           status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+          fundingSource: resolvedFundingSource,
+          cardBrand: resolvedCardBrand,
+          cardLast4: resolvedCardLast4,
         });
 
         transaction.set(secondaryOrderRef!, {
@@ -648,6 +671,9 @@ export async function POST(request: NextRequest) {
           currency: body.currency,
           createdAt: serverTimestamp(),
           status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
+          fundingSource: resolvedFundingSource,
+          cardBrand: resolvedCardBrand,
+          cardLast4: resolvedCardLast4,
         });
       });
     }, 3);

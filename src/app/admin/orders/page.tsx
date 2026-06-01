@@ -19,6 +19,11 @@ interface OrderSummary {
   shipmentSource?: 'local' | 'international';
   discountCode?: string | null;
   discountAmount?: number;
+  // Captured on every PayPal capture from this commit onward. null on legacy
+  // orders and on BIT orders.
+  fundingSource?: 'card' | 'paypal' | null;
+  cardBrand?: string | null;
+  cardLast4?: string | null;
 }
 
 function formatOrderDate(ts: Timestamp | null): string {
@@ -221,8 +226,22 @@ export default function OrdersPage() {
                   <span className="text-[11px] font-semibold px-2 py-1 rounded-md bg-orange-500/10 text-orange-400 border border-orange-500/15">
                     ⚡ BIT{isBitDeclined ? ' · Declined' : ''}
                   </span>
-                ) : (
+                ) : order.fundingSource === 'card' ? (
+                  <span
+                    title={order.cardBrand && order.cardLast4 ? `${order.cardBrand} ending in ${order.cardLast4}` : 'Credit/debit card'}
+                    className="text-[11px] font-semibold px-2 py-1 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                  >
+                    💳 Card{order.cardLast4 ? ` · ${order.cardLast4}` : ''}
+                  </span>
+                ) : order.fundingSource === 'paypal' ? (
                   <span className="text-[11px] font-semibold px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                    🅿️ PayPal
+                  </span>
+                ) : (
+                  <span
+                    title="Funding source not recorded — order placed before tracking was added. Cross-reference paypalOrderId in PayPal Activity."
+                    className="text-[11px] font-semibold px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15"
+                  >
                     PayPal
                   </span>
                 )}

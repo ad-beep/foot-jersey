@@ -90,6 +90,19 @@ export async function POST(request: NextRequest) {
 
     const order = await response.json();
 
+    // PayPal includes a payment_source object on every captured order. It
+    // contains EITHER `card` (paid with a credit/debit card via PayPal's
+    // hosted card form) OR `paypal` (paid with PayPal wallet / balance /
+    // linked bank). We surface this so /admin/orders can show a badge.
+    const ps = order.payment_source ?? {};
+    const fundingSource: 'card' | 'paypal' | null = ps.card
+      ? 'card'
+      : ps.paypal
+      ? 'paypal'
+      : null;
+    const cardBrand: string | null = ps.card?.brand ?? null;
+    const cardLast4: string | null = ps.card?.last_digits ?? null;
+
     // Write a recovery record so we can trace the payment if order creation fails
     if (order.status === 'COMPLETED') {
       try {
@@ -107,6 +120,9 @@ export async function POST(request: NextRequest) {
           capturedAmount,
           captureId,
           orderCreated: false,
+          fundingSource,
+          cardBrand,
+          cardLast4,
         });
       } catch (e) {
         // Non-blocking — best effort. If this write fails, orders/route.ts will
