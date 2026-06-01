@@ -73,10 +73,12 @@ service cloud.firestore {
 
     // ── Abandoned Carts (cart contents + email for reminders) ─────────────────
     // Created/updated by /api/abandoned-cart/save (server-side, no auth).
-    // Admin reads them on the Marketing page.
+    // Reads also need to be open because the save endpoint does a getDoc to
+    // check whether the cart already exists before merging. Cart docs are
+    // keyed by an unguessable session UUID so this isn't a useful enumeration
+    // target. Admin still reads them on the Marketing page through the same rule.
     match /abandonedCarts/{cartId} {
-      allow create, update, delete: if true;
-      allow read: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     // ── Marketing Spends (admin-logged ad-spend entries) ──────────────────────
