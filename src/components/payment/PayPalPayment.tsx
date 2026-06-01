@@ -5,15 +5,21 @@ import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { AlertCircle } from 'lucide-react';
 
 function getPayPalOptions() {
-  // Note: we explicitly DO NOT disable card funding here. PayPal's hosted
-  // checkout page accepts cards as a guest-checkout option, which is how
-  // card-paying customers now reach card processing (the in-website card
-  // form was returning INVALID_EXP for every submission).
+  // CRITICAL: disable-funding must include 'card'. Without it, PayPal's SDK
+  // renders a separate in-website Card button that opens the Standard Card
+  // Fields (SCF) form — that form was rejecting every submission with
+  // INVALID_EXP and is exactly what we're routing around.
+  //
+  // With card disabled here, only the PayPal button renders on our page.
+  // When a customer clicks it, PayPal opens their own hosted checkout page
+  // where a "Pay with Debit or Credit Card" guest option is built into the
+  // page itself (separate product from SCF, always available, doesn't
+  // depend on our merchant having the Advanced Cards capability).
   return {
     clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test',
     currency: 'ILS' as const,
     intent: 'capture' as const,
-    'disable-funding': 'paylater' as const,
+    'disable-funding': 'card,paylater' as const,
   };
 }
 
@@ -150,6 +156,7 @@ export function PayPalPayment({
           createOrder={handleCreateOrder}
           onApprove={handleApprove}
           onError={handleError}
+          fundingSource="paypal"
           style={{
             layout: 'vertical',
             color: 'blue',
