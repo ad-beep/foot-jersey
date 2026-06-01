@@ -4,14 +4,16 @@ import { useState, useCallback, useRef } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { AlertCircle } from 'lucide-react';
 
-function getPayPalOptions(fundingSource: 'paypal' | 'card') {
+function getPayPalOptions() {
+  // Note: we explicitly DO NOT disable card funding here. PayPal's hosted
+  // checkout page accepts cards as a guest-checkout option, which is how
+  // card-paying customers now reach card processing (the in-website card
+  // form was returning INVALID_EXP for every submission).
   return {
     clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test',
     currency: 'ILS' as const,
     intent: 'capture' as const,
-    ...(fundingSource === 'card'
-      ? { 'enable-funding': 'card', 'disable-funding': 'paylater' }
-      : { 'disable-funding': 'card,paylater' }),
+    'disable-funding': 'paylater' as const,
   };
 }
 
@@ -30,7 +32,6 @@ interface PayPalPaymentProps {
   amount: number;
   isHe: boolean;
   isRtl: boolean;
-  fundingSource?: 'paypal' | 'card';
   shippingAddress?: ShippingAddress;
   onSuccess: (orderId: string) => void;
   onError: (error: string) => void;
@@ -40,7 +41,6 @@ export function PayPalPayment({
   amount,
   isHe,
   isRtl,
-  fundingSource = 'paypal',
   shippingAddress,
   onSuccess,
   onError,
@@ -129,8 +129,7 @@ export function PayPalPayment({
     [onError]
   );
 
-  const isCard = fundingSource === 'card';
-  const paypalOptions = getPayPalOptions(fundingSource);
+  const paypalOptions = getPayPalOptions();
 
   return (
     <PayPalScriptProvider options={paypalOptions}>
@@ -151,23 +150,18 @@ export function PayPalPayment({
           createOrder={handleCreateOrder}
           onApprove={handleApprove}
           onError={handleError}
-          fundingSource={isCard ? 'card' : undefined}
           style={{
             layout: 'vertical',
-            color: isCard ? 'black' : 'blue',
+            color: 'blue',
             height: 48,
             tagline: false,
           }}
         />
 
         <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-          {isCard
-            ? (isHe
-              ? 'תשלום בכרטיס אשראי מאובטח ומעובד דרך PayPal'
-              : 'Credit card payment is secure and processed via PayPal')
-            : (isHe
-              ? 'התשלום בעזרת PayPal מאובטח ודעות אישית שלך מוגנות'
-              : 'PayPal payment is secure and your information is protected')}
+          {isHe
+            ? 'התשלום מאובטח דרך PayPal. ניתן לשלם עם חשבון PayPal או עם כרטיס אשראי כאורח.'
+            : 'Secure checkout via PayPal. Pay with your PayPal account or use a credit/debit card as guest.'}
         </p>
       </div>
     </PayPalScriptProvider>

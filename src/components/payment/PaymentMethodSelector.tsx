@@ -1,9 +1,14 @@
 'use client';
 
-import { CreditCard, Smartphone, AlertCircle, Wallet } from 'lucide-react';
+import { Smartphone, AlertCircle, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export type PaymentMethod = 'bit' | 'paypal' | 'credit-card';
+// In-website card fields (PayPal Advanced Checkout SCF) are disabled because
+// PayPal's hosted card form was rejecting submissions on our merchant account
+// with INVALID_EXP, blocking card customers entirely. The PayPal hosted page
+// itself accepts cards as a guest-checkout option, so card customers route
+// through the regular PayPal button instead.
+export type PaymentMethod = 'bit' | 'paypal';
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -24,19 +29,11 @@ const methods = [
   },
   {
     id: 'paypal' as PaymentMethod,
-    labelEn: 'PayPal',
-    labelHe: 'PayPal',
-    descEn: 'Pay with your PayPal account',
-    descHe: 'שלם עם חשבון PayPal שלך',
+    labelEn: 'PayPal or Card',
+    labelHe: 'PayPal או כרטיס אשראי',
+    descEn: 'PayPal, Visa, Mastercard, Amex',
+    descHe: 'PayPal, ויזה, מאסטרקארד, אמקס',
     icon: Wallet,
-  },
-  {
-    id: 'credit-card' as PaymentMethod,
-    labelEn: 'Credit Card',
-    labelHe: 'כרטיס אשראי',
-    descEn: 'Visa, Mastercard, Amex',
-    descHe: 'ויזה, מאסטרקארד, אמקס',
-    icon: CreditCard,
   },
 ];
 
@@ -53,7 +50,7 @@ export function PaymentMethodSelector({
         {isHe ? 'בחר שיטת תשלום' : 'Select Payment Method'}
       </h3>
 
-      <div className={`grid grid-cols-1 sm:grid-cols-3 gap-3`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3`}>
         {methods.map((method) => {
           const Icon = method.icon;
           const isSelected = selected === method.id;

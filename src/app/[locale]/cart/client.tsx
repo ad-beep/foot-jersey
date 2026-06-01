@@ -338,8 +338,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
     }) => {
       try {
         const isBit = options.method === 'bit';
-        // credit-card goes through PayPal gateway, so map to 'paypal' for backend
-        const backendMethod = options.method === 'credit-card' ? 'paypal' : options.method;
+        const backendMethod = options.method;
         const response = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -852,7 +851,6 @@ function CheckoutSection({ isHe, isRtl, split }: {
                 amount={finalTotal}
                 isHe={isHe}
                 isRtl={isRtl}
-                fundingSource={paymentMethod === 'credit-card' ? 'card' : 'paypal'}
                 shippingAddress={{
                   firstName: form.firstName,
                   lastName: form.lastName,
