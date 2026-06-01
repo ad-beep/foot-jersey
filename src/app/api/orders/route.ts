@@ -14,7 +14,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { google } from 'googleapis';
-import { sendOrderConfirmation, sendBitPendingEmail, sendOrderFailedRefundEmail } from '@/lib/email';
+import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import type { CartItem } from '@/types';
 
 const PAYPAL_API_BASE = 'https://api.paypal.com';
@@ -31,20 +31,6 @@ async function getPayPalAccessToken(): Promise<string> {
   });
   if (!res.ok) throw new Error('Failed to get PayPal access token');
   return (await res.json()).access_token;
-}
-
-async function issuePayPalRefund(captureId: string): Promise<boolean> {
-  try {
-    const accessToken = await getPayPalAccessToken();
-    const res = await fetch(`${PAYPAL_API_BASE}/v2/payments/captures/${captureId}/refund`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: '{}',
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
 }
 
 // Retry helper with exponential backoff
@@ -210,20 +196,16 @@ async function markLeadConverted(email: string) {
 }
 
 export async function POST(request: NextRequest) {
-  // These are set progressively so the catch block can refund/notify without body in scope.
+  // These are set progressively so the catch block has access to the
+  // PayPal references for the "contact support" response.
   let paypalOrderIdForRecovery: string | undefined;
   let paypalCaptureIdForRefund: string | undefined;
   let paymentConfirmedCaptured = false;
-  let catchEmail: string | undefined;
-  let catchName: string | undefined;
-  let catchTotal: number | undefined;
 
   try {
     const body = (await request.json()) as OrderData;
 
     paypalOrderIdForRecovery = body.paypalOrderId;
-    catchEmail = body.shippingInfo?.email;
-    catchTotal = body.total;
 
     // Validate required fields
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -512,7 +494,6 @@ export async function POST(request: NextRequest) {
     const customerName =
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
-    catchName = customerName;
 
     // 1. Write to Firestore with atomic order number.
     // ── Mixed shipment: write TWO linked orders sharing an orderGroupId ─────
@@ -781,36 +762,24 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating order:', error);
 
-    // Auto-refund: if we confirmed the payment was captured but order creation failed,
-    // automatically refund the customer so no money is taken without an order.
+    // NO auto-refund. If the payment was already captured but we failed to save
+    // the order, the money stays captured — the customer is told to contact
+    // support so the admin can manually decide whether to fulfil or refund.
+    // The orphaned-payment record in capturedPayments lets the admin find it.
     if (paymentConfirmedCaptured && paypalCaptureIdForRefund) {
-      console.log(`[orders] Order creation failed after capture — attempting auto-refund of capture ${paypalCaptureIdForRefund}`);
-      const refunded = await withRetry(() => issuePayPalRefund(paypalCaptureIdForRefund!), 3).catch(() => false);
-      if (refunded) {
-        console.log(`[orders] Auto-refund succeeded for capture ${paypalCaptureIdForRefund}`);
-        try {
-          // Reset orderCreated so orphaned-payment check can detect it; mark as refunded
-          await updateDoc(doc(db, 'capturedPayments', paypalOrderIdForRecovery!), {
-            status: 'refunded',
-            orderCreated: false,
-          });
-        } catch { /* best-effort */ }
-        // Notify the customer immediately so they know what happened
-        if (catchEmail) {
-          sendOrderFailedRefundEmail({
-            to: catchEmail,
-            customerName: catchName || 'Customer',
-            paypalOrderId: paypalOrderIdForRecovery!,
-            amount: catchTotal || 0,
-          }).catch((emailErr) => console.error('[orders] Failed to send refund notification email:', emailErr));
-        }
-        return NextResponse.json(
-          { error: 'Order processing failed. Your payment has been automatically refunded. Please try again in a few minutes.' },
-          { status: 500 }
-        );
-      } else {
-        console.error(`[orders] Auto-refund FAILED for capture ${paypalCaptureIdForRefund} — manual intervention required`);
-      }
+      console.error(
+        `[orders] Order save failed AFTER capture ${paypalCaptureIdForRefund}. ` +
+        `Customer paid but no order saved — check capturedPayments and reconcile manually.`
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Your payment was received but we could not finalize the order. ' +
+            'Please contact support with the reference below and we will sort it out.',
+          supportRef: paypalOrderIdForRecovery || undefined,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
