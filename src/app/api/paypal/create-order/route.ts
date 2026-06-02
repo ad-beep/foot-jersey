@@ -152,7 +152,13 @@ export async function POST(request: NextRequest) {
     }
 
     const order = await response.json();
-    const approveUrl = order.links?.find((l: { rel: string; href: string }) => l.rel === 'approve')?.href ?? null;
+    // Normal (application_context) orders expose the approval link as rel
+    // 'approve'. Card-first (experience_context / GUEST_CHECKOUT) orders expose
+    // it as rel 'payer-action'. Accept either so both flows get a redirect URL.
+    const approveUrl =
+      order.links?.find(
+        (l: { rel: string; href: string }) => l.rel === 'approve' || l.rel === 'payer-action'
+      )?.href ?? null;
 
     return NextResponse.json({
       orderId: order.id,

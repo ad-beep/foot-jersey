@@ -901,6 +901,14 @@ function CheckoutSection({ isHe, isRtl, split }: {
               {isHe ? 'אמצעי תשלום' : 'Payment method'}
             </p>
 
+            {/* Error (covers both card + PayPal failures) */}
+            {paymentError && (
+              <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}>
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#FF4D6D' }} />
+                <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
+              </div>
+            )}
+
             {/* Bit */}
             <button
               onClick={handleBitClick}
@@ -912,44 +920,6 @@ function CheckoutSection({ isHe, isRtl, split }: {
             >
               <Image src="/images/bit-logo.png" alt="Bit" width={40} height={40} className="rounded-md shrink-0" />
               <span className="text-sm font-semibold text-white">{isHe ? 'תשלום עם Bit' : 'Pay with Bit'}</span>
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 py-1">
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{isHe ? 'או' : 'or'}</span>
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
-            </div>
-
-            {/* PayPal / Credit Card */}
-            {paymentError && (
-              <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}>
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#FF4D6D' }} />
-                <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
-              </div>
-            )}
-            {/* Credit / Debit Card — routes straight to PayPal's hosted card form */}
-            <button
-              onClick={handleCardClick}
-              disabled={submitting}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-50"
-              style={{ backgroundColor: '#FFFFFF', color: '#0A0A0B' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#ECECEC'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#FFFFFF'; }}
-            >
-              <CreditCard className="w-5 h-5 shrink-0" />
-              <span className="flex-1 text-left">{isHe ? 'כרטיס אשראי / דביט' : 'Credit / Debit Card'}</span>
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-              ) : (
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded leading-none" style={{ backgroundColor: '#1A1F71', color: '#fff' }}>VISA</span>
-                  <span className="relative inline-block w-[26px] h-4">
-                    <span className="absolute top-0 left-0 w-4 h-4 rounded-full" style={{ backgroundColor: '#EB001B' }} />
-                    <span className="absolute top-0 right-0 w-4 h-4 rounded-full" style={{ backgroundColor: '#F79E1B', mixBlendMode: 'multiply' }} />
-                  </span>
-                </span>
-              )}
             </button>
 
             {/* Official PayPal button (branded, recognizable). Card funding is
@@ -976,6 +946,37 @@ function CheckoutSection({ isHe, isRtl, split }: {
                 onError={(msg) => { setPaymentError(msg); setSubmitting(false); }}
               />
             </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 py-1">
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{isHe ? 'או' : 'or'}</span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
+            </div>
+
+            {/* Credit / Debit Card — routes straight to PayPal's hosted card form */}
+            <button
+              onClick={handleCardClick}
+              disabled={submitting}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-50"
+              style={{ backgroundColor: '#FFFFFF', color: '#0A0A0B' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#ECECEC'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#FFFFFF'; }}
+            >
+              <CreditCard className="w-5 h-5 shrink-0" />
+              <span className="flex-1 text-left">{isHe ? 'כרטיס אשראי / דביט' : 'Credit / Debit Card'}</span>
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : (
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded leading-none" style={{ backgroundColor: '#1A1F71', color: '#fff' }}>VISA</span>
+                  <span className="relative inline-block w-[26px] h-4">
+                    <span className="absolute top-0 left-0 w-4 h-4 rounded-full" style={{ backgroundColor: '#EB001B' }} />
+                    <span className="absolute top-0 right-0 w-4 h-4 rounded-full" style={{ backgroundColor: '#F79E1B', mixBlendMode: 'multiply' }} />
+                  </span>
+                </span>
+              )}
+            </button>
           </div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
