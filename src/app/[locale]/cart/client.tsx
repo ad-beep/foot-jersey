@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag, Trash2, Plus, Minus, Truck, ArrowLeft, ArrowRight,
-  Package, CreditCard, X, AlertCircle, Loader2, Smartphone, Wallet,
+  CreditCard, X, AlertCircle, Loader2, Wallet,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -288,13 +288,20 @@ function CheckoutSection({ isHe, isRtl, split }: {
           body: JSON.stringify({ orderId: token }),
         });
         if (!captureRes.ok) {
-          // Order not approved — customer likely cancelled. Fail silently.
-          setSubmitting(false);
-          return;
+          // Capture failed — could be a cancellation or a real error.
+          // Check the status to distinguish.
+          const errData = await captureRes.json().catch(() => ({}));
+          if (errData?.details?.[0]?.issue === 'ORDER_NOT_APPROVED') {
+            // Customer cancelled — silent, just restore cart state.
+            setSubmitting(false);
+            return;
+          }
+          throw new Error('Payment capture failed. Please try again or contact support.');
         }
         const captureData = await captureRes.json();
         // Only save if PayPal confirms COMPLETED status
         if (captureData.status !== 'COMPLETED') {
+          // Not yet approved — customer likely cancelled.
           setSubmitting(false);
           return;
         }
@@ -446,28 +453,6 @@ function CheckoutSection({ isHe, isRtl, split }: {
       }
     },
     [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs]
-  );
-
-  const handlePaymentSuccess = useCallback(
-    async (paymentIntentId?: string, paypalOrderId?: string) => {
-      setSubmitting(true);
-      try {
-        const result = await saveOrder({ paymentIntentId, paypalOrderId, method: 'paypal' });
-        const orderId = result?.orderId;
-        if (!orderId) throw new Error('Order saved but no ID returned');
-        clearCart();
-        clearAbandonedCart();
-        if (typeof window !== 'undefined') localStorage.removeItem('exit_discount_code');
-        router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to save order';
-        setPaymentError(message);
-        toast({ title: message, variant: 'error' });
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [saveOrder, clearCart, router, locale, setPaymentError, toast]
   );
 
   const handleBitConfirm = useCallback(
