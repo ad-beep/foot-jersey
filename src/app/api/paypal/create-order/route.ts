@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
           return_url: returnUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/cart?payment=success`,
           cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/cart?payment=cancelled`,
           shipping_preference: shippingAddress ? 'SET_PROVIDED_ADDRESS' : 'NO_SHIPPING',
+          user_action: 'PAY_NOW',
         },
       }),
     });
