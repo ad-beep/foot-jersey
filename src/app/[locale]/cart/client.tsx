@@ -310,7 +310,10 @@ function CheckoutSection({ isHe, isRtl, split }: {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...pending.payload, paypalOrderId: captureData.orderId }),
         });
-        if (!orderRes.ok) throw new Error('Failed to save order');
+        if (!orderRes.ok) {
+          const errData = await orderRes.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to save order');
+        }
         const orderData = await orderRes.json();
         clearCart();
         clearAbandonedCart();
