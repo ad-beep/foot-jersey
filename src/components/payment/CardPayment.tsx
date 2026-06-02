@@ -69,6 +69,16 @@ function SubmitButton({
   );
 }
 
+const CARD_STYLE = {
+  input: {
+    color: 'white',
+    'font-size': '14px',
+    'font-family': 'inherit',
+  },
+  '.invalid': { color: '#FF4D6D' },
+  '::placeholder': { color: 'rgba(255,255,255,0.3)' },
+};
+
 function CardFieldsContent({
   amount,
   isHe,
@@ -79,16 +89,6 @@ function CardFieldsContent({
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const isCapturing = useRef(false);
-
-  const cardStyle = {
-    input: {
-      color: 'white',
-      'font-size': '14px',
-      'font-family': 'inherit',
-    },
-    '.invalid': { color: '#FF4D6D' },
-    '::placeholder': { color: 'rgba(255,255,255,0.3)' },
-  };
 
   const handleCreateOrder = useCallback(async () => {
     const res = await fetch('/api/paypal/create-order', {
@@ -117,6 +117,7 @@ function CardFieldsContent({
           const err = await res.json();
           throw new Error(err.error || 'Failed to capture payment');
         }
+        setSubmitting(false);
         onSuccess((await res.json()).orderId);
       } catch (err) {
         isCapturing.current = false;
@@ -158,7 +159,7 @@ function CardFieldsContent({
         createOrder={handleCreateOrder}
         onApprove={handleApprove}
         onError={handleError}
-        style={cardStyle}
+        style={CARD_STYLE}
       >
         <div
           className="rounded-xl p-4"
