@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag, Trash2, Plus, Minus, Truck, ArrowLeft, ArrowRight,
-  CreditCard, X, AlertCircle, Loader2, Wallet,
+  CreditCard, X, AlertCircle, Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -19,6 +19,7 @@ import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { splitCart, SHIPMENT_LEG_LABELS, SPLIT_SHIPMENT_NOTICE, type SplitResult } from '@/lib/shipping-split';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
+import { PayPalButton } from '@/components/payment/PayPalButton';
 import type { CartItem } from '@/types';
 
 // ─── Cart Item Row (full page) ──────────────────────────────────────────────
@@ -493,7 +494,11 @@ function CheckoutSection({ isHe, isRtl, split }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, isHe]);
 
-  const handlePayPalClick = useCallback(async () => {
+  // Credit / debit card button. Routes the buyer straight to PayPal's hosted
+  // card-entry form (guest checkout) via the redirect flow, then captures + saves
+  // on return. Saved as a `card` order. (PayPal-account payments use the official
+  // PayPal button below, not this redirect.)
+  const handleCardClick = useCallback(async () => {
     if (!validate()) {
       toast({
         title: isHe ? 'נא למלא את כל השדות' : 'Please fill all required fields',
@@ -516,7 +521,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
           billingStreet: sameAsBilling ? form.street : form.billingStreet,
           billingZip: sameAsBilling ? form.zip : form.billingZip,
         },
-        paymentMethod: 'paypal',
+        paymentMethod: 'card',
         paymentStatus: 'completed',
         subtotal,
         shipping: shippingCost,
@@ -540,6 +545,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: finalTotal.toFixed(2),
+          preferCard: true,
           returnUrl: `${window.location.origin}/${locale}/cart`,
           cancelUrl: `${window.location.origin}/${locale}/cart`,
           shippingAddress: {
@@ -550,17 +556,34 @@ function CheckoutSection({ isHe, isRtl, split }: {
           },
         }),
       });
-      if (!res.ok) throw new Error('Failed to create PayPal order');
+      if (!res.ok) throw new Error('Failed to create card order');
       const data = await res.json();
-      if (!data.approveUrl) throw new Error('No PayPal approval URL');
+      if (!data.approveUrl) throw new Error('No payment approval URL');
       window.location.href = data.approveUrl;
     } catch (err) {
       sessionStorage.removeItem('paypal_pending');
-      setPaymentError(err instanceof Error ? err.message : 'Failed to start PayPal payment');
+      setPaymentError(err instanceof Error ? err.message : 'Failed to start card payment');
       setSubmitting(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, items, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs, locale, isHe]);
+
+  // Official PayPal button success → save as a `paypal` order, then confirm.
+  const handlePayPalSuccess = useCallback(async (paypalOrderId: string) => {
+    setSubmitting(true);
+    try {
+      const result = await saveOrder({ method: 'paypal', paypalOrderId });
+      const orderId = result?.orderId;
+      if (!orderId) throw new Error('Order saved but no ID returned');
+      clearCart();
+      clearAbandonedCart();
+      if (typeof window !== 'undefined') localStorage.removeItem('exit_discount_code');
+      router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : 'Failed to save order');
+      setSubmitting(false);
+    }
+  }, [saveOrder, clearCart, router, locale]);
 
 
   const inputClass = 'w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-all duration-200 focus:ring-1';
@@ -905,18 +928,54 @@ function CheckoutSection({ isHe, isRtl, split }: {
                 <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
               </div>
             )}
+            {/* Credit / Debit Card — routes straight to PayPal's hosted card form */}
             <button
-              onClick={handlePayPalClick}
+              onClick={handleCardClick}
               disabled={submitting}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.06)'; }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-50"
+              style={{ backgroundColor: '#FFFFFF', color: '#0A0A0B' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#ECECEC'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#FFFFFF'; }}
             >
-              <Wallet className="w-5 h-5 shrink-0" style={{ color: '#0070E0' }} />
-              <span className="flex-1 text-left">{isHe ? 'PayPal / כרטיס אשראי' : 'PayPal / Credit Card'}</span>
-              {submitting && <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: 'var(--text-muted)' }} />}
+              <CreditCard className="w-5 h-5 shrink-0" />
+              <span className="flex-1 text-left">{isHe ? 'כרטיס אשראי / דביט' : 'Credit / Debit Card'}</span>
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : (
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded leading-none" style={{ backgroundColor: '#1A1F71', color: '#fff' }}>VISA</span>
+                  <span className="relative inline-block w-[26px] h-4">
+                    <span className="absolute top-0 left-0 w-4 h-4 rounded-full" style={{ backgroundColor: '#EB001B' }} />
+                    <span className="absolute top-0 right-0 w-4 h-4 rounded-full" style={{ backgroundColor: '#F79E1B', mixBlendMode: 'multiply' }} />
+                  </span>
+                </span>
+              )}
             </button>
+
+            {/* Official PayPal button (branded, recognizable). Card funding is
+                disabled in the SDK so it never loads PayPal's ACDC card form. */}
+            <div className={submitting ? 'opacity-50 pointer-events-none' : ''}>
+              <PayPalButton
+                amount={finalTotal}
+                isHe={isHe}
+                shippingAddress={{
+                  firstName: form.firstName, lastName: form.lastName,
+                  street: form.street, city: form.city,
+                  zip: form.zip, country: form.country,
+                  phone: form.phone, email: form.email,
+                }}
+                onValidate={() => {
+                  if (!validate()) {
+                    toast({ title: isHe ? 'נא למלא את כל השדות' : 'Please fill all required fields', variant: 'error' });
+                    return false;
+                  }
+                  setPaymentError('');
+                  return true;
+                }}
+                onSuccess={handlePayPalSuccess}
+                onError={(msg) => { setPaymentError(msg); setSubmitting(false); }}
+              />
+            </div>
           </div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
