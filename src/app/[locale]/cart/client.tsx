@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag, Trash2, Plus, Minus, Truck, ArrowLeft, ArrowRight,
-  Package, CreditCard, X, AlertCircle, Loader2, Smartphone,
+  Package, CreditCard, X, AlertCircle, Loader2, Smartphone, Wallet,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -18,7 +18,6 @@ import { Reveal } from '@/components/ui/reveal';
 import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { splitCart, SHIPMENT_LEG_LABELS, SPLIT_SHIPMENT_NOTICE, type SplitResult } from '@/lib/shipping-split';
-import { PayPalPayment } from '@/components/payment/PayPalPayment';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
 import type { CartItem } from '@/types';
 
@@ -266,6 +265,47 @@ function CheckoutSection({ isHe, isRtl, split }: {
     return () => clearTimeout(t);
   }, [items, form.email, locale]);
 
+  // Handle return from PayPal redirect flow
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const payerId = params.get('PayerID');
+    if (!token || !payerId) return;
+    const raw = sessionStorage.getItem('paypal_pending');
+    if (!raw) return;
+    window.history.replaceState({}, '', window.location.pathname);
+    const pending = JSON.parse(raw) as { payload: Record<string, unknown>; locale: string };
+    sessionStorage.removeItem('paypal_pending');
+    setSubmitting(true);
+    (async () => {
+      try {
+        const captureRes = await fetch('/api/paypal/capture-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: token }),
+        });
+        if (!captureRes.ok) throw new Error('Failed to capture payment');
+        const captureData = await captureRes.json();
+        const orderRes = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...pending.payload, paypalOrderId: captureData.orderId }),
+        });
+        if (!orderRes.ok) throw new Error('Failed to save order');
+        const orderData = await orderRes.json();
+        clearCart();
+        clearAbandonedCart();
+        if (typeof window !== 'undefined') localStorage.removeItem('exit_discount_code');
+        router.push(`/${pending.locale}/order-confirmed?orderId=${orderData.orderId}`);
+      } catch (err) {
+        setPaymentError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
+        setSubmitting(false);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Shipping already computed per-leg by splitCart (sum of per-leg flat fees).
   // freeShipping is used only by the free-shipping progress bar — we keep the
   // single-bag threshold view for the combined cart since both legs get the
@@ -453,6 +493,75 @@ function CheckoutSection({ isHe, isRtl, split }: {
     setShowBitFlow(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, isHe]);
+
+  const handlePayPalClick = useCallback(async () => {
+    if (!validate()) {
+      toast({
+        title: isHe ? 'נא למלא את כל השדות' : 'Please fill all required fields',
+        variant: 'error',
+      });
+      return;
+    }
+    setSubmitting(true);
+    setPaymentError('');
+    try {
+      const payload = {
+        items,
+        shippingInfo: {
+          firstName: form.firstName, lastName: form.lastName,
+          phone: form.phone, email: form.email,
+          country: form.country, city: form.city,
+          street: form.street, zip: form.zip, notes: form.notes,
+          billingCountry: sameAsBilling ? form.country : form.billingCountry,
+          billingCity: sameAsBilling ? form.city : form.billingCity,
+          billingStreet: sameAsBilling ? form.street : form.billingStreet,
+          billingZip: sameAsBilling ? form.zip : form.billingZip,
+        },
+        paymentMethod: 'paypal',
+        paymentStatus: 'completed',
+        subtotal,
+        shipping: shippingCost,
+        discountCode: discountApplied?.code || '',
+        discountAmount,
+        total: finalTotal,
+        currency: CURRENCY_CODE,
+        shipmentLegs: hasSplit
+          ? legs.map((leg) => ({
+              source: leg.source,
+              itemJerseyIds: leg.items.map((i) => i.jerseyId),
+              itemCount: leg.itemCount,
+              subtotal: leg.subtotal,
+              shipping: leg.shipping,
+            }))
+          : undefined,
+      };
+      sessionStorage.setItem('paypal_pending', JSON.stringify({ payload, locale }));
+      const res = await fetch('/api/paypal/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: finalTotal.toFixed(2),
+          returnUrl: `${window.location.origin}/${locale}/cart`,
+          cancelUrl: `${window.location.origin}/${locale}/cart`,
+          shippingAddress: {
+            firstName: form.firstName, lastName: form.lastName,
+            street: form.street, city: form.city,
+            zip: form.zip, country: form.country,
+            phone: form.phone, email: form.email,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create PayPal order');
+      const data = await res.json();
+      if (!data.approveUrl) throw new Error('No PayPal approval URL');
+      window.location.href = data.approveUrl;
+    } catch (err) {
+      sessionStorage.removeItem('paypal_pending');
+      setPaymentError(err instanceof Error ? err.message : 'Failed to start PayPal payment');
+      setSubmitting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, items, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, hasSplit, legs, locale, isHe]);
 
 
   const inputClass = 'w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-[var(--text-muted)] outline-none transition-all duration-200 focus:ring-1';
@@ -774,13 +883,13 @@ function CheckoutSection({ isHe, isRtl, split }: {
             <button
               onClick={handleBitClick}
               disabled={submitting}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 disabled:opacity-50"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.06)'; }}
             >
-              <Smartphone className="w-4 h-4 shrink-0" style={{ color: 'var(--gold)' }} />
-              <span className="flex-1 text-left">{isHe ? 'Bit — העברה בנקאית' : 'Bit — Bank Transfer'}</span>
+              <Image src="/images/bit-logo.png" alt="Bit" width={40} height={40} className="rounded-md shrink-0" />
+              <span className="text-sm font-semibold text-white">{isHe ? 'תשלום עם Bit' : 'Pay with Bit'}</span>
             </button>
 
             {/* Divider */}
@@ -790,31 +899,25 @@ function CheckoutSection({ isHe, isRtl, split }: {
               <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
             </div>
 
-            {/* PayPal */}
+            {/* PayPal / Credit Card */}
             {paymentError && (
               <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}>
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#FF4D6D' }} />
                 <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
               </div>
             )}
-            <PayPalPayment
-              amount={finalTotal}
-              isHe={isHe}
-              isRtl={isRtl}
-              shippingAddress={{
-                firstName: form.firstName,
-                lastName: form.lastName,
-                street: form.street,
-                city: form.city,
-                zip: form.zip,
-                country: form.country,
-                phone: form.phone,
-                email: form.email,
-              }}
-              onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
-              onError={setPaymentError}
-              onValidate={() => validate()}
-            />
+            <button
+              onClick={handlePayPalClick}
+              disabled={submitting}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.06)'; }}
+            >
+              <Wallet className="w-5 h-5 shrink-0" style={{ color: '#0070E0' }} />
+              <span className="flex-1 text-left">{isHe ? 'PayPal / כרטיס אשראי' : 'PayPal / Credit Card'}</span>
+              {submitting && <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: 'var(--text-muted)' }} />}
+            </button>
           </div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
