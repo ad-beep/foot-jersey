@@ -38,6 +38,7 @@ Card fields are styled to match the site's dark theme (dark background, gold foc
 
 ### Updated: `src/components/payment/PaymentMethodSelector.tsx`
 - Adds `'card'` to the `PaymentMethod` union type: `'bit' | 'paypal' | 'card'`
+- Renames the existing PayPal tile from "PayPal or Card / PayPal או כרטיס אשראי" to "PayPal" only — card has its own tile now
 - Adds a third tile: "Credit Card / כרטיס אשראי" with a `CreditCard` icon (Lucide)
 - Grid changes from `sm:grid-cols-2` to `sm:grid-cols-3` to accommodate three tiles
 - All other tile logic (selected state, gold border, glow) unchanged
