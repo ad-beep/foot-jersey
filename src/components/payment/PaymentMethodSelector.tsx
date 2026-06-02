@@ -1,9 +1,9 @@
 'use client';
 
-import { Smartphone, Wallet, CreditCard, AlertCircle } from 'lucide-react';
+import { Smartphone, Wallet, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export type PaymentMethod = 'bit' | 'paypal' | 'card';
+export type PaymentMethod = 'bit' | 'paypal';
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -24,19 +24,11 @@ const methods = [
   },
   {
     id: 'paypal' as PaymentMethod,
-    labelEn: 'PayPal',
-    labelHe: 'PayPal',
-    descEn: 'Pay with your PayPal account',
-    descHe: 'תשלום עם חשבון PayPal',
+    labelEn: 'PayPal or Card',
+    labelHe: 'PayPal או כרטיס אשראי',
+    descEn: 'PayPal, Visa, Mastercard, Amex',
+    descHe: 'PayPal, ויזה, מאסטרקארד, אמקס',
     icon: Wallet,
-  },
-  {
-    id: 'card' as PaymentMethod,
-    labelEn: 'Credit Card',
-    labelHe: 'כרטיס אשראי',
-    descEn: 'Visa, Mastercard, Amex',
-    descHe: 'ויזה, מאסטרקארד, אמקס',
-    icon: CreditCard,
   },
 ];
 
@@ -53,7 +45,7 @@ export function PaymentMethodSelector({
         {isHe ? 'בחר שיטת תשלום' : 'Select Payment Method'}
       </h3>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {methods.map((method) => {
           const Icon = method.icon;
           const isSelected = selected === method.id;
