@@ -19,7 +19,6 @@ import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { splitCart, SHIPMENT_LEG_LABELS, SPLIT_SHIPMENT_NOTICE, type SplitResult } from '@/lib/shipping-split';
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
-import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment/PaymentMethodSelector';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
 import type { CartItem } from '@/types';
 
@@ -243,8 +242,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
   const [form, setForm] = useState<CheckoutForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldError>({});
   const [submitting, setSubmitting] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bit');
+  const [showBitFlow, setShowBitFlow] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
@@ -403,12 +401,11 @@ function CheckoutSection({ isHe, isRtl, split }: {
     async (paymentIntentId?: string, paypalOrderId?: string) => {
       setSubmitting(true);
       try {
-        const result = await saveOrder({ paymentIntentId, paypalOrderId, method: paymentMethod });
+        const result = await saveOrder({ paymentIntentId, paypalOrderId, method: 'paypal' });
         const orderId = result?.orderId;
         if (!orderId) throw new Error('Order saved but no ID returned');
         clearCart();
         clearAbandonedCart();
-        // Clear exit-intent discount code after successful use
         if (typeof window !== 'undefined') localStorage.removeItem('exit_discount_code');
         router.push(`/${locale}/order-confirmed?orderId=${orderId}`);
       } catch (error) {
@@ -419,7 +416,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         setSubmitting(false);
       }
     },
-    [saveOrder, clearCart, router, locale, paymentMethod, setPaymentError, toast]
+    [saveOrder, clearCart, router, locale, setPaymentError, toast]
   );
 
   const handleBitConfirm = useCallback(
@@ -444,7 +441,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
     [saveOrder, clearCart, router, locale, setPaymentError, toast]
   );
 
-  const handleSubmit = useCallback(async () => {
+  const handleBitClick = useCallback(() => {
     if (!validate()) {
       toast({
         title: isHe ? 'נא למלא את כל השדות' : 'Please fill all required fields',
@@ -452,9 +449,8 @@ function CheckoutSection({ isHe, isRtl, split }: {
       });
       return;
     }
-
     setPaymentError('');
-    setShowPaymentForm(true);
+    setShowBitFlow(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, isHe]);
 
@@ -767,24 +763,37 @@ function CheckoutSection({ isHe, isRtl, split }: {
           </div>
         </div>
 
-        {/* Payment Method Selection */}
-        <PaymentMethodSelector
-          selected={paymentMethod}
-          onSelect={(m) => { setPaymentMethod(m); setShowPaymentForm(false); setPaymentError(''); }}
-          isHe={isHe}
-          isRtl={isRtl}
-          disabled={showPaymentForm && paymentMethod === 'bit'}
-        />
+        {/* Payment options */}
+        {!showBitFlow ? (
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-medium uppercase tracking-wider pb-1" style={{ color: 'var(--text-muted)' }}>
+              {isHe ? 'אמצעי תשלום' : 'Payment method'}
+            </p>
 
-        {/* PayPal: show button directly — no intermediate screen */}
-        {paymentMethod === 'paypal' && (
-          <>
+            {/* Bit */}
+            <button
+              onClick={handleBitClick}
+              disabled={submitting}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.06)'; }}
+            >
+              <Smartphone className="w-4 h-4 shrink-0" style={{ color: 'var(--gold)' }} />
+              <span className="flex-1 text-left">{isHe ? 'Bit — העברה בנקאית' : 'Bit — Bank Transfer'}</span>
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 py-1">
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{isHe ? 'או' : 'or'}</span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
+            </div>
+
+            {/* PayPal */}
             {paymentError && (
-              <div
-                className="p-3 rounded-lg flex items-start gap-2"
-                style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}
-              >
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#FF4D6D' }} />
+              <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}>
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#FF4D6D' }} />
                 <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
               </div>
             )}
@@ -806,49 +815,19 @@ function CheckoutSection({ isHe, isRtl, split }: {
               onError={setPaymentError}
               onValidate={() => validate()}
             />
-          </>
-        )}
-
-        {/* Bit: Proceed to Payment button → Bit form */}
-        {paymentMethod === 'bit' && !showPaymentForm && (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full py-4 rounded-xl font-bold text-base text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{ backgroundColor: 'var(--cta)' }}
-            onMouseEnter={(e) => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-          >
-            {submitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                <Package className="w-5 h-5" />
-                {isHe ? 'המשך לתשלום' : 'Proceed to Payment'}
-              </>
-            )}
-          </button>
-        )}
-
-        {paymentMethod === 'bit' && showPaymentForm && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
-          >
+          </div>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <button
-              onClick={() => { setShowPaymentForm(false); setSubmitting(false); setPaymentError(''); }}
+              onClick={() => { setShowBitFlow(false); setSubmitting(false); setPaymentError(''); }}
               className="text-sm"
               style={{ color: 'var(--text-muted)' }}
             >
               &larr; {isHe ? 'חזור' : 'Back'}
             </button>
             {paymentError && (
-              <div
-                className="p-3 rounded-lg flex items-start gap-2"
-                style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}
-              >
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#FF4D6D' }} />
+              <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}>
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#FF4D6D' }} />
                 <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
               </div>
             )}

@@ -147,7 +147,7 @@ export function PayPalPayment({
 
   return (
     <PayPalScriptProvider options={paypalOptions}>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {errorMessage && (
           <div
             className="p-3 rounded-lg flex items-start gap-2"
@@ -170,14 +170,9 @@ export function PayPalPayment({
             color: 'blue',
             height: 48,
             tagline: false,
+            shape: 'rect',
           }}
         />
-
-        <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-          {isHe
-            ? 'התשלום מאובטח דרך PayPal. ניתן לשלם עם חשבון PayPal או עם כרטיס אשראי כאורח.'
-            : 'Secure checkout via PayPal. Pay with your PayPal account or use a credit/debit card as guest.'}
-        </p>
       </div>
     </PayPalScriptProvider>
   );
