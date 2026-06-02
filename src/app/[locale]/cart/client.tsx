@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag, Trash2, Plus, Minus, Truck, ArrowLeft, ArrowRight,
-  Package, CreditCard, X, AlertCircle, Loader2,
+  Package, CreditCard, X, AlertCircle, Loader2, Smartphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from '@/hooks/useLocale';
@@ -331,7 +331,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
     async (options: {
       paymentIntentId?: string;
       paypalOrderId?: string;
-      method: PaymentMethod;
+      method: 'bit' | 'paypal' | 'card';
       bitSenderDetails?: BitSenderDetails;
     }) => {
       try {
