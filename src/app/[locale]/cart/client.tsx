@@ -21,6 +21,7 @@ import { splitCart, SHIPMENT_LEG_LABELS, SPLIT_SHIPMENT_NOTICE, type SplitResult
 import { PayPalPayment } from '@/components/payment/PayPalPayment';
 import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment/PaymentMethodSelector';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
+import { CardPayment } from '@/components/payment/CardPayment';
 import type { CartItem } from '@/types';
 
 // ─── Cart Item Row (full page) ──────────────────────────────────────────────
@@ -845,6 +846,23 @@ function CheckoutSection({ isHe, isRtl, split }: {
                 isRtl={isRtl}
                 onConfirm={handleBitConfirm}
                 loading={submitting}
+              />
+            ) : paymentMethod === 'card' ? (
+              <CardPayment
+                amount={finalTotal}
+                isHe={isHe}
+                shippingAddress={{
+                  firstName: form.firstName,
+                  lastName: form.lastName,
+                  street: form.street,
+                  city: form.city,
+                  zip: form.zip,
+                  country: form.country,
+                  phone: form.phone,
+                  email: form.email,
+                }}
+                onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
+                onError={setPaymentError}
               />
             ) : (
               <PayPalPayment
