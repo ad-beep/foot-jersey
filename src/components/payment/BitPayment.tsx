@@ -60,11 +60,13 @@ export function BitPayment({
 
   // Owner details
   const ownerPhone = '058-414-0508';
-  const ownerCleanPhone = '0584140508';
   const ownerName = isHe ? 'אדיב חזאן' : 'Adib Hazzan';
 
-  // Deep link for Bit app
-  const bitDeepLink = `bit://pay?phone=${ownerCleanPhone}&amount=${amount}&note=FootJersey+Order`;
+  // Owner's real Bit "pay me" link, decoded from the Bit app's own QR. This is
+  // the only URL Bit honours for receiving payments — a hand-crafted bit:// link
+  // does NOT work. It's a static link (no amount baked in); the customer scans
+  // it, Bit opens to pay this account, and they enter the amount shown above.
+  const bitDeepLink = 'https://www.bitpay.co.il/app/me/66176FE2-F950-4964-8B64-63F363D16527';
   const qrValue = bitDeepLink;
 
   const handleCopyPhone = () => {
