@@ -1,14 +1,9 @@
 'use client';
 
-import { Smartphone, AlertCircle, Wallet } from 'lucide-react';
+import { Smartphone, Wallet, CreditCard, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// In-website card fields (PayPal Advanced Checkout SCF) are disabled because
-// PayPal's hosted card form was rejecting submissions on our merchant account
-// with INVALID_EXP, blocking card customers entirely. The PayPal hosted page
-// itself accepts cards as a guest-checkout option, so card customers route
-// through the regular PayPal button instead.
-export type PaymentMethod = 'bit' | 'paypal';
+export type PaymentMethod = 'bit' | 'paypal' | 'card';
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -29,11 +24,19 @@ const methods = [
   },
   {
     id: 'paypal' as PaymentMethod,
-    labelEn: 'PayPal or Card',
-    labelHe: 'PayPal או כרטיס אשראי',
-    descEn: 'PayPal, Visa, Mastercard, Amex',
-    descHe: 'PayPal, ויזה, מאסטרקארד, אמקס',
+    labelEn: 'PayPal',
+    labelHe: 'PayPal',
+    descEn: 'Pay with your PayPal account',
+    descHe: 'תשלום עם חשבון PayPal',
     icon: Wallet,
+  },
+  {
+    id: 'card' as PaymentMethod,
+    labelEn: 'Credit Card',
+    labelHe: 'כרטיס אשראי',
+    descEn: 'Visa, Mastercard, Amex',
+    descHe: 'ויזה, מאסטרקארד, אמקס',
+    icon: CreditCard,
   },
 ];
 
@@ -50,7 +53,7 @@ export function PaymentMethodSelector({
         {isHe ? 'בחר שיטת תשלום' : 'Select Payment Method'}
       </h3>
 
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3`}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {methods.map((method) => {
           const Icon = method.icon;
           const isSelected = selected === method.id;
@@ -72,7 +75,6 @@ export function PaymentMethodSelector({
                   : '1px solid var(--border)',
               }}
             >
-              {/* Background glow effect */}
               {isSelected && (
                 <motion.div
                   layoutId="payment-glow"
@@ -112,10 +114,7 @@ export function PaymentMethodSelector({
                   >
                     {isHe ? method.labelHe : method.labelEn}
                   </p>
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                     {isHe ? method.descHe : method.descEn}
                   </p>
                 </div>
@@ -125,7 +124,6 @@ export function PaymentMethodSelector({
         })}
       </div>
 
-      {/* Info box */}
       <div
         className="p-3 rounded-lg flex items-start gap-2"
         style={{ backgroundColor: 'rgba(200,162,75,0.06)', border: '1px solid rgba(200,162,75,0.15)' }}
