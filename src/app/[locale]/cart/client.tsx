@@ -270,8 +270,10 @@ function CheckoutSection({ isHe, isRtl, split }: {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
-    const payerId = params.get('PayerID');
-    if (!token || !payerId) return;
+    // Only token is required — PayerID is present for wallet payments but may
+    // be absent for guest card payments. We rely on the capture call to
+    // determine whether the order was actually approved.
+    if (!token) return;
     const raw = sessionStorage.getItem('paypal_pending');
     if (!raw) return;
     window.history.replaceState({}, '', window.location.pathname);
@@ -285,8 +287,17 @@ function CheckoutSection({ isHe, isRtl, split }: {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orderId: token }),
         });
-        if (!captureRes.ok) throw new Error('Failed to capture payment');
+        if (!captureRes.ok) {
+          // Order not approved — customer likely cancelled. Fail silently.
+          setSubmitting(false);
+          return;
+        }
         const captureData = await captureRes.json();
+        // Only save if PayPal confirms COMPLETED status
+        if (captureData.status !== 'COMPLETED') {
+          setSubmitting(false);
+          return;
+        }
         const orderRes = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
