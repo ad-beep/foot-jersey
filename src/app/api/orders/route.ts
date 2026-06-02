@@ -725,7 +725,7 @@ export async function POST(request: NextRequest) {
       body.shippingInfo.name ||
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
 
-    if (body.paymentMethod === 'paypal') {
+    if (body.paymentMethod === 'paypal' || body.paymentMethod === 'card') {
       // Instant confirmation for PayPal orders
       await sendOrderConfirmation({
         to: body.shippingInfo.email,
