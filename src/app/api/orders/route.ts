@@ -79,7 +79,7 @@ interface ShipmentLegInput {
 interface OrderData {
   items: CartItem[];
   shippingInfo: ShippingInfo;
-  paymentMethod: 'bit' | 'paypal';
+  paymentMethod: 'bit' | 'paypal' | 'card';
   paymentStatus: 'pending' | 'completed' | 'failed';
   total: number;
   subtotal: number;
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
     // ── Verify PayPal payment FIRST — before any other validation ───────────
     // This ensures paymentConfirmedCaptured=true before price/discount checks,
     // so any failure below automatically triggers the auto-refund in the catch block.
-    if (body.paymentMethod === 'paypal') {
+    if (body.paymentMethod === 'paypal' || body.paymentMethod === 'card') {
       if (!body.paypalOrderId) {
         return NextResponse.json({ error: 'PayPal order ID required' }, { status: 400 });
       }
