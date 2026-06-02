@@ -41,6 +41,7 @@ interface PayPalPaymentProps {
   shippingAddress?: ShippingAddress;
   onSuccess: (orderId: string) => void;
   onError: (error: string) => void;
+  onValidate?: () => boolean;
 }
 
 export function PayPalPayment({
@@ -50,6 +51,7 @@ export function PayPalPayment({
   shippingAddress,
   onSuccess,
   onError,
+  onValidate,
 }: PayPalPaymentProps) {
   const [errorMessage, setErrorMessage] = useState<string>('');
   // Ref-based flag prevents double-capture without triggering a re-render
@@ -58,6 +60,11 @@ export function PayPalPayment({
 
   const handleCreateOrder = useCallback(
     async () => {
+      if (onValidate && !onValidate()) {
+        // Validation failed — form errors are shown by onValidate itself.
+        // Throw a sentinel so PayPal aborts without showing our error UI.
+        throw new Error('__validation_failed__');
+      }
       try {
         const response = await fetch('/api/paypal/create-order', {
           method: 'POST',
@@ -86,7 +93,7 @@ export function PayPalPayment({
         throw err;
       }
     },
-    [amount, onError, shippingAddress]
+    [amount, onError, onValidate, shippingAddress]
   );
 
   const handleApprove = useCallback(
@@ -128,6 +135,7 @@ export function PayPalPayment({
 
   const handleError = useCallback(
     (err: Record<string, unknown>) => {
+      if ((err.message as string) === '__validation_failed__') return;
       const message = (err.message as string) || 'PayPal payment failed';
       setErrorMessage(message);
       onError(message);

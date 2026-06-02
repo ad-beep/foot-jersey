@@ -768,103 +768,97 @@ function CheckoutSection({ isHe, isRtl, split }: {
         </div>
 
         {/* Payment Method Selection */}
-        {!showPaymentForm && (
+        <PaymentMethodSelector
+          selected={paymentMethod}
+          onSelect={(m) => { setPaymentMethod(m); setShowPaymentForm(false); setPaymentError(''); }}
+          isHe={isHe}
+          isRtl={isRtl}
+          disabled={showPaymentForm && paymentMethod === 'bit'}
+        />
+
+        {/* PayPal: show button directly — no intermediate screen */}
+        {paymentMethod === 'paypal' && (
           <>
-            <PaymentMethodSelector
-              selected={paymentMethod}
-              onSelect={setPaymentMethod}
-              isHe={isHe}
-              isRtl={isRtl}
-            />
-
-            {/* Submit */}
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full py-4 rounded-xl font-bold text-base text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ backgroundColor: 'var(--cta)' }}
-              onMouseEnter={(e) => {
-                if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '0.9';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.opacity = '1';
-              }}
-            >
-              {submitting ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Package className="w-5 h-5" />
-                  {isHe ? 'המשך לתשלום' : 'Proceed to Payment'}
-                </>
-              )}
-            </button>
-          </>
-        )}
-
-        {/* Payment Form (PayPal or BIT) */}
-        {showPaymentForm && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setShowPaymentForm(false);
-                  setSubmitting(false);
-                  setPaymentError('');
-                }}
-                className="text-sm"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                &larr; {isHe ? 'חזור' : 'Back'}
-              </button>
-            </div>
-
             {paymentError && (
               <div
                 className="p-3 rounded-lg flex items-start gap-2"
                 style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}
               >
-                <AlertCircle
-                  className="w-4 h-4 mt-0.5 flex-shrink-0"
-                  style={{ color: '#FF4D6D' }}
-                />
-                <p className="text-sm" style={{ color: '#FF4D6D' }}>
-                  {paymentError}
-                </p>
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#FF4D6D' }} />
+                <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
               </div>
             )}
+            <PayPalPayment
+              amount={finalTotal}
+              isHe={isHe}
+              isRtl={isRtl}
+              shippingAddress={{
+                firstName: form.firstName,
+                lastName: form.lastName,
+                street: form.street,
+                city: form.city,
+                zip: form.zip,
+                country: form.country,
+                phone: form.phone,
+                email: form.email,
+              }}
+              onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
+              onError={setPaymentError}
+              onValidate={() => validate()}
+            />
+          </>
+        )}
 
-            {paymentMethod === 'bit' ? (
-              <BitPayment
-                amount={finalTotal}
-                isHe={isHe}
-                isRtl={isRtl}
-                onConfirm={handleBitConfirm}
-                loading={submitting}
-              />
+        {/* Bit: Proceed to Payment button → Bit form */}
+        {paymentMethod === 'bit' && !showPaymentForm && (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full py-4 rounded-xl font-bold text-base text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+            style={{ backgroundColor: 'var(--cta)' }}
+            onMouseEnter={(e) => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+          >
+            {submitting ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <PayPalPayment
-                amount={finalTotal}
-                isHe={isHe}
-                isRtl={isRtl}
-                shippingAddress={{
-                  firstName: form.firstName,
-                  lastName: form.lastName,
-                  street: form.street,
-                  city: form.city,
-                  zip: form.zip,
-                  country: form.country,
-                  phone: form.phone,
-                  email: form.email,
-                }}
-                onSuccess={(orderId) => handlePaymentSuccess(undefined, orderId)}
-                onError={setPaymentError}
-              />
+              <>
+                <Package className="w-5 h-5" />
+                {isHe ? 'המשך לתשלום' : 'Proceed to Payment'}
+              </>
             )}
+          </button>
+        )}
+
+        {paymentMethod === 'bit' && showPaymentForm && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <button
+              onClick={() => { setShowPaymentForm(false); setSubmitting(false); setPaymentError(''); }}
+              className="text-sm"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              &larr; {isHe ? 'חזור' : 'Back'}
+            </button>
+            {paymentError && (
+              <div
+                className="p-3 rounded-lg flex items-start gap-2"
+                style={{ backgroundColor: 'rgba(255,77,109,0.1)' }}
+              >
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#FF4D6D' }} />
+                <p className="text-sm" style={{ color: '#FF4D6D' }}>{paymentError}</p>
+              </div>
+            )}
+            <BitPayment
+              amount={finalTotal}
+              isHe={isHe}
+              isRtl={isRtl}
+              onConfirm={handleBitConfirm}
+              loading={submitting}
+            />
           </motion.div>
         )}
 
