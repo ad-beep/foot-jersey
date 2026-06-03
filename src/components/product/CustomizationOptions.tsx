@@ -36,6 +36,9 @@ export function CustomizationOptions({
   // Player Version only available for regular and world cup jerseys
   const showPlayerVersion = jerseyType === 'regular' || jerseyType === 'world_cup';
 
+  // Pants not offered on special edition jerseys
+  const showPants = jerseyType !== 'special';
+
   // For character counter visibility
   const [nameFocused, setNameFocused] = useState(false);
   const [patchFocused, setPatchFocused] = useState(false);
@@ -54,12 +57,14 @@ export function CustomizationOptions({
       he: "פאצ'",
       price: PRICES.customization.patch,
     },
-    {
-      key: 'pants' as const,
-      en: 'Pants',
-      he: 'מכנסיים',
-      price: PRICES.customization.pants,
-    },
+    ...(showPants
+      ? [{
+          key: 'pants' as const,
+          en: 'Pants',
+          he: 'מכנסיים',
+          price: PRICES.customization.pants,
+        }]
+      : []),
     ...(showPlayerVersion
       ? [{
           key: 'playerVersion' as const,
