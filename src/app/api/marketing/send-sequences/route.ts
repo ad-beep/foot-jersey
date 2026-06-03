@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { sendMarketingDay3Email, sendMarketingDay7Email, sendMarketingBlastEmail, sendMarketingWelcomeEmail } from '@/lib/email';
+import { hasPreviousOrder } from '@/lib/first-order';
 
 // How many days must pass before we send another blast to the same person
 const BLAST_INTERVAL_DAYS = 5;
@@ -54,9 +55,16 @@ export async function GET(request: NextRequest) {
       try {
         if (!emailsSent.includes('welcome') && welcomeAttempts < WELCOME_CATCHUP_LIMIT) {
           welcomeAttempts++;
-          await sendMarketingWelcomeEmail({ to, discountCode });
-          await updateDoc(ref, { emailsSent: [...emailsSent, 'welcome'] });
-          welcomeSent++;
+          // STAY10 only works on a first order — don't send the discount welcome
+          // to an email that has already ordered. Mark 'welcome' so we stop
+          // retrying this lead, but don't count it as sent.
+          if (await hasPreviousOrder(to)) {
+            await updateDoc(ref, { emailsSent: [...emailsSent, 'welcome'], welcomeSkippedReturningCustomer: true });
+          } else {
+            await sendMarketingWelcomeEmail({ to, discountCode });
+            await updateDoc(ref, { emailsSent: [...emailsSent, 'welcome'] });
+            welcomeSent++;
+          }
         } else if (daysSince >= 7 && emailsSent.includes('day3') && !emailsSent.includes('day7')) {
           await sendMarketingDay7Email({ to, discountCode });
           await updateDoc(ref, { emailsSent: [...emailsSent, 'day7'] });

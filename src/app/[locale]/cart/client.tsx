@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -256,6 +256,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
   const [discountApplied, setDiscountApplied] = useState<{ code: string; type: string; value: number; amount: number } | null>(null);
   const [discountError, setDiscountError] = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   // ── Abandoned cart: re-save whenever items change and email is valid ──────
   useEffect(() => {
@@ -348,7 +349,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
       const res = await fetch('/api/discounts/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: discountCode.trim(), subtotal }),
+        body: JSON.stringify({ code: discountCode.trim(), subtotal, email: form.email.trim() }),
       });
       const data = await res.json();
       if (data.valid) {
@@ -356,7 +357,14 @@ function CheckoutSection({ isHe, isRtl, split }: {
         setDiscountError('');
       } else {
         setDiscountApplied(null);
-        setDiscountError(data.error || (isHe ? 'קוד לא תקין' : 'Invalid code'));
+        // First-order-only codes need the email to verify it's a first order.
+        if (data.reason === 'needs_email') {
+          setDiscountError(isHe ? 'הזן את האימייל שלך למעלה כדי להשתמש בקוד זה' : 'Enter your email above to use this code');
+          emailInputRef.current?.focus();
+          emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          setDiscountError(data.error || (isHe ? 'קוד לא תקין' : 'Invalid code'));
+        }
       }
     } catch {
       setDiscountError(isHe ? 'שגיאה בבדיקת הקוד' : 'Error validating code');
@@ -656,6 +664,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
               {isHe ? 'אימייל *' : 'Email *'}
             </label>
             <input
+              ref={emailInputRef}
               type="email"
               value={form.email}
               onChange={(e) => set('email', e.target.value)}

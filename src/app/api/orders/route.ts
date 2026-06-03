@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
+import { isFirstOrderOnlyCode, hasPreviousOrder } from '@/lib/first-order';
 import type { CartItem } from '@/types';
 
 const PAYPAL_API_BASE = 'https://api.paypal.com';
@@ -499,6 +500,19 @@ export async function POST(request: NextRequest) {
               `Discount amount mismatch: client sent ${clientDiscountAmount}, server computed ${serverDiscountAmount} for code ${body.discountCode}`
             );
             throw new Error('Discount amount mismatch. Please refresh and try again.');
+          }
+
+          // ── First-order-only guard (defense-in-depth, observability only) ──
+          // The /api/discounts/validate gate already blocks first-order-only
+          // codes for returning customers BEFORE payment, so a discounted order
+          // should never reach here. If one does, we only WARN — we must not
+          // reject or refund, because PayPal/card funds are already captured at
+          // this point (see capture block above) and the catch handler does not
+          // auto-refund. The real enforcement is the pre-payment validate call.
+          if (isFirstOrderOnlyCode(body.discountCode) && await hasPreviousOrder(body.shippingInfo.email)) {
+            console.warn(
+              `[orders] First-order-only code ${body.discountCode} used by returning customer ${body.shippingInfo.email} — slipped past the validate gate. Order allowed (payment already captured).`
+            );
           }
         }
       } catch (discountCheckErr) {

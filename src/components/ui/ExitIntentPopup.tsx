@@ -143,7 +143,7 @@ export function ExitIntentPopup() {
               {DISCOUNT_CODE}
             </div>
             <p className="text-sm" style={{ color: 'var(--muted)' }}>
-              {isHe ? 'הקוד יוחל אוטומטית בקופה' : 'Code will auto-apply at checkout'}
+              {isHe ? 'הזן את הקוד בקופה — תקף על ההזמנה הראשונה בלבד' : 'Enter it at checkout — valid on your first order only'}
             </p>
           </>
         ) : (
@@ -154,10 +154,15 @@ export function ExitIntentPopup() {
             >
               {isHe ? 'רגע — לפני שתעזוב' : 'Wait — before you go'}
             </h2>
-            <p className="text-sm mb-6" style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
+            <p className="text-sm mb-2" style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
               {isHe
-                ? 'קבל 10% הנחה על ההזמנה הראשונה שלך. הזן את האימייל שלך למטה.'
-                : 'Get 10% off your first order. Enter your email below to claim it.'}
+                ? 'ללקוחות חדשים בלבד — 10% הנחה על ההזמנה הראשונה שלך. הזן את האימייל שלך למטה.'
+                : 'New customers only — 10% off your first order. Enter your email below to claim it.'}
+            </p>
+            <p className="text-xs mb-6" style={{ color: 'var(--muted)', opacity: 0.7 }}>
+              {isHe
+                ? 'הקוד תקף פעם אחת, על ההזמנה הראשונה בלבד.'
+                : 'Valid once, on your first order only.'}
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input

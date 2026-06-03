@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { isFirstOrderOnlyCode, hasPreviousOrder } from '@/lib/first-order';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -24,10 +25,23 @@ function getAuth() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, subtotal } = await request.json();
+    const { code, subtotal, email } = await request.json();
 
     if (!code) {
       return NextResponse.json({ valid: false, error: 'No code provided' }, { status: 400 });
+    }
+
+    // First-order-only codes (e.g. STAY10) require the customer's email so we
+    // can confirm they haven't ordered before. This runs before payment, so the
+    // cart price is correct from the start.
+    if (isFirstOrderOnlyCode(code)) {
+      const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+      if (!trimmedEmail) {
+        return NextResponse.json({ valid: false, reason: 'needs_email', error: 'Enter your email above to use this code.' });
+      }
+      if (await hasPreviousOrder(trimmedEmail)) {
+        return NextResponse.json({ valid: false, error: 'This code is only valid on your first order.' });
+      }
     }
 
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
