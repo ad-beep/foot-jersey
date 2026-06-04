@@ -8,13 +8,9 @@ import { DEFAULT_LOCALE, SITE_URL } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { organizationSchema } from '@/lib/schema';
-// WhatsApp + StickyMobileCTA are purely interactive — fine to skip SSR
+// WhatsApp float is purely interactive — fine to skip SSR
 const WhatsAppFloat = dynamic(
   () => import('@/components/layout/WhatsAppFloat').then(m => ({ default: m.WhatsAppFloat })),
-  { ssr: false },
-);
-const StickyMobileCTA = dynamic(
-  () => import('@/components/layout/StickyMobileCTA').then(m => ({ default: m.StickyMobileCTA })),
   { ssr: false },
 );
 import { Dock } from '@/components/layout/Dock';
@@ -110,7 +106,6 @@ export default async function LocaleLayout({
           <Dock />
           <CartDrawer dict={dict} />
           <WhatsAppFloat />
-          <StickyMobileCTA />
           <ExitIntentPopup />
         </ToastProvider>
         <Analytics />

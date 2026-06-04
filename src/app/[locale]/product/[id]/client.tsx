@@ -168,6 +168,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
   const { locale, isRtl } = useLocale();
   const hydrated = useHydration();
   const addItem = useCartStore((s) => s.addItem);
+  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const isFav = useFavoritesStore((s) => s.isFavorite(productId));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const recordView = useAnalyticsStore((s) => s.recordView);
@@ -210,6 +211,15 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
       if (nameNumberErrorTimeoutRef.current) clearTimeout(nameNumberErrorTimeoutRef.current);
       if (patchErrorTimeoutRef.current) clearTimeout(patchErrorTimeoutRef.current);
     };
+  }, []);
+
+  // Mobile sticky Add-to-Cart appears once the inline CTA has scrolled away.
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  useEffect(() => {
+    const handler = () => setShowStickyCta(window.scrollY > 520);
+    window.addEventListener('scroll', handler, { passive: true });
+    handler();
+    return () => window.removeEventListener('scroll', handler);
   }, []);
 
   const jersey = useMemo(() => allJerseys.find((j) => j.id === productId) ?? initialJersey, [allJerseys, productId, initialJersey]);
@@ -278,6 +288,15 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
     const displayName = getJerseyName(jersey, locale);
     toast({ title: isHe ? 'נוסף לסל!' : 'Added to cart!', description: displayName, variant: 'success' });
   }, [jersey, selectedSize, customization, nameNumberOpen, isMystery, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
+
+  // From the sticky bar: if no size is chosen, bring the size picker into view
+  // (it's scrolled off-screen) before running the normal add-to-cart flow.
+  const handleStickyAdd = useCallback(() => {
+    if (!selectedSize) {
+      document.getElementById('pdp-size')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    handleAddToCart();
+  }, [selectedSize, handleAddToCart]);
 
   const handleToggleFavorite = useCallback(() => {
     // Read state BEFORE toggling so we know which direction we're going
@@ -487,7 +506,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
             </div>
 
             {/* Size selector */}
-            <div className="mb-6">
+            <div id="pdp-size" className="mb-6 scroll-mt-24">
               <div className={`flex items-center justify-between mb-2 ${isHe ? 'flex-row-reverse' : ''}`}>
                 <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                   {isHe ? 'מידה' : 'Size'}
@@ -553,6 +572,21 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
               <span className="mx-1">·</span>
               {CURRENCY}{totalPrice}
             </Button>
+
+            {/* Free-shipping nudge — counts the jersey they're about to add */}
+            {(() => {
+              const afterAdd = (hydrated ? cartCount : 0) + 1;
+              const left = SHIPPING_POLICY.freeShippingMinItems - afterAdd;
+              return (
+                <p className={`text-xs mt-2.5 text-center font-medium ${isHe ? 'text-right' : ''}`} style={{ color: left <= 0 ? '#4ade80' : 'var(--muted)' }}>
+                  {left <= 0
+                    ? (isHe ? '✓ מזכה במשלוח חינם' : '✓ Qualifies for free shipping')
+                    : (isHe
+                        ? `עוד ${left} חולצ${left === 1 ? 'ה' : 'ות'} למשלוח חינם 🚚`
+                        : `${left} more jersey${left === 1 ? '' : 's'} for free shipping 🚚`)}
+                </p>
+              );
+            })()}
 
             {/* Trust row */}
             <div
@@ -697,6 +731,27 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
         jerseyName={displayName}
         size={stockAlertSize}
       />
+
+      {/* ── Mobile sticky Add-to-Cart (sits above the bottom dock) ── */}
+      <div
+        className={`md:hidden fixed inset-x-0 z-40 px-3 transition-transform duration-300 ${
+          showStickyCta ? 'translate-y-0' : 'translate-y-[140%]'
+        }`}
+        style={{ bottom: '4rem' }}
+        aria-hidden={!showStickyCta}
+      >
+        <button
+          onClick={handleStickyAdd}
+          disabled={!showStickyCta}
+          className={`w-full h-13 min-h-[52px] rounded-xl font-bold text-base flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform ${isHe ? 'flex-row-reverse' : ''}`}
+          style={{ backgroundColor: 'var(--cta)', color: '#fff', boxShadow: '0 -2px 20px rgba(0,0,0,0.4)' }}
+        >
+          <ShoppingCart className="w-5 h-5" />
+          <span>{isHe ? 'הוסף לסל' : 'Add to Cart'}</span>
+          <span className="opacity-60">·</span>
+          <span dir="ltr">{CURRENCY}{totalPrice}</span>
+        </button>
+      </div>
     </div>
   );
 }

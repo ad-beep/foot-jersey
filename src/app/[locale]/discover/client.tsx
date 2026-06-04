@@ -695,10 +695,12 @@ export function DiscoverClient({ initialJerseys }: { initialJerseys: Jersey[] })
           <div
             className={`flex items-center gap-3 pt-4 pb-4 flex-wrap ${isHe ? 'flex-row-reverse' : ''}`}
           >
-            {/* Count */}
+            {/* Count — announced to screen readers when filters change */}
             <p
               className="font-mono text-[11px] uppercase tracking-[0.18em] flex-1"
               style={{ color: 'var(--muted)' }}
+              aria-live="polite"
+              role="status"
             >
               {hasFilters
                 ? t.showingFiltered(resultCount)

@@ -34,6 +34,8 @@ interface CartState {
   clearCart: () => void;
   toggleCart: () => void;
   setCartOpen: (open: boolean) => void;
+  /** Reconcile persisted cart prices against the live catalog (id → base price). */
+  syncPrices: (priceMap: Map<string, number>) => void;
 
   // Computed
   getItemCount: () => number;
@@ -164,6 +166,23 @@ export const useCartStore = create<CartState>()(
       clearCart: () => set({ items: [] }),
       toggleCart: () => set({ isOpen: !get().isOpen }),
       setCartOpen: (open) => set({ isOpen: open }),
+
+      syncPrices: (priceMap) => {
+        let changed = false;
+        const items = get().items.map((item) => {
+          const freshBase = priceMap.get(item.jerseyId);
+          // Only adjust when the catalog has a price and it actually differs.
+          if (freshBase == null || freshBase === item.jersey.price) return item;
+          changed = true;
+          const updatedJersey = { ...item.jersey, price: freshBase };
+          return {
+            ...item,
+            jersey: updatedJersey,
+            totalPrice: computeItemPrice(updatedJersey, item.customization),
+          };
+        });
+        if (changed) set({ items });
+      },
 
       getItemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
       getSubtotal: () =>

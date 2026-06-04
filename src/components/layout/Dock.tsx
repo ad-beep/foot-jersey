@@ -68,7 +68,8 @@ export function Dock() {
                 <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
                 {isCart && count > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-2 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                    key={count}
+                    className="cart-badge-pop absolute -top-1.5 -right-2 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
                     style={{ backgroundColor: 'var(--cta)' }}
                     aria-hidden="true"
                   >

@@ -988,7 +988,28 @@ export function CartPageClient() {
 
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
+  const syncPrices = useCartStore((s) => s.syncPrices);
   const { toast } = useToast();
+
+  // Reconcile any stale persisted cart prices against the live catalogue so the
+  // cart never shows an out-of-date price that won't match checkout.
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((res) => {
+        if (cancelled) return;
+        const list = res.data ?? res ?? [];
+        const priceMap = new Map<string, number>();
+        for (const p of list) {
+          if (p?.id != null && typeof p.price === 'number') priceMap.set(p.id, p.price);
+        }
+        if (priceMap.size > 0) syncPrices(priceMap);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [hydrated, syncPrices]);
 
   const hasItems = hydrated && items.length > 0;
   const split = useMemo(() => summarizeCart(hydrated ? items : []), [items, hydrated]);

@@ -250,3 +250,24 @@
   0%, 100% { transform: scale(1);   opacity: 1; }
   50%       { transform: scale(2.5); opacity: 0; }
 }
+
+/* Cart badge pop — replayed by remounting the badge with a changing key */
+@keyframes cartPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.5); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.cart-badge-pop { animation: cartPop 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ── Accessibility: honor reduced-motion globally ──────────────────────────
+   Users who set "reduce motion" get near-instant transitions and no looping
+   decorative animations, while content still appears (no opacity:0 traps). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

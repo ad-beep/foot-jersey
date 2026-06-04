@@ -129,8 +129,20 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--gold)' }} />
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center" style={{ backgroundColor: 'var(--ink)' }}>
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
+          style={{ backgroundColor: 'rgba(200,162,75,0.10)', border: '2px solid rgba(200,162,75,0.25)' }}
+        >
+          <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--gold)' }} />
+        </div>
+        <p className="text-lg font-bold text-white mb-1.5" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+          {isHe ? 'התשלום התקבל ✓' : 'Payment received ✓'}
+        </p>
+        <div className="flex items-center gap-2" style={{ color: 'var(--muted)' }}>
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--gold)' }} />
+          <span className="text-sm">{isHe ? 'מסיימים את ההזמנה שלך…' : 'Finalizing your order…'}</span>
+        </div>
       </div>
     );
   }
@@ -323,6 +335,30 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
               </p>
             </div>
           </div>
+
+          {/* Prominent BIT payment callout — only while awaiting the transfer */}
+          {isPending && (
+            <div style={{ backgroundColor: 'rgba(255,190,50,0.07)', border: '1px solid rgba(255,190,50,0.3)', borderRadius: 14, padding: '18px 20px', marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: amber, marginBottom: 10 }}>
+                {isHe ? '⚡ השלם את התשלום ב-BIT' : '⚡ Complete your BIT payment'}
+              </div>
+              <p style={{ fontSize: 14, color: '#ddd', lineHeight: 1.6, marginBottom: 12 }}>
+                {isHe
+                  ? 'אם עדיין לא העברת — פתח את אפליקציית BIT ושלח את הסכום למספר למטה. נאמת את התשלום ידנית (בדרך כלל תוך מספר שעות) ואז נתחיל להכין את ההזמנה.'
+                  : "If you haven't transferred yet, open the BIT app and send the amount below to our number. We verify manually (usually within a few hours), then we start preparing your order."}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ flex: '1 1 120px', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>{isHe ? 'סכום' : 'Amount'}</div>
+                  <div dir="ltr" style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>₪{order.total}</div>
+                </div>
+                <div style={{ flex: '2 1 160px', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>{isHe ? 'מספר BIT' : 'BIT number'}</div>
+                  <div dir="ltr" style={{ fontSize: 20, fontWeight: 800, color: amber, fontFamily: 'monospace', letterSpacing: 1 }}>054-682-0210</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* What's next — full timeline with BIT note + pickup + help + tiktok */}
           {(() => {

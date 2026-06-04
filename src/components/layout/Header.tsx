@@ -18,11 +18,17 @@ const SearchBar = dynamic(
   () => import('@/components/search/SearchBar').then(m => ({ default: m.SearchBar })),
   {
     ssr: false,
+    // Make the placeholder read as a ready search field (icon + prompt) so it
+    // never looks "dead" while the heavy fuzzy-search bundle is still loading.
     loading: () => (
       <div
-        className="w-full h-11 rounded-full"
+        className="w-full h-11 rounded-full flex items-center gap-2 px-4"
         style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-      />
+        aria-hidden="true"
+      >
+        <Search className="w-4 h-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+        <span className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>Search jerseys, teams, leagues…</span>
+      </div>
     ),
   },
 );
@@ -81,7 +87,9 @@ export function Header({ dict: _dict }: HeaderProps) {
       style={
         scrolled
           ? { backgroundColor: 'rgba(10,10,11,0.94)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border)' }
-          : { backgroundColor: 'transparent' }
+          // Subtle top-down scrim keeps the white wordmark/icons legible over
+          // light hero imagery before the user scrolls.
+          : { background: 'linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0))' }
       }
     >
       <div className="h-full max-w-[1200px] mx-auto px-4 md:px-6 flex items-center gap-3 md:gap-4">
@@ -256,7 +264,8 @@ export function Header({ dict: _dict }: HeaderProps) {
             <ShoppingBag className="w-5 h-5" aria-hidden="true" />
             {hydrated && cartCount > 0 && (
               <span
-                className="absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-black"
+                key={cartCount}
+                className="cart-badge-pop absolute top-1.5 right-1.5 w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black text-black"
                 style={{ backgroundColor: 'var(--cta)' }}
                 aria-hidden="true"
               >
