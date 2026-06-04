@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { sendMarketingWelcomeEmail } from '@/lib/email';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { hasPreviousOrder } from '@/lib/first-order';
+
+export const runtime = 'nodejs';
 
 // Stay generous — a real burst from 100k TikTok views can fire ~5/sec. But
 // block bots that hammer the endpoint thousands of times from one IP.
@@ -23,11 +25,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
     }
 
+    const db = getAdminDb();
     // Always save the lead first. The discount code is already in localStorage
     // on the client, so the user gets value even if the welcome email never goes.
-    const docRef = await addDoc(collection(db, 'exitIntentLeads'), {
+    const docRef = await db.collection('exitIntentLeads').add({
       email,
-      capturedAt: serverTimestamp(),
+      capturedAt: FieldValue.serverTimestamp(),
       source: 'exit_intent',
       discountCode: 'STAY10',
       emailsSent: [],
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
     // they can't use. We still saved the lead above (for analytics/blasts).
     // Mark 'welcome' as sent so the send-sequences cron doesn't email it later.
     if (await hasPreviousOrder(email)) {
-      updateDoc(docRef, { emailsSent: ['welcome'], welcomeSkippedReturningCustomer: true })
+      docRef.update({ emailsSent: ['welcome'], welcomeSkippedReturningCustomer: true })
         .catch((err) => console.error('[exit-intent] failed to flag returning lead:', err));
     } else {
       // Fire-and-forget the welcome email. Under a 100k-view spike, Gmail SMTP
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
       // termination), the next /api/marketing/send-sequences cron run picks up
       // any lead missing "welcome" in emailsSent.
       sendMarketingWelcomeEmail({ to: email, discountCode: 'STAY10' })
-        .then(() => updateDoc(docRef, { emailsSent: ['welcome'] }))
+        .then(() => docRef.update({ emailsSent: ['welcome'] }))
         .catch((err) => console.error('[exit-intent] welcome email failed (cron will retry):', err));
     }
 

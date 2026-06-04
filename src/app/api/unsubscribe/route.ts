@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, updateDoc, Timestamp } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 import { SITE_URL } from '@/lib/constants';
+import { verifyUnsubscribeToken } from '@/lib/unsubscribe-token';
+
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('t') ?? '';
 
-  let email = '';
-  try {
-    email = Buffer.from(token, 'base64url').toString('utf8');
-    if (!email || !email.includes('@')) throw new Error('invalid');
-  } catch {
-    return new NextResponse(errorPage('Invalid unsubscribe link.'), {
+  const email = verifyUnsubscribeToken(token);
+  if (!email) {
+    return new NextResponse(errorPage('Invalid or expired unsubscribe link.'), {
       status: 400,
       headers: { 'Content-Type': 'text/html' },
     });
   }
 
   try {
-    const snap = await getDocs(query(collection(db, 'exitIntentLeads'), where('email', '==', email)));
-    await Promise.all(snap.docs.map((d) => updateDoc(d.ref, { unsubscribedAt: Timestamp.now() })));
+    const db = getAdminDb();
+    const snap = await db.collection('exitIntentLeads').where('email', '==', email).get();
+    await Promise.all(snap.docs.map((d) => d.ref.update({ unsubscribedAt: Timestamp.now() })));
   } catch (err) {
     console.error('[unsubscribe] db error:', err);
   }

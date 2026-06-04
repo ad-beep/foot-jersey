@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
 import { SITE_NAME } from '@/lib/constants';
 import { Loader2, CheckCircle2, Clock, ShoppingBag } from 'lucide-react';
@@ -52,7 +50,7 @@ interface Order {
   discountCode?: string;
   currency: string;
   status: string;
-  createdAt: Timestamp | null;
+  createdAt: number | null;
 }
 
 export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[] }) {
@@ -97,13 +95,15 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
     function tryFetch() {
       if (cancelled) return;
       attempts += 1;
-      getDoc(doc(db, 'orders', orderId!))
-        .then((snap) => {
+      fetch(`/api/orders/${encodeURIComponent(orderId!)}`)
+        .then(async (res) => {
           if (cancelled) return;
-          if (snap.exists()) {
-            setOrder({ id: snap.id, ...snap.data() } as Order);
+          if (res.ok) {
+            const data = await res.json();
+            setOrder(data.order as Order);
             setLoading(false);
-          } else if (attempts < MAX_ATTEMPTS) {
+          } else if (res.status === 404 && attempts < MAX_ATTEMPTS) {
+            // Read replicas can lag right after creation — keep retrying.
             setTimeout(tryFetch, RETRY_DELAY_MS);
           } else {
             setLoading(false);

@@ -8,6 +8,9 @@ const nextConfig = {
     dangerouslyAllowSVG: false,
   },
   experimental: {
+    // firebase-admin is a Node-only package (uses fs/net). Keep it external so
+    // webpack doesn't try to bundle it into the server build.
+    serverComponentsExternalPackages: ['firebase-admin'],
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { sendBitApprovedEmail } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
 import { writeAuditLog } from '@/lib/audit-log';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -17,10 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the order to get full details
-    const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await getDoc(orderRef);
+    const orderRef = getAdminDb().collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
 
-    if (!orderSnap.exists()) {
+    if (!orderSnap.exists) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Mark as processing AFTER email succeeds — keeps order in retryable 'pending' state
     // if email delivery fails (network error, etc.)
-    await updateDoc(orderRef, {
+    await orderRef.update({
       status: 'processing',
       paymentStatus: 'completed',
       approvedAt: new Date().toISOString(),

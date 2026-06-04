@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useLocale } from '@/hooks/useLocale';
 import { Reveal } from '@/components/ui/reveal';
 
@@ -26,18 +24,12 @@ export function Newsletter() {
     }
     setStatus('loading');
     try {
-      const normalizedEmail = email.trim().toLowerCase();
-      // Check for duplicates before inserting
-      const existing = await getDocs(
-        query(collection(db, 'newsletterEmails'), where('email', '==', normalizedEmail))
-      );
-      if (existing.empty) {
-        await addDoc(collection(db, 'newsletterEmails'), {
-          email: normalizedEmail,
-          locale,
-          subscribedAt: serverTimestamp(),
-        });
-      }
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), locale }),
+      });
+      if (!res.ok) throw new Error('subscribe failed');
       setStatus('success');
       setEmail('');
     } catch {

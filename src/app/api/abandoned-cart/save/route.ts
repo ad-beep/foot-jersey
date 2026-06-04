@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,30 +20,34 @@ export async function POST(request: NextRequest) {
     }
 
     const { sessionId, email, items, locale } = await request.json();
-    if (!sessionId || !email) {
+    if (!sessionId || typeof sessionId !== 'string' || !email) {
       return NextResponse.json({ error: 'Missing sessionId or email' }, { status: 400 });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
     }
 
-    const ref = doc(db, 'abandonedCarts', sessionId);
-    const snap = await getDoc(ref);
+    const db = getAdminDb();
+    const ref = db.collection('abandonedCarts').doc(sessionId);
+    const snap = await ref.get();
+
+    // Cap stored items so a crafted request can't bloat the document.
+    const safeItems = Array.isArray(items) ? items.slice(0, 50) : [];
 
     const data: Record<string, unknown> = {
       email,
-      items: Array.isArray(items) ? items : [],
+      items: safeItems,
       locale: locale || 'en',
-      updatedAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       reminderSent: false,
     };
 
     // Only set createdAt on first write
-    if (!snap.exists()) {
-      data.createdAt = serverTimestamp();
+    if (!snap.exists) {
+      data.createdAt = FieldValue.serverTimestamp();
     }
 
-    await setDoc(ref, data, { merge: true });
+    await ref.set(data, { merge: true });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('abandonedCart save error:', err);
@@ -51,9 +57,20 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = rateLimit({ key: `abandoned-del:${ip}`, windowMs: 60_000, max: 30 });
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } },
+      );
+    }
+
     const { sessionId } = await request.json();
-    if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
-    await deleteDoc(doc(db, 'abandonedCarts', sessionId));
+    if (!sessionId || typeof sessionId !== 'string') {
+      return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+    }
+    await getAdminDb().collection('abandonedCarts').doc(sessionId).delete();
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('abandonedCart delete error:', err);

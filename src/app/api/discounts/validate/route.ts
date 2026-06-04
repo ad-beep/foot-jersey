@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { isFirstOrderOnlyCode, hasPreviousOrder } from '@/lib/first-order';
+
+export const runtime = 'nodejs';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -80,8 +81,8 @@ export async function POST(request: NextRequest) {
     // Use Firestore atomic count as authoritative (race-condition safe), fall back to Sheets
     let firestoreUses = 0;
     try {
-      const usageSnap = await getDoc(doc(db, 'discountUsage', code.toUpperCase().trim()));
-      if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
+      const usageSnap = await getAdminDb().collection('discountUsage').doc(code.toUpperCase().trim()).get();
+      if (usageSnap.exists) firestoreUses = (usageSnap.data()?.count as number) || 0;
     } catch {
       // Firestore unavailable — fall back to Sheets count
     }

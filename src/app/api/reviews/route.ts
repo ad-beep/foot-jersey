@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+
+export const runtime = 'nodejs';
 
 const REVIEWS = 'productReviews';
 const ORDERS = 'orders';
@@ -20,14 +14,13 @@ export async function GET(request: NextRequest) {
     if (!jerseyId) {
       return NextResponse.json({ error: 'Missing jerseyId' }, { status: 400 });
     }
-    const snap = await getDocs(
-      query(
-        collection(db, REVIEWS),
-        where('jerseyId', '==', jerseyId),
-        orderBy('createdAt', 'desc'),
-        limit(50)
-      )
-    );
+    const db = getAdminDb();
+    const snap = await db
+      .collection(REVIEWS)
+      .where('jerseyId', '==', jerseyId)
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get();
     const reviews = snap.docs.map((d) => {
       const data = d.data();
       return {
@@ -53,6 +46,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `reviews:${ip}`, windowMs: 60_000, max: 10 });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } },
+      );
+    }
+
     const body = await request.json();
     const { orderNumber, email, jerseyId, rating, text, city } = body;
 
@@ -74,11 +76,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Review must be 10-1000 characters' }, { status: 400 });
     }
 
+    const db = getAdminDb();
+
     // Verify order exists, matches email, and contains this jerseyId.
-    const ordersRef = collection(db, ORDERS);
-    const orderSnap = await getDocs(
-      query(ordersRef, where('orderNumber', '==', parsedOrder), limit(2))
-    );
+    const orderSnap = await db.collection(ORDERS).where('orderNumber', '==', parsedOrder).limit(2).get();
     if (orderSnap.empty) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
@@ -96,14 +97,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Prevent duplicate review (same jerseyId + orderId).
-    const dupSnap = await getDocs(
-      query(
-        collection(db, REVIEWS),
-        where('orderId', '==', matched.id),
-        where('jerseyId', '==', jerseyId),
-        limit(1)
-      )
-    );
+    const dupSnap = await db
+      .collection(REVIEWS)
+      .where('orderId', '==', matched.id)
+      .where('jerseyId', '==', jerseyId)
+      .limit(1)
+      .get();
     if (!dupSnap.empty) {
       return NextResponse.json({ error: 'You already reviewed this jersey for this order.' }, { status: 409 });
     }
@@ -111,7 +110,7 @@ export async function POST(request: NextRequest) {
     const customerName = orderData.shippingInfo?.name || 'Verified buyer';
     const customerCity = typeof city === 'string' && city.trim() ? city.trim().slice(0, 60) : (orderData.shippingInfo?.city || '');
 
-    await addDoc(collection(db, REVIEWS), {
+    await db.collection(REVIEWS).add({
       jerseyId,
       orderId: matched.id,
       orderNumber: parsedOrder,
@@ -121,7 +120,7 @@ export async function POST(request: NextRequest) {
       rating: parsedRating,
       text: text.trim(),
       verified: true,
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({ ok: true });

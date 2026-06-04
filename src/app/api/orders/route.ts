@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  doc,
-  getDoc,
-  runTransaction,
-  serverTimestamp,
-  updateDoc,
-  increment,
-  setDoc,
-} from 'firebase/firestore';
 import { google } from 'googleapis';
-import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
+import { sendOrderConfirmation, sendBitPendingEmail, sendAdminPaymentAlert } from '@/lib/email';
 import { isFirstOrderOnlyCode, hasPreviousOrder } from '@/lib/first-order';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { CartItem } from '@/types';
+
+export const runtime = 'nodejs';
 
 const PAYPAL_API_BASE = 'https://api.paypal.com';
 
@@ -158,7 +149,7 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
     console.error('Failed to append order to Google Sheets after retries:', error);
     // Flag the order in Firestore so it can be manually synced later
     try {
-      await updateDoc(doc(db, 'orders', orderId), { sheetsWriteFailed: true });
+      await getAdminDb().collection('orders').doc(orderId).update({ sheetsWriteFailed: true });
     } catch {
       // Best-effort flag — don't block
     }
@@ -168,8 +159,8 @@ async function appendOrderToSheet(orderId: string, body: OrderData) {
 async function incrementDiscountUsage(code: string) {
   try {
     const normalizedCode = code.toUpperCase().trim();
-    const usageRef = doc(db, 'discountUsage', normalizedCode);
-    await setDoc(usageRef, { count: increment(1) }, { merge: true });
+    await getAdminDb().collection('discountUsage').doc(normalizedCode)
+      .set({ count: FieldValue.increment(1) }, { merge: true });
   } catch (error) {
     console.error('Failed to increment discount usage:', error);
   }
@@ -203,6 +194,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = (await request.json()) as OrderData;
+    const db = getAdminDb();
 
     paypalOrderIdForRecovery = body.paypalOrderId;
 
@@ -235,18 +227,19 @@ export async function POST(request: NextRequest) {
       //    Using a transaction prevents two concurrent requests from both creating
       //    an order for the same payment (race condition).
       try {
-        const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
-        const claimResult = await runTransaction(db, async (tx) => {
+        const capturedRef = db.collection('capturedPayments').doc(body.paypalOrderId);
+        const claimResult = await db.runTransaction(async (tx) => {
           const snap = await tx.get(capturedRef);
-          if (!snap.exists() || snap.data().status !== 'captured') return 'not_found';
-          if (snap.data().orderCreated === true) return snap.data().orderId as string;
-          if (snap.data().orderCreated === 'processing') return 'duplicate_in_progress';
+          const data = snap.data();
+          if (!snap.exists || data?.status !== 'captured') return 'not_found';
+          if (data.orderCreated === true) return data.orderId as string;
+          if (data.orderCreated === 'processing') return 'duplicate_in_progress';
           // Atomically mark as processing so no other request can claim it
           tx.update(capturedRef, { orderCreated: 'processing' });
-          paypalCaptureIdForRefund = snap.data().captureId || undefined;
-          resolvedFundingSource = (snap.data().fundingSource as 'card' | 'paypal' | null) ?? null;
-          resolvedCardBrand = (snap.data().cardBrand as string | null) ?? null;
-          resolvedCardLast4 = (snap.data().cardLast4 as string | null) ?? null;
+          paypalCaptureIdForRefund = data.captureId || undefined;
+          resolvedFundingSource = (data.fundingSource as 'card' | 'paypal' | null) ?? null;
+          resolvedCardBrand = (data.cardBrand as string | null) ?? null;
+          resolvedCardLast4 = (data.cardLast4 as string | null) ?? null;
           return 'claimed';
         });
 
@@ -286,10 +279,10 @@ export async function POST(request: NextRequest) {
                 const capturedAmount = parseFloat(
                   paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? '0'
                 );
-                await setDoc(doc(db, 'capturedPayments', body.paypalOrderId!), {
+                await db.collection('capturedPayments').doc(body.paypalOrderId!).set({
                   paypalOrderId: body.paypalOrderId,
                   payerId: paypalOrder.payer?.email_address || '',
-                  capturedAt: serverTimestamp(),
+                  capturedAt: FieldValue.serverTimestamp(),
                   status: 'captured',
                   capturedAmount,
                   captureId: captureId || null,
@@ -325,14 +318,15 @@ export async function POST(request: NextRequest) {
     // bitTransactionId — same pattern as PayPal's capturedPayments — to prevent
     // two concurrent requests from creating duplicate orders for the same payment.
     if (body.paymentMethod === 'bit' && body.bitTransactionId) {
-      const bitRef = doc(db, 'capturedBitPayments', body.bitTransactionId);
-      const bitClaimResult = await runTransaction(db, async (tx) => {
+      const bitRef = db.collection('capturedBitPayments').doc(body.bitTransactionId);
+      const bitClaimResult = await db.runTransaction(async (tx) => {
         const snap = await tx.get(bitRef);
-        if (!snap.exists()) {
-          tx.set(bitRef, { createdAt: serverTimestamp(), orderCreated: 'processing' });
+        if (!snap.exists) {
+          tx.set(bitRef, { createdAt: FieldValue.serverTimestamp(), orderCreated: 'processing' });
           return 'claimed';
         }
-        if (snap.data().orderCreated === true) return snap.data().orderId as string;
+        const data = snap.data();
+        if (data?.orderCreated === true) return data.orderId as string;
         return 'duplicate_in_progress';
       }).catch(() => 'claimed'); // If Firestore fails, proceed — don't block legitimate orders
 
@@ -423,8 +417,8 @@ export async function POST(request: NextRequest) {
 
           let firestoreUses = 0;
           try {
-            const usageSnap = await getDoc(doc(db, 'discountUsage', normalizedCode));
-            if (usageSnap.exists()) firestoreUses = (usageSnap.data().count as number) || 0;
+            const usageSnap = await db.collection('discountUsage').doc(normalizedCode).get();
+            if (usageSnap.exists) firestoreUses = (usageSnap.data()?.count as number) || 0;
           } catch { /* fall back to Sheets count */ }
           const currentUses = Math.max(sheetsUses, firestoreUses);
 
@@ -495,9 +489,9 @@ export async function POST(request: NextRequest) {
       `${body.shippingInfo.firstName || ''} ${body.shippingInfo.lastName || ''}`.trim();
 
     // 1. Write to Firestore with atomic order number.
-    const counterRef = doc(db, 'meta', 'orderCounter');
-    const ordersCollection = collection(db, 'orders');
-    const primaryOrderRef = doc(ordersCollection);
+    const counterRef = db.collection('meta').doc('orderCounter');
+    const ordersCollection = db.collection('orders');
+    const primaryOrderRef = ordersCollection.doc();
 
     function serializeItems(src: typeof body.items) {
       return src.map((item) => ({
@@ -523,9 +517,9 @@ export async function POST(request: NextRequest) {
     };
 
     await withRetry(async () => {
-      await runTransaction(db, async (transaction) => {
+      await db.runTransaction(async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
-        const baseCount = counterSnap.exists() ? (counterSnap.data().count as number) : 0;
+        const baseCount = counterSnap.exists ? (counterSnap.data()?.count as number) : 0;
         const orderNumber = baseCount + 1;
         transaction.set(counterRef, { count: orderNumber });
 
@@ -544,7 +538,7 @@ export async function POST(request: NextRequest) {
           shipping: body.shipping ?? 0,
           total: body.total,
           currency: body.currency,
-          createdAt: serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           status: body.paymentMethod === 'bit' ? 'pending_bit_approval' : 'pending',
           fundingSource: resolvedFundingSource,
           cardBrand: resolvedCardBrand,
@@ -558,8 +552,7 @@ export async function POST(request: NextRequest) {
     // Mark the captured payment record as fulfilled (best-effort)
     if (body.paypalOrderId) {
       try {
-        const capturedRef = doc(db, 'capturedPayments', body.paypalOrderId);
-        await updateDoc(capturedRef, {
+        await db.collection('capturedPayments').doc(body.paypalOrderId).update({
           orderCreated: true,
           orderId: primaryOrderRef.id,
         });
@@ -571,7 +564,7 @@ export async function POST(request: NextRequest) {
     // Mark BIT transaction as fulfilled so duplicate requests are rejected (best-effort)
     if (body.bitTransactionId) {
       try {
-        await updateDoc(doc(db, 'capturedBitPayments', body.bitTransactionId), {
+        await db.collection('capturedBitPayments').doc(body.bitTransactionId).update({
           orderCreated: true,
           orderId: primaryOrderRef.id,
         });
@@ -622,7 +615,7 @@ export async function POST(request: NextRequest) {
       }).catch(async (e) => {
         console.error('Email send error:', e);
         try {
-          await updateDoc(doc(db, 'orders', orderDoc.id), { emailSendFailed: true });
+          await db.collection('orders').doc(orderDoc.id).update({ emailSendFailed: true });
         } catch { /* best-effort */ }
       });
     } else if (body.paymentMethod === 'bit') {
@@ -635,7 +628,7 @@ export async function POST(request: NextRequest) {
       }).catch(async (e) => {
         console.error('Email send error:', e);
         try {
-          await updateDoc(doc(db, 'orders', orderDoc.id), { emailSendFailed: true });
+          await db.collection('orders').doc(orderDoc.id).update({ emailSendFailed: true });
         } catch { /* best-effort */ }
       });
     }
@@ -659,6 +652,12 @@ export async function POST(request: NextRequest) {
         `[orders] Order save failed AFTER capture ${paypalCaptureIdForRefund}. ` +
         `Customer paid but no order saved — check capturedPayments and reconcile manually.`
       );
+      // Alert the admin so they can reconcile (fulfil or refund). Fire-and-forget.
+      sendAdminPaymentAlert({
+        paypalOrderId: paypalOrderIdForRecovery,
+        captureId: paypalCaptureIdForRefund,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      }).catch((e) => console.error('[orders] Failed to send admin payment alert:', e));
       return NextResponse.json(
         {
           error:

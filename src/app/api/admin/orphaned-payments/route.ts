@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { requireAdmin } from '@/lib/admin-auth';
+
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -9,11 +10,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const q = query(
-      collection(db, 'capturedPayments'),
-      where('orderCreated', '==', false),
-    );
-    const snap = await getDocs(q);
+    const snap = await getAdminDb()
+      .collection('capturedPayments')
+      .where('orderCreated', '==', false)
+      .get();
     const orphaned = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter((p: any) => {

@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `stock-alert:${ip}`, windowMs: 60_000, max: 10 });
+    const limited = rateLimit({ key: `newsletter:${ip}`, windowMs: 60_000, max: 10 });
     if (!limited.ok) {
       return NextResponse.json(
         { error: 'Too many requests' },
@@ -16,43 +16,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, jerseyId, size } = await request.json();
-
+    const { email, locale } = await request.json();
     if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
-    }
-    if (!jerseyId || typeof jerseyId !== 'string') {
-      return NextResponse.json({ error: 'Missing jerseyId' }, { status: 400 });
-    }
-    if (!size || typeof size !== 'string') {
-      return NextResponse.json({ error: 'Missing size' }, { status: 400 });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const db = getAdminDb();
-    const alertsRef = db.collection('stockAlerts');
-    const existing = await alertsRef
+    const existing = await db
+      .collection('newsletterEmails')
       .where('email', '==', normalizedEmail)
-      .where('jerseyId', '==', jerseyId)
-      .where('size', '==', size)
       .limit(1)
       .get();
 
-    if (!existing.empty) {
-      return NextResponse.json({ ok: true, duplicate: true });
+    if (existing.empty) {
+      await db.collection('newsletterEmails').add({
+        email: normalizedEmail,
+        locale: locale === 'he' ? 'he' : 'en',
+        subscribedAt: FieldValue.serverTimestamp(),
+      });
     }
-
-    await alertsRef.add({
-      email: normalizedEmail,
-      jerseyId,
-      size,
-      createdAt: FieldValue.serverTimestamp(),
-      notified: false,
-    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[stock-alerts] capture error:', err);
+    console.error('[newsletter] subscribe error:', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }

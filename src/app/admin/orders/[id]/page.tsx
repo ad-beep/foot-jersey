@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { doc, onSnapshot, deleteDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
-import { writeAuditLog } from '@/lib/audit-log';
+import { writeAuditLogClient } from '@/lib/audit-log-client';
 import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2, PackageCheck, CheckCircle, XCircle } from 'lucide-react';
 import { calcOrderCost, type ProductInfo } from '@/lib/cost-utils';
 
@@ -186,7 +186,7 @@ export default function OrderDetailPage() {
     if (!order || actionLoading) return;
     setActionLoading(true);
     const currentUser = getAuth().currentUser;
-    await writeAuditLog({
+    await writeAuditLogClient({
       action: 'delete_order',
       adminEmail: currentUser?.email ?? 'unknown',
       details: { orderId: order.id, orderNumber: order.orderNumber, customerEmail: order.shippingInfo?.email, total: order.total },

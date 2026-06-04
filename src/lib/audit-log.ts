@@ -1,5 +1,5 @@
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export interface AuditEntry {
   action: string;
@@ -8,13 +8,13 @@ export interface AuditEntry {
 }
 
 /**
- * Write an audit log entry to Firestore. Best-effort — never throws.
+ * Write an audit log entry to Firestore via the Admin SDK. Best-effort — never throws.
  */
 export async function writeAuditLog(entry: AuditEntry): Promise<void> {
   try {
-    await addDoc(collection(db, 'adminAuditLog'), {
+    await getAdminDb().collection('adminAuditLog').add({
       ...entry,
-      timestamp: serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
     });
   } catch (err) {
     console.error('[audit-log] Failed to write entry:', err);

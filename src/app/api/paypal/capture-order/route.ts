@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 const PAYPAL_API_BASE = 'https://api.paypal.com';
 
 async function getPayPalAccessToken() {
@@ -106,16 +108,16 @@ export async function POST(request: NextRequest) {
     // Write a recovery record so we can trace the payment if order creation fails
     if (order.status === 'COMPLETED') {
       try {
-        const { db } = await import('@/lib/firebase');
-        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+        const { getAdminDb } = await import('@/lib/firebase-admin');
+        const { FieldValue } = await import('firebase-admin/firestore');
         const capture = order.purchase_units?.[0]?.payments?.captures?.[0];
         const capturedAmount = parseFloat(capture?.amount?.value ?? '0');
         const captureId: string | null = capture?.id || null;
-        await setDoc(doc(db, 'capturedPayments', order.id), {
+        await getAdminDb().collection('capturedPayments').doc(order.id).set({
           paypalOrderId: order.id,
           payerId: order.payer?.email_address || '',
           payerName: `${order.payer?.name?.given_name || ''} ${order.payer?.name?.surname || ''}`.trim(),
-          capturedAt: serverTimestamp(),
+          capturedAt: FieldValue.serverTimestamp(),
           status: 'captured',
           capturedAmount,
           captureId,

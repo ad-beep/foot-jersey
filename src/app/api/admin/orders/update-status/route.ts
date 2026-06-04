@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { google } from 'googleapis';
 import { sendBitApprovedEmail, sendOrderShippedEmail } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    await updateDoc(doc(db, 'orders', orderId), { status });
+    await getAdminDb().collection('orders').doc(orderId).update({ status });
 
     writeAuditLog({ action: 'order.status_changed', adminEmail: auth.email, details: { orderId, status } });
 

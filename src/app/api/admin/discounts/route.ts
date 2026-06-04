@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { requireAdmin } from '@/lib/admin-auth';
 import { writeAuditLog } from '@/lib/audit-log';
-import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 
 const SHEET_TAB = 'DiscountCodes';
 
@@ -93,7 +92,7 @@ export async function GET(request: NextRequest) {
     // Merge real-time usage counts from Firestore discountUsage collection
     let usageMap: Record<string, number> = {};
     try {
-      const usageSnap = await getDocs(collection(db, 'discountUsage'));
+      const usageSnap = await getAdminDb().collection('discountUsage').get();
       usageSnap.forEach((usageDoc) => {
         usageMap[usageDoc.id.toUpperCase()] = (usageDoc.data().count as number) || 0;
       });

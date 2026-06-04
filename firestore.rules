@@ -3,22 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── Admin check ──────────────────────────────────────────────────────
-    // Matches the value of NEXT_PUBLIC_ADMIN_EMAILS in your Vercel dashboard.
-    // If you have multiple admin emails, add them with || operators.
+    // Matches the admin email(s). Update if you change the admin account.
     function isAdmin() {
       return request.auth != null &&
              request.auth.token.email == 'adibhazz@gmail.com';
     }
 
+    // ── Architecture note ────────────────────────────────────────────────
+    // ALL server-side writes now go through the Firebase Admin SDK (API routes
+    // and cron jobs), which bypasses these rules entirely. Therefore the client
+    // SDK only needs:
+    //   • the signed-in admin (browser) reading/managing data on /admin pages
+    //   • each signed-in user reading/writing their own /users profile
+    // Everything else is denied to the client. Public site features (orders,
+    // reviews, stock alerts, newsletter, abandoned carts, exit-intent leads,
+    // order tracking, order confirmation) are served exclusively by server API
+    // routes using the Admin SDK — the browser never touches those collections
+    // directly. This closes the previous "allow create/update: if true" holes.
+
     // ── Orders ────────────────────────────────────────────────────────────
-    // • create + update: allowed unauthenticated — the Next.js API routes
-    //   (/api/orders and /api/orders/approve-bit) use the Firebase client SDK
-    //   on the server without a user session. Until those routes are migrated
-    //   to the Firebase Admin SDK, these must remain open.
-    // • read + delete: restricted to the admin only.
+    // Created/updated by server API routes (Admin SDK). The admin browser reads
+    // and manages orders on /admin/orders, so allow admin read/write there.
     match /orders/{orderId} {
-      allow create, update: if true;
-      allow read, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // ── Users ─────────────────────────────────────────────────────────────
@@ -27,62 +34,74 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // ── Order counter (used by server-side API, unauthenticated) ──────────────
+    // ── Order counter ─────────────────────────────────────────────────────
+    // Server-only (Admin SDK). No client access.
     match /meta/{docId} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
 
-    // ── Admin Audit Log ───────────────────────────────────────────────────────
-    // Writes come from server-side API routes (no auth session) — allow create.
-    // Reads restricted to admin only.
+    // ── Admin Audit Log ───────────────────────────────────────────────────
+    // Written server-side (Admin SDK) and by the admin browser for actions done
+    // directly from /admin (e.g. deleting an order). Only the admin can create;
+    // entries are immutable (no update/delete from the client).
     match /adminAuditLog/{entryId} {
-      allow create: if true;
       allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
 
-    // ── Captured Payments (PayPal recovery records) ───────────────────────────
-    // Written by capture-order route and orders route (no auth session).
-    // Read/delete restricted to admin only.
+    // ── Captured PayPal Payments (recovery records) ───────────────────────
+    // Server-only (Admin SDK). The admin views orphaned payments via an API.
     match /capturedPayments/{docId} {
-      allow create, update: if true;
-      allow read, delete: if isAdmin();
+      allow read, write: if false;
     }
 
-    // ── Discount Usage counters ───────────────────────────────────────────────
-    // Written by orders route (no auth session). Read by discount validation.
-    // Admin can read/write for management.
-    match /discountUsage/{code} {
-      allow read, write: if true;
-    }
-
-    // ── Captured BIT Payments (idempotency guard for BIT orders) ──────────────
-    // Same pattern as capturedPayments. Server-side orders route writes here
-    // with no auth; admin can audit / clean up.
+    // ── Captured BIT Payments (idempotency guard) ─────────────────────────
+    // Server-only (Admin SDK).
     match /capturedBitPayments/{docId} {
-      allow create, update: if true;
-      allow read, delete: if isAdmin();
+      allow read, write: if false;
     }
 
-    // ── Exit-intent Leads (email captures from the discount popup) ────────────
-    // Created/updated by /api/exit-intent/capture and /api/marketing/send-sequences
-    // (both server-side, no auth). Admin reads them on the Marketing page.
+    // ── Discount Usage counters ───────────────────────────────────────────
+    // Server-only (Admin SDK) — written by the orders route, read by validation.
+    match /discountUsage/{code} {
+      allow read, write: if false;
+    }
+
+    // ── Product Reviews ───────────────────────────────────────────────────
+    // Server-only (Admin SDK) — read and written by /api/reviews.
+    match /productReviews/{reviewId} {
+      allow read, write: if false;
+    }
+
+    // ── Stock Alerts ──────────────────────────────────────────────────────
+    // Server-only (Admin SDK) — written by /api/stock-alerts.
+    match /stockAlerts/{alertId} {
+      allow read, write: if false;
+    }
+
+    // ── Newsletter Emails ─────────────────────────────────────────────────
+    // Server-only (Admin SDK) — written by /api/newsletter.
+    match /newsletterEmails/{docId} {
+      allow read, write: if false;
+    }
+
+    // ── Exit-intent Leads ─────────────────────────────────────────────────
+    // Written server-side (Admin SDK). Admin reads them on /admin/marketing.
     match /exitIntentLeads/{leadId} {
-      allow create, update: if true;
-      allow read, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
-    // ── Abandoned Carts (cart contents + email for reminders) ─────────────────
-    // Created/updated by /api/abandoned-cart/save (server-side, no auth).
-    // Reads also need to be open because the save endpoint does a getDoc to
-    // check whether the cart already exists before merging. Cart docs are
-    // keyed by an unguessable session UUID so this isn't a useful enumeration
-    // target. Admin still reads them on the Marketing page through the same rule.
+    // ── Abandoned Carts ───────────────────────────────────────────────────
+    // Written server-side (Admin SDK). Admin reads them on /admin/marketing.
     match /abandonedCarts/{cartId} {
-      allow read, create, update, delete: if true;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
-    // ── Marketing Spends (admin-logged ad-spend entries) ──────────────────────
-    // Owned entirely by the admin — no public access.
+    // ── Marketing Spends (admin-logged ad-spend entries) ──────────────────
+    // The admin browser reads and writes these on /admin/marketing.
     match /marketingSpends/{spendId} {
       allow read, write: if isAdmin();
     }

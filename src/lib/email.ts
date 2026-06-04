@@ -1,5 +1,18 @@
 import nodemailer from 'nodemailer';
 import { SITE_URL } from './constants';
+import { signUnsubscribeToken } from './unsubscribe-token';
+
+// Escape user-supplied values before interpolating them into HTML email bodies,
+// so a customer-controlled field (name, custom name/number, address, notes)
+// can't inject markup or links into the message.
+function esc(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // Reuse a single pooled transporter across sends. A new SMTP connection per
 // email (TLS + auth handshake each time) is what made the marketing cron slow
@@ -77,8 +90,7 @@ interface SendBitPendingOptions {
 
 // ─── Unsubscribe URL helper ───────────────────────────────────────────────────
 function unsubscribeUrl(email: string): string {
-  const token = Buffer.from(email).toString('base64url');
-  return `${SITE_URL}/api/unsubscribe?t=${token}`;
+  return `${SITE_URL}/api/unsubscribe?t=${signUnsubscribeToken(email)}`;
 }
 
 // ─── Shared HTML wrapper ──────────────────────────────────────────────────────
@@ -147,7 +159,7 @@ function wrapEmail(content: string, title: string, unsubUrl?: string): string {
 function renderItems(items: OrderItem[]): string {
   return items.map((item) => {
     const customParts: string[] = [];
-    if (item.customization?.customName) customParts.push(`#${item.customization.customNumber || ''} ${item.customization.customName}`);
+    if (item.customization?.customName) customParts.push(esc(`#${item.customization.customNumber || ''} ${item.customization.customName}`));
     if (item.customization?.isPlayerVersion) customParts.push('Player Version');
     if (item.customization?.hasPatch) customParts.push('Patch');
     if (item.customization?.hasPants) customParts.push('Pants');
@@ -155,8 +167,8 @@ function renderItems(items: OrderItem[]): string {
     const lineTotal = item.totalPrice * item.quantity;
     return `<tr>
       <td>
-        <div class="item-name">${item.teamName}</div>
-        <div class="item-meta">Size ${item.size} × ${item.quantity}${item.quantity > 1 ? ` (₪${item.totalPrice} each)` : ''}</div>
+        <div class="item-name">${esc(item.teamName)}</div>
+        <div class="item-meta">Size ${esc(item.size)} × ${item.quantity}${item.quantity > 1 ? ` (₪${item.totalPrice} each)` : ''}</div>
         ${customParts.length > 0 ? `<div class="item-custom">${customParts.join(' · ')}</div>` : ''}
       </td>
       <td>₪${lineTotal}</td>
@@ -170,9 +182,45 @@ async function sendMail(opts: { to: string; subject: string; html: string }): Pr
     throw new Error('[Email] GMAIL_USER or GMAIL_APP_PASSWORD not configured — email not sent');
   }
   const from = `FootJersey <${process.env.GMAIL_USER}>`;
-  console.log(`[Email] Sending to ${opts.to} — "${opts.subject}"`);
   await transporter.sendMail({ from, to: opts.to, subject: opts.subject, html: opts.html });
-  console.log(`[Email] Sent OK to ${opts.to}`);
+}
+
+// ─── Admin Alert: captured payment with no saved order ────────────────────────
+// Fired when PayPal/card funds were captured but the order failed to save. The
+// admin reconciles manually (fulfil or refund) — we never auto-refund.
+export async function sendAdminPaymentAlert(opts: {
+  paypalOrderId?: string;
+  captureId?: string;
+  customerEmail?: string;
+  total?: number;
+  errorMessage?: string;
+}): Promise<void> {
+  const admins = (process.env.ADMIN_EMAILS ?? process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? '')
+    .split(',').map((e) => e.trim()).filter(Boolean);
+  if (admins.length === 0) return;
+
+  const rows: [string, string][] = [
+    ['PayPal Order ID', opts.paypalOrderId || '—'],
+    ['Capture ID', opts.captureId || '—'],
+    ['Customer email', opts.customerEmail || '—'],
+    ['Order total', opts.total != null ? `₪${opts.total}` : '—'],
+    ['Error', opts.errorMessage || '—'],
+  ];
+  const content = `
+    <div class="body">
+      <div style="margin-bottom:16px;"><span class="status-badge status-pending">⚠️ Action needed</span></div>
+      <h1 class="title">Captured payment, no saved order</h1>
+      <p class="subtitle">A payment was captured but the order failed to save. Reconcile it manually — fulfil the order or refund the customer in PayPal.</p>
+      <div class="totals">
+        ${rows.map(([k, v]) => `<div class="total-row"><span>${esc(k)}</span><span style="color:#fff;font-family:monospace;">${esc(v)}</span></div>`).join('')}
+      </div>
+      <a href="${SITE_URL}/admin/orders" class="cta-button">Open Admin → Orders</a>
+    </div>`;
+  await sendMail({
+    to: admins.join(','),
+    subject: '⚠️ FootJersey: captured payment with no saved order',
+    html: wrapEmail(content, 'Payment needs reconciliation'),
+  });
 }
 
 // ─── Order Confirmation Email (PayPal/Credit Card) ────────────────────────────
@@ -187,7 +235,7 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
       <div style="margin-bottom:16px;">
         <span class="status-badge status-success">✓ Order Confirmed</span>
       </div>
-      <h1 class="title">Thank you, ${opts.customerName.split(' ')[0]}!</h1>
+      <h1 class="title">Thank you, ${esc(opts.customerName.split(' ')[0])}!</h1>
       <p class="subtitle">Your order has been placed and payment confirmed. We're preparing your jerseys!</p>
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
@@ -213,9 +261,9 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
 
       <div class="address-box">
         <h4>Shipping To</h4>
-        <p>${opts.customerName}<br>
-        ${opts.shippingAddress.street}, ${opts.shippingAddress.city}<br>
-        ${opts.shippingAddress.zip}, ${opts.shippingAddress.country}</p>
+        <p>${esc(opts.customerName)}<br>
+        ${esc(opts.shippingAddress.street)}, ${esc(opts.shippingAddress.city)}<br>
+        ${esc(opts.shippingAddress.zip)}, ${esc(opts.shippingAddress.country)}</p>
       </div>
 
       <div class="info-box success">
@@ -262,9 +310,9 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
   const addressHtml = opts.shippingAddress ? `
       <div class="address-box">
         <h4>Shipping To</h4>
-        <p>${opts.customerName}<br>
-        ${opts.shippingAddress.street}, ${opts.shippingAddress.city}<br>
-        ${opts.shippingAddress.zip}, ${opts.shippingAddress.country}</p>
+        <p>${esc(opts.customerName)}<br>
+        ${esc(opts.shippingAddress.street)}, ${esc(opts.shippingAddress.city)}<br>
+        ${esc(opts.shippingAddress.zip)}, ${esc(opts.shippingAddress.country)}</p>
       </div>` : '';
 
   const content = `
@@ -272,7 +320,7 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
       <div style="margin-bottom:16px;">
         <span class="status-badge status-pending">⏳ Awaiting Payment Confirmation</span>
       </div>
-      <h1 class="title">Order Received, ${opts.customerName.split(' ')[0]}!</h1>
+      <h1 class="title">Order Received, ${esc(opts.customerName.split(' ')[0])}!</h1>
       <p class="subtitle">We received your BIT payment transfer request. Your order is on hold until we verify the payment.</p>
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
@@ -343,9 +391,9 @@ export async function sendBitApprovedEmail(opts: {
   const addressHtml = opts.shippingAddress ? `
       <div class="address-box">
         <h4>Shipping To</h4>
-        <p>${opts.customerName}<br>
-        ${opts.shippingAddress.street}, ${opts.shippingAddress.city}<br>
-        ${opts.shippingAddress.zip}, ${opts.shippingAddress.country}</p>
+        <p>${esc(opts.customerName)}<br>
+        ${esc(opts.shippingAddress.street)}, ${esc(opts.shippingAddress.city)}<br>
+        ${esc(opts.shippingAddress.zip)}, ${esc(opts.shippingAddress.country)}</p>
       </div>` : '';
 
   const content = `
@@ -392,7 +440,7 @@ export async function sendOrderFailedRefundEmail(opts: {
       <div style="margin-bottom:16px;">
         <span class="status-badge status-pending">⚠ Order Could Not Be Processed</span>
       </div>
-      <h1 class="title">We're sorry, ${opts.customerName.split(' ')[0] || 'there'}.</h1>
+      <h1 class="title">We're sorry, ${esc(opts.customerName.split(' ')[0] || 'there')}.</h1>
       <p class="subtitle">Your payment went through, but we ran into a technical issue while creating your order. We've automatically issued a full refund.</p>
 
       <div class="info-box warning">
@@ -443,7 +491,7 @@ export async function sendOrderShippedEmail(opts: {
       <div style="margin-bottom:16px;">
         <span class="status-badge status-success">📦 Your Order Has Shipped</span>
       </div>
-      <h1 class="title">It's on the way, ${opts.customerName.split(' ')[0] || 'friend'}! 🚚</h1>
+      <h1 class="title">It's on the way, ${esc(opts.customerName.split(' ')[0] || 'friend')}! 🚚</h1>
       <p class="subtitle">Great news — your order is out for delivery. You'll receive a separate message with details on how to pick it up from your nearest pickup point.</p>
 
       <div class="order-id">Order #${opts.orderId.slice(0, 8).toUpperCase()}</div>
@@ -504,7 +552,7 @@ export async function sendAbandonedCartEmail(opts: {
         <tbody>${opts.items.map(item => `
           <tr>
             <td style="padding:10px 0;border-bottom:1px solid #111;">
-              <div style="font-size:14px;color:#fff;font-weight:600;">${item.name || 'Jersey'}</div>
+              <div style="font-size:14px;color:#fff;font-weight:600;">${esc(item.name || 'Jersey')}</div>
               <div style="font-size:12px;color:#666;">${isHe ? 'מידה' : 'Size'}: ${item.size} · ×${item.quantity}</div>
             </td>
             <td style="padding:10px 0;border-bottom:1px solid #111;text-align:right;font-family:monospace;color:#C8A24B;font-weight:700;">₪${(item.price * item.quantity).toFixed(0)}</td>
