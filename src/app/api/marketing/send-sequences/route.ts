@@ -4,6 +4,11 @@ import { collection, getDocs, updateDoc, doc, Timestamp } from 'firebase/firesto
 import { sendMarketingDay3Email, sendMarketingDay7Email, sendMarketingBlastEmail, sendMarketingWelcomeEmail } from '@/lib/email';
 import { hasPreviousOrder } from '@/lib/first-order';
 
+// This route sends many emails sequentially over Gmail SMTP (welcome catch-up +
+// daily blast). The default function timeout (~15s) is far too short, so the
+// run gets killed mid-way and returns a non-JSON 504. Pro allows up to 300s.
+export const maxDuration = 300;
+
 // How many days must pass before we send another blast to the same person
 const BLAST_INTERVAL_DAYS = 5;
 // Max blast emails per daily cron run (stays within free-plan Gmail limits)

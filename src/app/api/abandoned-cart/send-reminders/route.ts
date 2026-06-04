@@ -11,6 +11,10 @@ import {
 } from 'firebase/firestore';
 import { sendAbandonedCartEmail } from '@/lib/email';
 
+// Sends up to 10 reminder emails sequentially; give it room past the ~15s
+// default so a slow SMTP batch can't get killed mid-run.
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   // Verify Vercel cron secret
   const authHeader = request.headers.get('authorization');
