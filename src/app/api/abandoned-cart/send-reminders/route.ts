@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-  Timestamp,
-} from 'firebase/firestore';
 import { sendAbandonedCartEmail } from '@/lib/email';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
-// Sends up to 10 reminder emails sequentially; give it room past the ~15s
-// default so a slow SMTP batch can't get killed mid-run.
+// firebase-admin requires the Node runtime; give the SMTP batch room past the
+// ~15s default (60s is the Hobby max).
+export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
@@ -23,20 +16,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const oneHourAgo = Timestamp.fromDate(new Date(Date.now() - 60 * 60 * 1000));
+    const db = getAdminDb();
+    const oneHourAgoMs = Date.now() - 60 * 60 * 1000;
 
-    const q = query(
-      collection(db, 'abandonedCarts'),
-      where('reminderSent', '==', false),
-      where('updatedAt', '<', oneHourAgo),
-    );
+    // Single-field query only (auto-indexed). The previous version added a
+    // second where('updatedAt','<',…), which made it a COMPOUND query that
+    // required a composite index that didn't exist (failed-precondition → 500).
+    // We instead apply the "older than 1 hour" window in code below.
+    const snap = await db.collection('abandonedCarts').where('reminderSent', '==', false).get();
 
-    const snap = await getDocs(q);
+    const due = snap.docs.filter((d) => {
+      const u = d.data().updatedAt;
+      const ms = u?.toMillis?.() ?? (u?.seconds ?? 0) * 1000;
+      return ms > 0 && ms < oneHourAgoMs;
+    });
+
     let sent = 0;
     const errors: string[] = [];
 
-    // Process up to 10 per invocation to stay within edge function timeout
-    for (const cartDoc of snap.docs.slice(0, 10)) {
+    // Process up to 10 per invocation to stay within the function timeout.
+    for (const cartDoc of due.slice(0, 10)) {
       const cart = cartDoc.data();
       if (!cart.email) continue;
 
@@ -46,7 +45,7 @@ export async function GET(request: NextRequest) {
           items: cart.items ?? [],
           locale: cart.locale ?? 'en',
         });
-        await updateDoc(doc(db, 'abandonedCarts', cartDoc.id), {
+        await cartDoc.ref.update({
           reminderSent: true,
           reminderSentAt: Timestamp.now(),
         });
@@ -61,6 +60,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, sent, errors: errors.length > 0 ? errors : undefined });
   } catch (err) {
     console.error('send-reminders error:', err);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
   }
 }
