@@ -4,9 +4,6 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
-  query,
-  where,
   runTransaction,
   serverTimestamp,
   updateDoc,
@@ -16,6 +13,8 @@ import {
 import { google } from 'googleapis';
 import { sendOrderConfirmation, sendBitPendingEmail } from '@/lib/email';
 import { isFirstOrderOnlyCode, hasPreviousOrder } from '@/lib/first-order';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import type { CartItem } from '@/types';
 
 const PAYPAL_API_BASE = 'https://api.paypal.com';
@@ -187,10 +186,11 @@ async function incrementDiscountUsage(code: string) {
 
 async function markLeadConverted(email: string) {
   try {
-    const snap = await getDocs(
-      query(collection(db, 'exitIntentLeads'), where('email', '==', email)),
-    );
-    await Promise.all(snap.docs.map((d) => updateDoc(d.ref, { convertedAt: serverTimestamp() })));
+    // Admin SDK — exitIntentLeads is not readable by the unauthenticated client
+    // SDK (rules), so the previous client-SDK query silently failed here.
+    const adminDb = getAdminDb();
+    const snap = await adminDb.collection('exitIntentLeads').where('email', '==', email).get();
+    await Promise.all(snap.docs.map((d) => d.ref.update({ convertedAt: FieldValue.serverTimestamp() })));
   } catch (error) {
     console.error('Failed to mark lead as converted:', error);
   }

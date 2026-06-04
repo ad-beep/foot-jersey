@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { sendMarketingDay3Email, sendMarketingDay7Email, sendMarketingBlastEmail, sendMarketingWelcomeEmail } from '@/lib/email';
 import { hasPreviousOrder } from '@/lib/first-order';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
+
+// firebase-admin requires the Node runtime (not edge).
+export const runtime = 'nodejs';
 
 // 60s is the max on Vercel's free/Hobby plan, so we stay within it (instead of
 // relying on Pro's 300s). Combined with the pooled transporter + parallel sends
@@ -30,101 +33,110 @@ export async function GET(request: NextRequest) {
   let blastSent = 0;
   let errors = 0;
 
-  const snap = await getDocs(collection(db, 'exitIntentLeads'));
+  try {
+    // Admin Firestore — the client SDK can't read exitIntentLeads (rules deny
+    // unauthenticated reads), which is why this cron used to 500 immediately.
+    const db = getAdminDb();
+    const snap = await db.collection('exitIntentLeads').get();
 
-  // ── Welcome sequences ─────────────────────────────────────────────────
-  // Welcome catch-up runs first: if a lead was captured but the welcome email
-  // never sent (Gmail throttle during a traffic spike, cold-start kill, etc.)
-  // this cron sends it on the next run. Bounded per cron run so we don't try
-  // to send 1000s of welcomes if the popup just went viral.
-  const WELCOME_CATCHUP_LIMIT = 30;
-  let welcomeAttempts = 0;
+    // ── Welcome sequences ─────────────────────────────────────────────────
+    // Welcome catch-up runs first: if a lead was captured but the welcome email
+    // never sent (Gmail throttle during a traffic spike, cold-start kill, etc.)
+    // this cron sends it on the next run. Bounded per cron run so we don't try
+    // to send 1000s of welcomes if the popup just went viral.
+    const WELCOME_CATCHUP_LIMIT = 30;
+    let welcomeAttempts = 0;
 
-  await Promise.all(
-    snap.docs.map(async (leadDoc) => {
-      const data = leadDoc.data();
+    await Promise.all(
+      snap.docs.map(async (leadDoc) => {
+        const data = leadDoc.data();
 
-      // Skip unsubscribed and converted leads
-      if (data.unsubscribedAt || data.convertedAt) return;
+        // Skip unsubscribed and converted leads
+        if (data.unsubscribedAt || data.convertedAt) return;
 
-      const emailsSent: string[] = data.emailsSent ?? [];
-      const capturedAt: number =
-        data.capturedAt?.toMillis?.() ?? (data.capturedAt?.seconds ?? 0) * 1000;
-      if (!capturedAt) return;
+        const emailsSent: string[] = data.emailsSent ?? [];
+        const capturedAt: number =
+          data.capturedAt?.toMillis?.() ?? (data.capturedAt?.seconds ?? 0) * 1000;
+        if (!capturedAt) return;
 
-      const daysSince = (now - capturedAt) / DAY_MS;
-      const discountCode: string = data.discountCode ?? 'STAY10';
-      const to: string = data.email;
-      const ref = doc(db, 'exitIntentLeads', leadDoc.id);
+        const daysSince = (now - capturedAt) / DAY_MS;
+        const discountCode: string = data.discountCode ?? 'STAY10';
+        const to: string = data.email;
+        const ref = leadDoc.ref;
 
-      try {
-        if (!emailsSent.includes('welcome') && welcomeAttempts < WELCOME_CATCHUP_LIMIT) {
-          welcomeAttempts++;
-          // STAY10 only works on a first order — don't send the discount welcome
-          // to an email that has already ordered. Mark 'welcome' so we stop
-          // retrying this lead, but don't count it as sent.
-          if (await hasPreviousOrder(to)) {
-            await updateDoc(ref, { emailsSent: [...emailsSent, 'welcome'], welcomeSkippedReturningCustomer: true });
-          } else {
-            await sendMarketingWelcomeEmail({ to, discountCode });
-            await updateDoc(ref, { emailsSent: [...emailsSent, 'welcome'] });
-            welcomeSent++;
+        try {
+          if (!emailsSent.includes('welcome') && welcomeAttempts < WELCOME_CATCHUP_LIMIT) {
+            welcomeAttempts++;
+            // STAY10 only works on a first order — don't send the discount welcome
+            // to an email that has already ordered. Mark 'welcome' so we stop
+            // retrying this lead, but don't count it as sent.
+            if (await hasPreviousOrder(to)) {
+              await ref.update({ emailsSent: [...emailsSent, 'welcome'], welcomeSkippedReturningCustomer: true });
+            } else {
+              await sendMarketingWelcomeEmail({ to, discountCode });
+              await ref.update({ emailsSent: [...emailsSent, 'welcome'] });
+              welcomeSent++;
+            }
+          } else if (daysSince >= 7 && emailsSent.includes('day3') && !emailsSent.includes('day7')) {
+            await sendMarketingDay7Email({ to, discountCode });
+            await ref.update({ emailsSent: [...emailsSent, 'day7'] });
+            day7Sent++;
+          } else if (daysSince >= 3 && emailsSent.includes('welcome') && !emailsSent.includes('day3')) {
+            await sendMarketingDay3Email({ to, discountCode });
+            await ref.update({ emailsSent: [...emailsSent, 'day3'] });
+            day3Sent++;
           }
-        } else if (daysSince >= 7 && emailsSent.includes('day3') && !emailsSent.includes('day7')) {
-          await sendMarketingDay7Email({ to, discountCode });
-          await updateDoc(ref, { emailsSent: [...emailsSent, 'day7'] });
-          day7Sent++;
-        } else if (daysSince >= 3 && emailsSent.includes('welcome') && !emailsSent.includes('day3')) {
-          await sendMarketingDay3Email({ to, discountCode });
-          await updateDoc(ref, { emailsSent: [...emailsSent, 'day3'] });
-          day3Sent++;
+        } catch (err) {
+          console.error(`[marketing-seq] failed for ${to}:`, err);
+          errors++;
         }
-      } catch (err) {
-        console.error(`[marketing-seq] failed for ${to}:`, err);
-        errors++;
-      }
-    }),
-  );
+      }),
+    );
 
-  // ── Daily blast — 50 per day, rotating through all active subscribers ────────
-  const blastCutoff = now - BLAST_INTERVAL_DAYS * DAY_MS;
+    // ── Daily blast — 50 per day, rotating through all active subscribers ────────
+    const blastCutoff = now - BLAST_INTERVAL_DAYS * DAY_MS;
 
-  // Collect eligible leads: not unsubscribed, not converted, not blasted recently
-  const eligible = snap.docs
-    .map((d) => ({ id: d.id, ...d.data() } as Record<string, any>))
-    .filter((d) => {
-      if (d.unsubscribedAt || d.convertedAt) return false;
-      if (!d.email) return false;
-      const lastBlast: number = d.lastBlastAt
-        ? (d.lastBlastAt.toMillis?.() ?? (d.lastBlastAt.seconds ?? 0) * 1000)
-        : 0;
-      return lastBlast < blastCutoff;
-    })
-    // Sort: never-blasted (lastBlastAt = 0) first, then oldest blast first
-    .sort((a, b) => {
-      const aT = a.lastBlastAt ? (a.lastBlastAt.toMillis?.() ?? (a.lastBlastAt.seconds ?? 0) * 1000) : 0;
-      const bT = b.lastBlastAt ? (b.lastBlastAt.toMillis?.() ?? (b.lastBlastAt.seconds ?? 0) * 1000) : 0;
-      return aT - bT;
-    })
-    .slice(0, BLAST_LIMIT);
+    // Collect eligible leads: not unsubscribed, not converted, not blasted recently
+    const eligible = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() } as Record<string, any>))
+      .filter((d) => {
+        if (d.unsubscribedAt || d.convertedAt) return false;
+        if (!d.email) return false;
+        const lastBlast: number = d.lastBlastAt
+          ? (d.lastBlastAt.toMillis?.() ?? (d.lastBlastAt.seconds ?? 0) * 1000)
+          : 0;
+        return lastBlast < blastCutoff;
+      })
+      // Sort: never-blasted (lastBlastAt = 0) first, then oldest blast first
+      .sort((a, b) => {
+        const aT = a.lastBlastAt ? (a.lastBlastAt.toMillis?.() ?? (a.lastBlastAt.seconds ?? 0) * 1000) : 0;
+        const bT = b.lastBlastAt ? (b.lastBlastAt.toMillis?.() ?? (b.lastBlastAt.seconds ?? 0) * 1000) : 0;
+        return aT - bT;
+      })
+      .slice(0, BLAST_LIMIT);
 
-  // Send in parallel — the pooled transporter (maxConnections: 5) throttles
-  // these to a safe number of concurrent SMTP connections, so the whole blast
-  // finishes in a fraction of the sequential time and stays under the 60s cap.
-  await Promise.all(
-    eligible.map(async (lead) => {
-      try {
-        await sendMarketingBlastEmail({ to: lead.email, dayIndex });
-        await updateDoc(doc(db, 'exitIntentLeads', lead.id), {
-          lastBlastAt: Timestamp.now(),
-        });
-        blastSent++;
-      } catch (err) {
-        console.error(`[marketing-blast] failed for ${lead.email}:`, err);
-        errors++;
-      }
-    }),
-  );
+    // Send in parallel — the pooled transporter (maxConnections: 5) throttles
+    // these to a safe number of concurrent SMTP connections, so the whole blast
+    // finishes in a fraction of the sequential time and stays under the 60s cap.
+    await Promise.all(
+      eligible.map(async (lead) => {
+        try {
+          await sendMarketingBlastEmail({ to: lead.email, dayIndex });
+          await db.collection('exitIntentLeads').doc(lead.id).update({ lastBlastAt: Timestamp.now() });
+          blastSent++;
+        } catch (err) {
+          console.error(`[marketing-blast] failed for ${lead.email}:`, err);
+          errors++;
+        }
+      }),
+    );
 
-  return NextResponse.json({ ok: true, welcomeSent, day3Sent, day7Sent, blastSent, errors });
+    return NextResponse.json({ ok: true, welcomeSent, day3Sent, day7Sent, blastSent, errors });
+  } catch (err) {
+    console.error('[marketing-seq] fatal error:', err);
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : 'Unknown error', welcomeSent, day3Sent, day7Sent, blastSent, errors },
+      { status: 500 },
+    );
+  }
 }
