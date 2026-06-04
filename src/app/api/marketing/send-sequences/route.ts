@@ -4,10 +4,10 @@ import { collection, getDocs, updateDoc, doc, Timestamp } from 'firebase/firesto
 import { sendMarketingDay3Email, sendMarketingDay7Email, sendMarketingBlastEmail, sendMarketingWelcomeEmail } from '@/lib/email';
 import { hasPreviousOrder } from '@/lib/first-order';
 
-// This route sends many emails sequentially over Gmail SMTP (welcome catch-up +
-// daily blast). The default function timeout (~15s) is far too short, so the
-// run gets killed mid-way and returns a non-JSON 504. Pro allows up to 300s.
-export const maxDuration = 300;
+// 60s is the max on Vercel's free/Hobby plan, so we stay within it (instead of
+// relying on Pro's 300s). Combined with the pooled transporter + parallel sends
+// below, the run finishes in well under 60s.
+export const maxDuration = 60;
 
 // How many days must pass before we send another blast to the same person
 const BLAST_INTERVAL_DAYS = 5;
@@ -108,18 +108,23 @@ export async function GET(request: NextRequest) {
     })
     .slice(0, BLAST_LIMIT);
 
-  for (const lead of eligible) {
-    try {
-      await sendMarketingBlastEmail({ to: lead.email, dayIndex });
-      await updateDoc(doc(db, 'exitIntentLeads', lead.id), {
-        lastBlastAt: Timestamp.now(),
-      });
-      blastSent++;
-    } catch (err) {
-      console.error(`[marketing-blast] failed for ${lead.email}:`, err);
-      errors++;
-    }
-  }
+  // Send in parallel — the pooled transporter (maxConnections: 5) throttles
+  // these to a safe number of concurrent SMTP connections, so the whole blast
+  // finishes in a fraction of the sequential time and stays under the 60s cap.
+  await Promise.all(
+    eligible.map(async (lead) => {
+      try {
+        await sendMarketingBlastEmail({ to: lead.email, dayIndex });
+        await updateDoc(doc(db, 'exitIntentLeads', lead.id), {
+          lastBlastAt: Timestamp.now(),
+        });
+        blastSent++;
+      } catch (err) {
+        console.error(`[marketing-blast] failed for ${lead.email}:`, err);
+        errors++;
+      }
+    }),
+  );
 
   return NextResponse.json({ ok: true, welcomeSent, day3Sent, day7Sent, blastSent, errors });
 }

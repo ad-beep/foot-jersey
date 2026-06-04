@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 
-// This proxies to the cron endpoints and AWAITS their full run (which can send
-// dozens of emails). Must outlive them, so match their extended duration.
-export const maxDuration = 300;
+// Proxies to the cron endpoints and AWAITS their full run. They now finish in
+// well under 60s (pooled + parallel sends), so 60s here (the Hobby max) is
+// plenty and keeps the whole thing free-plan-safe.
+export const maxDuration = 60;
 
 // Admin-triggered manual run of the marketing crons.
 // Lets the user verify the system works without waiting 24h for the scheduler.

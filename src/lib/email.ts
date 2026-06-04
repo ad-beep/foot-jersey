@@ -1,16 +1,32 @@
 import nodemailer from 'nodemailer';
 import { SITE_URL } from './constants';
 
+// Reuse a single pooled transporter across sends. A new SMTP connection per
+// email (TLS + auth handshake each time) is what made the marketing cron slow
+// enough to time out; pooling reuses up to `maxConnections` and also caps how
+// many emails send at once, which keeps us within Gmail's concurrency limits
+// and the serverless 60s budget. Cached and keyed on creds so a credential
+// change (e.g. switching the sending account) rebuilds it.
+let cachedTransporter: nodemailer.Transporter | null = null;
+let cachedFor = '';
+
 function getTransporter() {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) return null;
-  return nodemailer.createTransport({
+  const key = `${user}:${pass}`;
+  if (cachedTransporter && cachedFor === key) return cachedTransporter;
+  cachedTransporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     auth: { user, pass },
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
   });
+  cachedFor = key;
+  return cachedTransporter;
 }
 
 interface OrderItem {
