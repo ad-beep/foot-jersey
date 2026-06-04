@@ -26,6 +26,11 @@ FootJersey_Catalogue.xlsx
 .DS_Store
 *.pem
 
+# dev artifacts / screenshots / scratch spreadsheets (not part of the app)
+/Screenshot*.png
+/*.xlsx
+/MORNING_LOG.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*

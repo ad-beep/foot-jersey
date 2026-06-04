@@ -2,7 +2,7 @@
 // Used by admin dashboard and order detail page to calculate profit/cost.
 
 export const USD_TO_ILS = 3.0;
-export const MARKETING_PER_JERSEY = 15;   // ₪15 per jersey sold (paid to marketing person)
+export const MARKETING_PER_JERSEY = 20;   // ₪20 per jersey sold (paid to marketing person)
 export const PAYPAL_RATE = 0.05;           // 5% PayPal commission
 export const SHIPPING_COST_USD = 5;        // $5 per order
 export const FREE_SHIPPING_MIN_ITEMS = 3;  // Free shipping when ≥3 jerseys ordered
@@ -110,7 +110,7 @@ export interface OrderCostSummary {
   shippingCostILS: number;    // $5 × 3.4 if <3 jerseys, else 0
   shippingFree: boolean;
   totalJerseys: number;
-  marketingILS: number;       // totalJerseys × 15
+  marketingILS: number;       // totalJerseys × MARKETING_PER_JERSEY
   paypalCommissionILS: number; // 5% of order total if PayPal, else 0
   totalCostILS: number;
   revenueILS: number;         // order.total (what customer paid)

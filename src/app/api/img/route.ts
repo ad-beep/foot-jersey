@@ -32,13 +32,14 @@ export async function GET(request: NextRequest) {
     return new NextResponse('url required', { status: 400 });
   }
 
-  // Decode and validate URL — reject anything that isn't http(s) to prevent
-  // file:// / ftp:// SSRF vectors even before the hostname check.
+  // Decode and validate URL. Only https is allowed — the allowlisted CDNs all
+  // serve over TLS, so plaintext http (and file:// / ftp:// SSRF vectors) are
+  // rejected outright, before the hostname check.
   let src: string;
   try {
     src = decodeURIComponent(rawUrl);
     const parsed = new URL(src);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    if (parsed.protocol !== 'https:') {
       return new NextResponse('Invalid URL scheme', { status: 400 });
     }
     const { hostname } = parsed;

@@ -20,7 +20,6 @@ const nextConfig = {
       '@radix-ui/react-select',
       '@radix-ui/react-toast',
       '@radix-ui/react-tooltip',
-      'resend',
     ],
   },
   async headers() {

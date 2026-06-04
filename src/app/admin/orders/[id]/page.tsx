@@ -8,7 +8,7 @@ import { getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { writeAuditLogClient } from '@/lib/audit-log-client';
 import { Loader2, ArrowLeft, Copy, Check, Truck, CheckCircle2, Trash2, PackageCheck, CheckCircle, XCircle } from 'lucide-react';
-import { calcOrderCost, type ProductInfo } from '@/lib/cost-utils';
+import { calcOrderCost, MARKETING_PER_JERSEY, type ProductInfo } from '@/lib/cost-utils';
 
 interface OrderItem {
   jerseyId: string;
@@ -124,13 +124,16 @@ export default function OrderDetailPage() {
   const [trackingSaved, setTrackingSaved] = useState(false);
   const [trackingSaving, setTrackingSaving] = useState(false);
 
+  const orderId_ = order?.id;
+  const orderTrackingNumber = order?.trackingNumber;
+  const orderTrackingCarrier = order?.trackingCarrier;
   useEffect(() => {
-    if (!order) return;
+    if (!orderId_) return;
     setTrackingDraft({
-      trackingNumber: order.trackingNumber ?? '',
-      trackingCarrier: order.trackingCarrier ?? '',
+      trackingNumber: orderTrackingNumber ?? '',
+      trackingCarrier: orderTrackingCarrier ?? '',
     });
-  }, [order?.id, order?.trackingNumber, order?.trackingCarrier]);
+  }, [orderId_, orderTrackingNumber, orderTrackingCarrier]);
 
   const saveTracking = useCallback(async () => {
     if (!order) return;
@@ -644,7 +647,7 @@ export default function OrderDetailPage() {
                       value: cost.shippingFree ? '₪0' : `₪${fmtN(cost.shippingCostILS)}`,
                       color: cost.shippingFree ? 'text-green-400' : 'text-gray-300',
                     },
-                    { label: `Marketing (${cost.totalJerseys} × ₪15)`, value: `₪${fmtN(cost.marketingILS)}`, color: 'text-gray-300' },
+                    { label: `Marketing (${cost.totalJerseys} × ₪${MARKETING_PER_JERSEY})`, value: `₪${fmtN(cost.marketingILS)}`, color: 'text-gray-300' },
                     ...(cost.paypalCommissionILS > 0
                       ? [{ label: 'PayPal commission (5%)', value: `₪${fmtN(cost.paypalCommissionILS)}`, color: 'text-gray-300' }]
                       : []),

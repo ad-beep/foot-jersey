@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Loader2, TrendingUp, ShoppingBag, Monitor } from 'lucide-react';
+import { Loader2, TrendingUp, ShoppingBag, Monitor, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import {
   USD_TO_ILS,
@@ -41,42 +41,64 @@ interface Order {
   createdAt: Timestamp | null;
 }
 
-type TimeRange = 'day' | 'week' | 'month';
+type ViewMode = 'all' | 'month' | 'week';
 
-// ─── Revenue chart data ───────────────────────────────────────
-function buildChartData(orders: Order[], range: TimeRange): { name: string; revenue: number }[] {
-  const now = new Date();
-  if (range === 'day') {
-    return Array.from({ length: 24 }, (_, i) => {
-      const h = new Date(now.getTime() - (23 - i) * 3600000);
-      const label = `${h.getHours()}:00`;
-      const revenue = orders
-        .filter((o) => {
-          if (!o.createdAt) return false;
-          const d = o.createdAt.toDate();
-          return d.getHours() === h.getHours() && d.toDateString() === h.toDateString();
-        })
-        .reduce((s, o) => s + o.total, 0);
-      return { name: label, revenue };
-    });
-  }
-  if (range === 'week') {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function orderDate(o: Order): Date | null {
+  return o.createdAt?.toDate?.() ?? null;
+}
+
+// ─── Revenue chart data — buckets adapt to the active view ────
+// week  → one point per day for the last 7 days
+// month → one point per day across the anchored calendar month
+// all   → one point per month from the first order to now
+function buildChartData(orders: Order[], viewMode: ViewMode, monthAnchor: Date): { name: string; revenue: number }[] {
+  if (viewMode === 'week') {
+    const now = new Date();
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(now.getTime() - (6 - i) * 86400000);
       const revenue = orders
-        .filter((o) => o.createdAt?.toDate().toDateString() === d.toDateString())
+        .filter((o) => orderDate(o)?.toDateString() === d.toDateString())
         .reduce((s, o) => s + o.total, 0);
-      return { name: days[d.getDay()], revenue };
+      return { name: `${d.getDate()}/${d.getMonth() + 1}`, revenue };
     });
   }
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(now.getTime() - (29 - i) * 86400000);
+  if (viewMode === 'month') {
+    const year = monthAnchor.getFullYear();
+    const month = monthAnchor.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      const revenue = orders
+        .filter((o) => {
+          const d = orderDate(o);
+          return d != null && d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+        })
+        .reduce((s, o) => s + o.total, 0);
+      return { name: `${day}`, revenue };
+    });
+  }
+  // all-time → monthly buckets from the earliest order to now
+  const dated = orders.map(orderDate).filter((d): d is Date => d != null);
+  if (dated.length === 0) return [];
+  const earliest = dated.reduce((a, b) => (a < b ? a : b));
+  const now = new Date();
+  const out: { name: string; revenue: number }[] = [];
+  const cursor = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
+  while (cursor <= now) {
+    const y = cursor.getFullYear();
+    const m = cursor.getMonth();
     const revenue = orders
-      .filter((o) => o.createdAt?.toDate().toDateString() === d.toDateString())
+      .filter((o) => {
+        const d = orderDate(o);
+        return d != null && d.getFullYear() === y && d.getMonth() === m;
+      })
       .reduce((s, o) => s + o.total, 0);
-    return { name: `${d.getDate()}/${d.getMonth() + 1}`, revenue };
-  });
+    out.push({ name: `${MONTH_NAMES[m]} ${String(y).slice(2)}`, revenue });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return out;
 }
 
 // ─── SVG Line/Area Chart ──────────────────────────────────────
@@ -150,7 +172,9 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [productMap, setProductMap] = useState<Map<string, ProductInfo>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
+  // 0 = current month, -1 = last month, etc. Only used in 'month' view.
+  const [monthOffset, setMonthOffset] = useState(0);
   const [visits, setVisits] = useState<number | null>(null);
   const [orphanedCount, setOrphanedCount] = useState<number>(0);
 
@@ -211,18 +235,51 @@ export default function AdminDashboard() {
     checkOrphanedPayments();
   }, []);
 
+  // ─── Active scope ──────────────────────────────────────────
+  // The view mode + month navigator decide which orders feed EVERY metric on
+  // this page (profit, orders, costs, jerseys, add-ons, chart).
+  const monthAnchor = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  }, [monthOffset]);
+
+  const filteredOrders = useMemo(() => {
+    if (viewMode === 'all') return orders;
+    if (viewMode === 'week') {
+      const cutoff = Date.now() - 7 * 86400000;
+      return orders.filter((o) => {
+        const t = orderDate(o)?.getTime();
+        return t != null && t >= cutoff;
+      });
+    }
+    // month
+    const start = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth(), 1).getTime();
+    const end = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 1).getTime();
+    return orders.filter((o) => {
+      const t = orderDate(o)?.getTime();
+      return t != null && t >= start && t < end;
+    });
+  }, [orders, viewMode, monthAnchor]);
+
+  const scopeLabel =
+    viewMode === 'all'
+      ? 'All time'
+      : viewMode === 'week'
+      ? 'Last 7 days'
+      : `${MONTH_NAMES[monthAnchor.getMonth()]} ${monthAnchor.getFullYear()}`;
+
   // ─── Metrics ───────────────────────────────────────────────
   const metrics = useMemo(() => {
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
-    const paypalRevenue = orders.filter((o) => o.paymentMethod === 'paypal').reduce((s, o) => s + (o.total || 0), 0);
-    const bitRevenue = orders.filter((o) => o.paymentMethod === 'bit').reduce((s, o) => s + (o.total || 0), 0);
+    const totalOrders = filteredOrders.length;
+    const totalRevenue = filteredOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const paypalRevenue = filteredOrders.filter((o) => o.paymentMethod === 'paypal').reduce((s, o) => s + (o.total || 0), 0);
+    const bitRevenue = filteredOrders.filter((o) => o.paymentMethod === 'bit').reduce((s, o) => s + (o.total || 0), 0);
 
     let productCostILS = 0;
     let totalJerseys = 0;
     let shippingCostILS = 0;
 
-    for (const order of orders) {
+    for (const order of filteredOrders) {
       const jerseyCount = order.items.reduce((s, i) => s + (i.quantity || 1), 0);
       totalJerseys += jerseyCount;
       if (jerseyCount < FREE_SHIPPING_MIN_ITEMS) shippingCostILS += SHIPPING_COST_USD * USD_TO_ILS;
@@ -238,12 +295,12 @@ export default function AdminDashboard() {
     const totalProfit = totalRevenue - totalCostILS;
 
     return { totalOrders, totalRevenue, totalProfit, totalJerseys, paypalRevenue, bitRevenue, productCostILS, shippingCostILS, marketingILS, paypalCommissionILS, totalCostILS };
-  }, [orders, productMap]);
+  }, [filteredOrders, productMap]);
 
   // ─── Per-type material cost breakdown ──────────────────────
   const costByType = useMemo(() => {
     const map: Record<string, { count: number; costILS: number; baseCostUSD: number }> = {};
-    for (const order of orders) {
+    for (const order of filteredOrders) {
       for (const item of order.items) {
         const detail = getItemCostDetail(item, productMap);
         if (!map[detail.displayType]) map[detail.displayType] = { count: 0, costILS: 0, baseCostUSD: detail.baseCostUSD };
@@ -252,27 +309,27 @@ export default function AdminDashboard() {
       }
     }
     return Object.entries(map).sort((a, b) => b[1].costILS - a[1].costILS);
-  }, [orders, productMap]);
+  }, [filteredOrders, productMap]);
 
-  // ─── Revenue chart ─────────────────────────────────────────
-  const chartData = useMemo(() => buildChartData(orders, timeRange), [orders, timeRange]);
+  // ─── Revenue chart (always derived from full history, bucketed per view) ──
+  const chartData = useMemo(() => buildChartData(orders, viewMode, monthAnchor), [orders, viewMode, monthAnchor]);
 
   // ─── Jersey type count breakdown ───────────────────────────
   const jerseyTypeCounts = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const order of orders) {
+    for (const order of filteredOrders) {
       for (const item of order.items) {
         const detail = getItemCostDetail(item, productMap);
         map[detail.displayType] = (map[detail.displayType] || 0) + detail.quantity;
       }
     }
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 7);
-  }, [orders, productMap]);
+  }, [filteredOrders, productMap]);
 
   // ─── Add-ons breakdown ─────────────────────────────────────
   const addonCounts = useMemo(() => {
     let nameNum = 0, pants = 0, playerVer = 0, patch = 0, socks = 0;
-    for (const order of orders) {
+    for (const order of filteredOrders) {
       for (const item of order.items) {
         const c = item.customization; const qty = item.quantity || 1;
         if ((c?.customName && c.customName !== 'false') || (c?.customNumber && c.customNumber !== 'false')) nameNum += qty;
@@ -284,7 +341,7 @@ export default function AdminDashboard() {
       }
     }
     return { nameNum, pants, playerVer, patch, socks };
-  }, [orders]);
+  }, [filteredOrders]);
 
   // ─── Render ────────────────────────────────────────────────
   if (loading) {
@@ -318,10 +375,61 @@ export default function AdminDashboard() {
   ];
   const maxBarVal = Math.max(...costBars.map((b) => b.value), 1);
 
+  const canGoNextMonth = monthOffset < 0;
+
   return (
     <div className="p-6 max-w-[1200px]">
-      <h1 className="text-xl font-bold mb-1">Admin Cockpit</h1>
-      <p className="text-sm text-gray-500 mb-8">Business performance at a glance</p>
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-xl font-bold mb-1">Admin Cockpit</h1>
+          <p className="text-sm text-gray-500">
+            Business performance · <span className="text-gray-400 font-semibold">{scopeLabel}</span>
+          </p>
+        </div>
+
+        {/* ── Time-range mode selector + month navigator ── */}
+        <div className="flex items-center gap-3">
+          {viewMode === 'month' && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setMonthOffset((m) => m - 1)}
+                aria-label="Previous month"
+                className="w-7 h-7 flex items-center justify-center rounded-md border border-white/10 text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-semibold text-gray-300 min-w-[92px] text-center tabular-nums">
+                {MONTH_NAMES[monthAnchor.getMonth()]} {monthAnchor.getFullYear()}
+              </span>
+              <button
+                onClick={() => canGoNextMonth && setMonthOffset((m) => m + 1)}
+                disabled={!canGoNextMonth}
+                aria-label="Next month"
+                className="w-7 h-7 flex items-center justify-center rounded-md border border-white/10 text-gray-400 enabled:hover:text-white enabled:hover:bg-white/[0.06] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          <div className="flex gap-1 p-1 rounded-lg border border-white/8 bg-white/[0.02]">
+            {([
+              { id: 'all', label: 'All time' },
+              { id: 'month', label: 'Month' },
+              { id: 'week', label: 'Week' },
+            ] as { id: ViewMode; label: string }[]).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => { setViewMode(m.id); if (m.id === 'month') setMonthOffset(0); }}
+                className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-colors ${
+                  viewMode === m.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ── Orphaned payment warning ── */}
       {orphanedCount > 0 && (
@@ -362,18 +470,9 @@ export default function AdminDashboard() {
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-1">Total Revenue</p>
             <p className="text-2xl font-extrabold text-green-400 tracking-tight">₪{fmt(metrics.totalRevenue)}</p>
           </div>
-          <div className="flex gap-1.5">
-            {(['day', 'week', 'month'] as TimeRange[]).map((r) => (
-              <button key={r} onClick={() => setTimeRange(r)}
-                className={`px-3 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
-                  timeRange === r ? 'bg-cyan-500/12 border-cyan-500/30 text-cyan-400' : 'border-white/8 text-gray-600 hover:text-gray-400'}`}>
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </button>
-            ))}
-          </div>
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-700 mb-2">
-              Revenue — Last {timeRange === 'day' ? '24h' : timeRange === 'week' ? '7 days' : '30 days'}
+              Revenue — {viewMode === 'week' ? 'Last 7 days' : viewMode === 'month' ? scopeLabel : 'By month'}
             </p>
             <LineChart data={chartData} color="#22d3ee" />
           </div>
