@@ -243,21 +243,6 @@ const CATEGORIES: CategoryDef[] = [
     grid: 'min-h-[140px] lg:col-start-4 lg:col-end-7 lg:row-start-7 lg:row-end-8 lg:min-h-0',
     size: 'sm',
   },
-
-  // ── Row 8 (desktop) — full-width banner ─────────────────────────────────────
-  {
-    slug: 'second-hand',
-    en: 'Second Hand',
-    he: 'יד שנייה',
-    bg: '#0a0b07',
-    symbol: '2ND',
-    masthead: 'SECOND HAND · PRE-LOVED',
-    meta: 'COMMUNITY · RESELL · INSPECTED',
-    accent: 'rgba(138,160,90,0.9)',
-    sub: { en: 'FROM OUR COMMUNITY — HANDPICKED & INSPECTED', he: 'מהקהילה שלנו — נבחרו ונבדקו' },
-    grid: 'col-span-2 min-h-[160px] lg:col-start-1 lg:col-end-7 lg:row-start-8 lg:row-end-9 lg:min-h-0',
-    size: 'lg',
-  },
 ];
 
 const LEAGUE_SLUGS = new Set(['england', 'spain', 'italy', 'germany', 'france', 'rest_of_world', 'national_teams', 'israeli_league']);
@@ -270,7 +255,6 @@ const COLLECTION_SLUG_MAP: Record<string, string> = {
   'long-sleeve': 'long-sleeve',
   'drip': 'drip',
   'other-products': 'other-products',
-  'second-hand': 'second-hand',
 };
 const CATEGORY_PAGE_SLUGS = new Set(['mystery-box', 'stussy-edition']);
 

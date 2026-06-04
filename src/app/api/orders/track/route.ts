@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+
+// firebase-admin requires the Node runtime (not edge).
+export const runtime = 'nodejs';
 
 interface TrackedOrder {
   id: string;
@@ -11,14 +14,21 @@ interface TrackedOrder {
   currency: string;
   trackingNumber?: string;
   trackingCarrier?: string;
-  shipmentSource?: 'local' | 'international';
-  orderGroupId?: string;
-  siblingOrderNumber?: number;
   items: Array<{ teamName: string; size: string; quantity: number }>;
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Throttle lookups so the endpoint can't be used to brute-force order/email pairs.
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `track:${ip}`, windowMs: 60_000, max: 20 });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } },
+      );
+    }
+
     const { orderNumber, email } = await request.json();
 
     const parsedNumber = Number(orderNumber);
@@ -29,10 +39,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
     }
 
-    const ordersRef = collection(db, 'orders');
-    const snap = await getDocs(
-      query(ordersRef, where('orderNumber', '==', parsedNumber), limit(2))
-    );
+    // Admin SDK — the `orders` collection is admin-only under Firestore rules, so
+    // the client SDK can't read it. The email match below is the access check.
+    const db = getAdminDb();
+    const snap = await db
+      .collection('orders')
+      .where('orderNumber', '==', parsedNumber)
+      .limit(2)
+      .get();
 
     if (snap.empty) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
@@ -47,10 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = matched.data();
-    const groupId: string | undefined = data.orderGroupId;
-
-    const legs: TrackedOrder[] = [];
-    legs.push({
+    const order: TrackedOrder = {
       id: matched.id,
       orderNumber: data.orderNumber,
       status: data.status,
@@ -59,47 +70,14 @@ export async function POST(request: NextRequest) {
       currency: data.currency,
       trackingNumber: data.trackingNumber,
       trackingCarrier: data.trackingCarrier,
-      shipmentSource: data.shipmentSource,
-      orderGroupId: data.orderGroupId,
-      siblingOrderNumber: data.siblingOrderNumber,
       items: (data.items || []).map((i: { teamName: string; size: string; quantity: number }) => ({
         teamName: i.teamName,
         size: i.size,
         quantity: i.quantity,
       })),
-    });
+    };
 
-    if (groupId) {
-      const siblingSnap = await getDocs(
-        query(ordersRef, where('orderGroupId', '==', groupId), limit(5))
-      );
-      for (const sib of siblingSnap.docs) {
-        if (sib.id === matched.id) continue;
-        const sd = sib.data();
-        legs.push({
-          id: sib.id,
-          orderNumber: sd.orderNumber,
-          status: sd.status,
-          createdAt: sd.createdAt?.toMillis?.() ?? null,
-          total: sd.total,
-          currency: sd.currency,
-          trackingNumber: sd.trackingNumber,
-          trackingCarrier: sd.trackingCarrier,
-          shipmentSource: sd.shipmentSource,
-          orderGroupId: sd.orderGroupId,
-          siblingOrderNumber: sd.siblingOrderNumber,
-          items: (sd.items || []).map((i: { teamName: string; size: string; quantity: number }) => ({
-            teamName: i.teamName,
-            size: i.size,
-            quantity: i.quantity,
-          })),
-        });
-      }
-    }
-
-    legs.sort((a, b) => a.orderNumber - b.orderNumber);
-
-    return NextResponse.json({ legs });
+    return NextResponse.json({ order });
   } catch (err) {
     console.error('[orders/track] error:', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

@@ -29,7 +29,7 @@ import type { Jersey, Size, CartCustomization, JerseyType } from '@/types';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const BADGE_TYPES = new Set<JerseyType>(['retro', 'special', 'kids', 'drip', 'world_cup', 'other_products', 'second_hand']);
+const BADGE_TYPES = new Set<JerseyType>(['retro', 'special', 'kids', 'drip', 'world_cup', 'other_products']);
 
 const TYPE_LABELS: Record<JerseyType, { en: string; he: string }> = {
   regular:        { en: 'Regular',   he: 'רגיל' },
@@ -40,7 +40,6 @@ const TYPE_LABELS: Record<JerseyType, { en: string; he: string }> = {
   world_cup:      { en: 'World Cup', he: 'מונדיאל' },
   other_products: { en: 'Other',     he: 'אחר' },
   stussy:         { en: 'Stussy',    he: 'סטוסי' },
-  second_hand:    { en: 'Second Hand', he: 'יד שנייה' },
   mystery:        { en: 'Mystery',   he: 'מיסטרי' },
 };
 

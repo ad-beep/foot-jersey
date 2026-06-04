@@ -4,7 +4,7 @@ import { useState, useRef, useMemo } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 import { storage } from '@/lib/firebase';
-import { PRICES, CURRENT_SEASON, SECOND_HAND_CONDITIONS, type SecondHandConditionValue } from '@/lib/constants';
+import { PRICES, CURRENT_SEASON } from '@/lib/constants';
 import { Upload, Loader2, CheckCircle, AlertCircle, X, ImagePlus, Plus, Layers, Trash2 } from 'lucide-react';
 
 // ─── Tag options (user-facing label is "Tag") ──────────
@@ -17,7 +17,6 @@ const JERSEY_TAGS = [
   { value: 'kids', label: 'Kids' },
   { value: 'world-cup', label: 'World Cup' },
   { value: 'other', label: 'Other Products' },
-  { value: 'second-hand', label: 'Second Hand' },
 ];
 
 const LEAGUES = [
@@ -48,7 +47,6 @@ const LEAGUE_LABELS: Record<string, string> = {
 function deriveLeaguePage(tag: string, league: string): string {
   // World Cup always goes to International
   if (tag === 'world-cup') return 'national_teams';
-  // Second-hand keeps the league the seller selected
   return league;
 }
 
@@ -62,7 +60,6 @@ function deriveCategory(tag: string, league: string): string {
     case 'kids':        return 'kids';
     case 'world-cup':   return 'world-cup';
     case 'other':       return 'accessories';
-    case 'second-hand': return 'second-hand';
     default:            return league;
   }
 }
@@ -102,9 +99,6 @@ function deriveCollections(tag: string, season: string, isLongSleeve: boolean): 
     case 'other':
       collections.push('Other Products');
       break;
-    case 'second-hand':
-      collections.push('Second Hand');
-      break;
   }
 
   if (isLongSleeve) {
@@ -119,7 +113,6 @@ function sheetType(tag: string): string {
   if (tag === 'world-cup') return 'world_cup';
   if (tag === 'other') return 'other_products';
   if (tag === 'stussy') return 'special'; // stussy is a special edition type
-  if (tag === 'second-hand') return 'second_hand';
   return tag;
 }
 
@@ -159,22 +152,14 @@ export default function AddProductPage() {
   const [tag, setTag] = useState('regular');
   const [isLongSleeve, setIsLongSleeve] = useState(false);
   const [availableSizes, setAvailableSizes] = useState('S,M,L,XL,XXL');
-  // Second-hand only — seller-chosen price and jersey condition
-  const [customPrice, setCustomPrice] = useState<string>('');
-  const [condition, setCondition] = useState<SecondHandConditionValue | ''>('');
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
-  const isSecondHand = tag === 'second-hand';
-
   // Derived values (individual)
   const effectiveLeague = deriveLeaguePage(tag, league);
   const autoPrice = getAutoPrice(tag, isLongSleeve);
-  const parsedCustomPrice = Number.parseInt(customPrice, 10);
-  const computedPrice = isSecondHand
-    ? (Number.isFinite(parsedCustomPrice) && parsedCustomPrice > 0 ? parsedCustomPrice : 0)
-    : autoPrice;
+  const computedPrice = autoPrice;
   const collections = useMemo(
     () => deriveCollections(tag, season, isLongSleeve),
     [tag, season, isLongSleeve]
@@ -194,12 +179,7 @@ export default function AddProductPage() {
   const [batchImages, setBatchImages] = useState<File[]>([]);
   const [batchPreviews, setBatchPreviews] = useState<string[]>([]);
   const [batchNames, setBatchNames] = useState<{ he: string; en: string }[]>([]);
-  // Per-jersey price + condition, only used when batchTag === 'second-hand'
-  const [batchPrices, setBatchPrices] = useState<string[]>([]);
-  const [batchConditions, setBatchConditions] = useState<(SecondHandConditionValue | '')[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  const isBatchSecondHand = batchTag === 'second-hand';
 
   const [batchStatus, setBatchStatus] = useState<BatchStatus>('idle');
   const [batchProgress, setBatchProgress] = useState(0);
@@ -246,16 +226,6 @@ export default function AddProductPage() {
       setErrorMsg('At least one image is required');
       return;
     }
-    if (isSecondHand) {
-      if (!Number.isFinite(parsedCustomPrice) || parsedCustomPrice <= 0) {
-        setErrorMsg('Second-hand price is required (must be a positive number)');
-        return;
-      }
-      if (!condition) {
-        setErrorMsg('Condition is required for second-hand listings');
-        return;
-      }
-    }
 
     try {
       setStatus('uploading');
@@ -292,7 +262,6 @@ export default function AddProductPage() {
       if (isLongSleeve) autoTags.push('long_sleeve');
       if (tag === 'world-cup') autoTags.push('world_cup');
       if (nameEn.trim()) autoTags.push(`en:${nameEn.trim()}`);
-      if (isSecondHand && condition) autoTags.push(`condition:${condition}`);
 
       setStatus('saving');
       const currentUser = getAuth().currentUser;
@@ -329,8 +298,6 @@ export default function AddProductPage() {
         setLeague('england');
         setIsLongSleeve(false);
         setAvailableSizes('S,M,L,XL,XXL');
-        setCustomPrice('');
-        setCondition('');
         setImageFiles([]);
         setPreviews([]);
         setStatus('idle');
@@ -367,8 +334,6 @@ export default function AddProductPage() {
 
   function handleGoToNaming() {
     setBatchNames(batchImages.map(() => ({ he: '', en: '' })));
-    setBatchPrices(batchImages.map(() => ''));
-    setBatchConditions(batchImages.map(() => ''));
     setCurrentIndex(0);
     setBatchStep('naming');
   }
@@ -381,37 +346,16 @@ export default function AddProductPage() {
     });
   }
 
-  function updateBatchPrice(index: number, value: string) {
-    const sanitized = value.replace(/\D/g, '');
-    setBatchPrices((prev) => {
-      const next = [...prev];
-      next[index] = sanitized;
-      return next;
-    });
-  }
-
-  function updateBatchCondition(index: number, value: SecondHandConditionValue | '') {
-    setBatchConditions((prev) => {
-      const next = [...prev];
-      next[index] = value;
-      return next;
-    });
-  }
-
   function handleDeleteCurrentJersey() {
     const newImages = batchImages.filter((_, i) => i !== currentIndex);
     const newPreviews = batchPreviews.filter((_, i) => i !== currentIndex);
     URL.revokeObjectURL(batchPreviews[currentIndex]);
     const newNames = batchNames.filter((_, i) => i !== currentIndex);
-    const newPrices = batchPrices.filter((_, i) => i !== currentIndex);
-    const newConditions = batchConditions.filter((_, i) => i !== currentIndex);
 
     if (newImages.length === 0) {
       setBatchImages([]);
       setBatchPreviews([]);
       setBatchNames([]);
-      setBatchPrices([]);
-      setBatchConditions([]);
       setBatchStep('details');
       setCurrentIndex(0);
       return;
@@ -420,8 +364,6 @@ export default function AddProductPage() {
     setBatchImages(newImages);
     setBatchPreviews(newPreviews);
     setBatchNames(newNames);
-    setBatchPrices(newPrices);
-    setBatchConditions(newConditions);
     setCurrentIndex(Math.min(currentIndex, newImages.length - 1));
   }
 
@@ -430,19 +372,6 @@ export default function AddProductPage() {
     setBatchError('');
     const batchId = `jersey-batch-${Date.now()}`;
     try {
-      // Second-hand: validate every jersey has price + condition before any upload
-      if (isBatchSecondHand) {
-        for (let i = 0; i < batchImages.length; i++) {
-          const priceNum = Number.parseInt(batchPrices[i] ?? '', 10);
-          if (!Number.isFinite(priceNum) || priceNum <= 0) {
-            throw new Error(`Jersey ${i + 1}: missing or invalid price`);
-          }
-          if (!batchConditions[i]) {
-            throw new Error(`Jersey ${i + 1}: condition is required`);
-          }
-        }
-      }
-
       const currentUser = getAuth().currentUser;
       const idToken = currentUser ? await currentUser.getIdToken() : null;
 
@@ -465,13 +394,8 @@ export default function AddProductPage() {
         if (batchIsLongSleeve) autoTags.push('long_sleeve');
         if (batchTag === 'world-cup') autoTags.push('world_cup');
         if (nameEnVal) autoTags.push(`en:${nameEnVal}`);
-        if (isBatchSecondHand && batchConditions[i]) {
-          autoTags.push(`condition:${batchConditions[i]}`);
-        }
 
-        const perJerseyPrice = isBatchSecondHand
-          ? Number.parseInt(batchPrices[i], 10)
-          : batchComputedPrice;
+        const perJerseyPrice = batchComputedPrice;
 
         const res = await fetch('/api/admin/products', {
           method: 'POST',
@@ -503,8 +427,6 @@ export default function AddProductPage() {
         setBatchImages([]);
         setBatchPreviews([]);
         setBatchNames([]);
-        setBatchPrices([]);
-        setBatchConditions([]);
         setCurrentIndex(0);
         setBatchStep('details');
         setBatchTag('regular');
@@ -660,54 +582,13 @@ export default function AddProductPage() {
               Long Sleeve (+₪{PRICES.longSleeveExtra})
             </label>
 
-            {/* ─── Second Hand: seller-chosen price + condition ─── */}
-            {isSecondHand && (
-              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.04] space-y-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-amber-300/80 font-semibold">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  Second-hand listing
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Price (₪)" required hint="Set your own price per jersey">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={customPrice}
-                      onChange={(e) => setCustomPrice(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                      placeholder="e.g. 75"
-                      className="admin-input"
-                    />
-                  </Field>
-                  <Field label="Condition" required>
-                    <select
-                      value={condition}
-                      onChange={(e) => setCondition(e.target.value as SecondHandConditionValue | '')}
-                      className="admin-select"
-                    >
-                      <option value="">— Select condition —</option>
-                      {SECOND_HAND_CONDITIONS.map((c) => (
-                        <option key={c.value} value={c.value}>{c.labelEn}</option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-                {condition && (
-                  <p className="text-xs text-amber-200/70 leading-relaxed">
-                    {SECOND_HAND_CONDITIONS.find((c) => c.value === condition)?.descEn}
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* ─── Enhanced Info Strip ─── */}
             <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] space-y-3">
               <div className="flex items-center gap-5">
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-gray-500 block">Price</span>
                   <span className="text-lg font-bold text-cyan-400">
-                    {isSecondHand
-                      ? (computedPrice > 0 ? `₪${computedPrice}` : '—')
-                      : `₪${computedPrice}`}
+                    ₪{computedPrice}
                   </span>
                 </div>
                 <div className="w-px h-8 bg-white/10" />
@@ -939,26 +820,13 @@ export default function AddProductPage() {
             Long Sleeve (+₪{PRICES.longSleeveExtra})
           </label>
 
-          {/* Second-hand notice */}
-          {isBatchSecondHand && (
-            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.04] space-y-1.5">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-amber-300/80 font-semibold">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
-                Second-hand batch
-              </div>
-              <p className="text-xs text-amber-200/70 leading-relaxed">
-                You&apos;ll set a <strong className="text-amber-200">price</strong> and <strong className="text-amber-200">condition</strong> for each jersey individually in the next step.
-              </p>
-            </div>
-          )}
-
           {/* Info Strip */}
           <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] space-y-3">
             <div className="flex items-center gap-5">
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-gray-500 block">Price</span>
                 <span className="text-lg font-bold text-cyan-400">
-                  {isBatchSecondHand ? 'Per-jersey' : `₪${batchComputedPrice}`}
+                  ₪{batchComputedPrice}
                 </span>
               </div>
               <div className="w-px h-8 bg-white/10" />
@@ -1143,44 +1011,6 @@ export default function AddProductPage() {
                     />
                   </Field>
 
-                  {isBatchSecondHand && (
-                    <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/30 space-y-3">
-                      <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider">
-                        Second Hand — per-jersey details
-                      </p>
-                      <Field label="Price (₪)" required>
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={batchPrices[currentIndex] ?? ''}
-                          onChange={(e) => updateBatchPrice(currentIndex, e.target.value)}
-                          placeholder="e.g. 80"
-                          className="admin-input"
-                        />
-                      </Field>
-                      <Field label="Condition" required>
-                        <select
-                          value={batchConditions[currentIndex] ?? ''}
-                          onChange={(e) => updateBatchCondition(currentIndex, e.target.value as SecondHandConditionValue | '')}
-                          className="admin-input"
-                        >
-                          <option value="">Select condition…</option>
-                          {SECOND_HAND_CONDITIONS.map((c) => (
-                            <option key={c.value} value={c.value}>
-                              {c.labelEn}
-                            </option>
-                          ))}
-                        </select>
-                      </Field>
-                      {batchConditions[currentIndex] && (
-                        <p className="text-xs text-gray-400 leading-relaxed">
-                          {SECOND_HAND_CONDITIONS.find((c) => c.value === batchConditions[currentIndex])?.descEn}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
                   {/* Navigation */}
                   <div className="pt-2 space-y-2">
                     {currentIndex > 0 && (
@@ -1195,13 +1025,7 @@ export default function AddProductPage() {
                     {currentIndex < batchImages.length - 1 ? (
                       <button
                         type="button"
-                        disabled={
-                          !batchNames[currentIndex]?.he?.trim() ||
-                          (isBatchSecondHand && (
-                            !(Number.parseInt(batchPrices[currentIndex] ?? '', 10) > 0) ||
-                            !batchConditions[currentIndex]
-                          ))
-                        }
+                        disabled={!batchNames[currentIndex]?.he?.trim()}
                         onClick={() => setCurrentIndex((i) => i + 1)}
                         className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.09] border border-white/10 text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
                       >
@@ -1210,13 +1034,7 @@ export default function AddProductPage() {
                     ) : (
                       <button
                         type="button"
-                        disabled={
-                          !batchNames[currentIndex]?.he?.trim() ||
-                          (isBatchSecondHand && (
-                            !(Number.parseInt(batchPrices[currentIndex] ?? '', 10) > 0) ||
-                            !batchConditions[currentIndex]
-                          ))
-                        }
+                        disabled={!batchNames[currentIndex]?.he?.trim()}
                         onClick={handleBatchPublish}
                         className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
                       >
@@ -1230,10 +1048,7 @@ export default function AddProductPage() {
               {/* Progress dots */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 {batchImages.map((_, i) => {
-                  const named = Boolean(batchNames[i]?.he?.trim());
-                  const priced = Number.parseInt(batchPrices[i] ?? '', 10) > 0;
-                  const hasCondition = Boolean(batchConditions[i]);
-                  const complete = named && (!isBatchSecondHand || (priced && hasCondition));
+                  const complete = Boolean(batchNames[i]?.he?.trim());
                   return (
                     <button
                       key={i}
@@ -1251,11 +1066,7 @@ export default function AddProductPage() {
                   );
                 })}
                 <span className="text-xs text-gray-500 ml-1">
-                  {batchNames.filter((n, i) => {
-                    const named = n.he.trim();
-                    if (!isBatchSecondHand) return Boolean(named);
-                    return Boolean(named) && Number.parseInt(batchPrices[i] ?? '', 10) > 0 && Boolean(batchConditions[i]);
-                  }).length} / {batchImages.length} {isBatchSecondHand ? 'complete' : 'named'}
+                  {batchNames.filter((n) => Boolean(n.he.trim())).length} / {batchImages.length} named
                 </span>
               </div>
             </>

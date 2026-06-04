@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/hooks/useLocale';
-import { Package, Truck, CheckCircle2, Clock, ShoppingBag, Home, Plane, ExternalLink } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, ShoppingBag, ExternalLink } from 'lucide-react';
 
-interface TrackedLeg {
+interface TrackedOrder {
   id: string;
   orderNumber: number;
   status: string;
@@ -14,9 +14,6 @@ interface TrackedLeg {
   currency: string;
   trackingNumber?: string;
   trackingCarrier?: string;
-  shipmentSource?: 'local' | 'international';
-  orderGroupId?: string;
-  siblingOrderNumber?: number;
   items: Array<{ teamName: string; size: string; quantity: number }>;
 }
 
@@ -59,13 +56,13 @@ export function TrackOrderClient() {
   const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [legs, setLegs] = useState<TrackedLeg[] | null>(null);
+  const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [error, setError] = useState('');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLegs(null);
+    setOrder(null);
     setLoading(true);
     try {
       const res = await fetch('/api/orders/track', {
@@ -80,7 +77,7 @@ export function TrackOrderClient() {
           : (res.status === 404 ? "We couldn't find an order with that number and email." : 'Could not load the order.'));
         return;
       }
-      setLegs(data.legs as TrackedLeg[]);
+      setOrder(data.order as TrackedOrder);
     } catch {
       setError(isHe ? 'שגיאת רשת. נסה שוב.' : 'Network error. Try again.');
     } finally {
@@ -88,7 +85,8 @@ export function TrackOrderClient() {
     }
   };
 
-  const hasSplit = legs && legs.length > 1;
+  const step = order ? statusStep(order.status) : 0;
+  const link = order ? carrierUrl(order.trackingCarrier, order.trackingNumber) : null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
@@ -165,157 +163,118 @@ export function TrackOrderClient() {
           )}
         </form>
 
-        {legs && legs.length > 0 && (
+        {order && (
           <div className="space-y-5">
-            {hasSplit && (
+            <div
+              className="rounded-2xl p-5 md:p-6"
+              style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
+            >
+              <div className={`flex items-center justify-between mb-4 ${isHe ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-2 ${isHe ? 'flex-row-reverse' : ''}`}>
+                  <Package className="w-4 h-4" style={{ color: 'var(--gold)' }} />
+                  <h2 className="text-base font-bold text-white">
+                    {isHe ? 'הזמנה' : 'Order'} #{order.orderNumber}
+                  </h2>
+                </div>
+                <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
+                  {order.currency}{order.total}
+                </span>
+              </div>
+
+              {/* Progress steps */}
+              <div className="relative mb-5 px-1">
+                <div className="absolute top-3 left-0 right-0 h-0.5" style={{ backgroundColor: 'var(--border)' }} />
+                <div
+                  className="absolute top-3 left-0 h-0.5 transition-all"
+                  style={{
+                    width: step < 0 ? '0%' : `${Math.min(100, (step / (STATUS_ORDER.length - 1)) * 100)}%`,
+                    backgroundColor: step >= STATUS_ORDER.indexOf('shipped') ? '#4ade80' : 'var(--gold)',
+                  }}
+                />
+                <div className={`relative flex justify-between ${isHe ? 'flex-row-reverse' : ''}`}>
+                  {[
+                    { key: 'pending',    icon: ShoppingBag,  label: isHe ? 'התקבל' : 'Received' },
+                    { key: 'processing', icon: Clock,        label: isHe ? 'בהכנה' : 'Processing' },
+                    { key: 'shipped',    icon: Truck,        label: isHe ? 'בדרך' : 'Shipped' },
+                    { key: 'delivered',  icon: CheckCircle2, label: isHe ? 'הגיע'  : 'Delivered' },
+                  ].map((s) => {
+                    const siStep = STATUS_ORDER.indexOf(s.key);
+                    const done = step >= siStep;
+                    const Icon = s.icon;
+                    return (
+                      <div key={s.key} className="flex flex-col items-center gap-1.5" style={{ width: 56 }}>
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{
+                            backgroundColor: done ? 'var(--gold)' : 'var(--steel)',
+                            border: `1px solid ${done ? 'var(--gold)' : 'var(--border)'}`,
+                            color: done ? '#000' : 'var(--muted)',
+                          }}
+                        >
+                          <Icon className="w-3 h-3" />
+                        </div>
+                        <span className="text-[10px] font-semibold text-center" style={{ color: done ? 'var(--gold)' : 'var(--muted)' }}>
+                          {s.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Current status line */}
               <div
-                className="rounded-xl p-4 flex items-start gap-3"
+                className="rounded-lg px-3 py-2.5 mb-4 flex items-center gap-2"
                 style={{ backgroundColor: 'rgba(200,162,75,0.08)', border: '1px solid rgba(200,162,75,0.22)' }}
               >
-                <Truck className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} />
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                  {isHe
-                    ? 'ההזמנה שלך מפוצלת לשני משלוחים — כל חלק משודר בנפרד, עם מספר מעקב משלו.'
-                    : 'Your order is split into two shipments — each ships separately with its own tracking.'}
-                </p>
+                <span className="text-sm font-semibold text-white">
+                  {statusLabel(order.status, isHe)}
+                </span>
               </div>
-            )}
 
-            {legs.map((leg) => {
-              const step = statusStep(leg.status);
-              const link = carrierUrl(leg.trackingCarrier, leg.trackingNumber);
-              return (
-                <div
-                  key={leg.id}
-                  className="rounded-2xl p-5 md:p-6"
-                  style={{ backgroundColor: 'var(--steel)', border: '1px solid var(--border)' }}
-                >
-                  <div className={`flex items-center justify-between mb-4 ${isHe ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center gap-2 ${isHe ? 'flex-row-reverse' : ''}`}>
-                      {leg.shipmentSource === 'local' ? (
-                        <Home className="w-4 h-4" style={{ color: '#4ade80' }} />
-                      ) : leg.shipmentSource === 'international' ? (
-                        <Plane className="w-4 h-4" style={{ color: '#38bdf8' }} />
-                      ) : (
-                        <Package className="w-4 h-4" style={{ color: 'var(--gold)' }} />
-                      )}
-                      <h2 className="text-base font-bold text-white">
-                        {isHe ? 'הזמנה' : 'Order'} #{leg.orderNumber}
-                      </h2>
-                      {leg.shipmentSource === 'local' && (
-                        <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
-                          style={{ backgroundColor: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
-                          {isHe ? 'מישראל' : 'From Israel'}
-                        </span>
-                      )}
-                      {leg.shipmentSource === 'international' && (
-                        <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
-                          style={{ backgroundColor: 'rgba(56,189,248,0.1)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.25)' }}>
-                          {isHe ? 'מהספק' : 'From supplier'}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
-                      {leg.currency}{leg.total}
-                    </span>
-                  </div>
-
-                  {/* Progress steps */}
-                  <div className="relative mb-5 px-1">
-                    <div className="absolute top-3 left-0 right-0 h-0.5" style={{ backgroundColor: 'var(--border)' }} />
-                    <div
-                      className="absolute top-3 left-0 h-0.5 transition-all"
-                      style={{
-                        width: step < 0 ? '0%' : `${Math.min(100, (step / (STATUS_ORDER.length - 1)) * 100)}%`,
-                        backgroundColor: step >= STATUS_ORDER.indexOf('shipped') ? '#4ade80' : 'var(--gold)',
-                      }}
-                    />
-                    <div className={`relative flex justify-between ${isHe ? 'flex-row-reverse' : ''}`}>
-                      {[
-                        { key: 'pending',    icon: ShoppingBag,  label: isHe ? 'התקבל' : 'Received' },
-                        { key: 'processing', icon: Clock,        label: isHe ? 'בהכנה' : 'Processing' },
-                        { key: 'shipped',    icon: Truck,        label: isHe ? 'בדרך' : 'Shipped' },
-                        { key: 'delivered',  icon: CheckCircle2, label: isHe ? 'הגיע'  : 'Delivered' },
-                      ].map((s) => {
-                        const siStep = STATUS_ORDER.indexOf(s.key);
-                        const done = step >= siStep;
-                        const Icon = s.icon;
-                        return (
-                          <div key={s.key} className="flex flex-col items-center gap-1.5" style={{ width: 56 }}>
-                            <div
-                              className="w-6 h-6 rounded-full flex items-center justify-center"
-                              style={{
-                                backgroundColor: done ? 'var(--gold)' : 'var(--steel)',
-                                border: `1px solid ${done ? 'var(--gold)' : 'var(--border)'}`,
-                                color: done ? '#000' : 'var(--muted)',
-                              }}
-                            >
-                              <Icon className="w-3 h-3" />
-                            </div>
-                            <span className="text-[10px] font-semibold text-center" style={{ color: done ? 'var(--gold)' : 'var(--muted)' }}>
-                              {s.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Current status line */}
-                  <div
-                    className="rounded-lg px-3 py-2.5 mb-4 flex items-center gap-2"
-                    style={{ backgroundColor: 'rgba(200,162,75,0.08)', border: '1px solid rgba(200,162,75,0.22)' }}
-                  >
-                    <span className="text-sm font-semibold text-white">
-                      {statusLabel(leg.status, isHe)}
-                    </span>
-                  </div>
-
-                  {/* Tracking number */}
-                  {leg.trackingNumber ? (
-                    <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
-                      <p className="text-[10px] uppercase tracking-widest font-bold mb-1" style={{ color: 'var(--muted)' }}>
-                        {isHe ? 'מספר מעקב' : 'Tracking number'}
-                        {leg.trackingCarrier && <span className="ms-2 normal-case tracking-normal font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>· {leg.trackingCarrier}</span>}
-                      </p>
-                      <div className={`flex items-center justify-between gap-2 ${isHe ? 'flex-row-reverse' : ''}`}>
-                        <code className="text-sm font-mono text-white">{leg.trackingNumber}</code>
-                        {link && (
-                          <a
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-bold flex items-center gap-1"
-                            style={{ color: 'var(--gold)' }}
-                          >
-                            {isHe ? 'פתח אצל המוביל' : 'Open on carrier'}
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs italic mb-4" style={{ color: 'var(--muted)' }}>
-                      {isHe
-                        ? 'מספר מעקב יופיע כאן כשנשלח את החבילה.'
-                        : 'Tracking number will appear here once your parcel ships.'}
-                    </p>
-                  )}
-
-                  {/* Items */}
-                  <div className="space-y-1.5">
-                    {leg.items.map((item, i) => (
-                      <div key={i} className={`flex items-center justify-between text-xs ${isHe ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-white">{item.teamName}</span>
-                        <span style={{ color: 'var(--muted)' }}>
-                          {isHe ? 'מידה' : 'Size'} {item.size} · ×{item.quantity}
-                        </span>
-                      </div>
-                    ))}
+              {/* Tracking number */}
+              {order.trackingNumber ? (
+                <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+                  <p className="text-[10px] uppercase tracking-widest font-bold mb-1" style={{ color: 'var(--muted)' }}>
+                    {isHe ? 'מספר מעקב' : 'Tracking number'}
+                    {order.trackingCarrier && <span className="ms-2 normal-case tracking-normal font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>· {order.trackingCarrier}</span>}
+                  </p>
+                  <div className={`flex items-center justify-between gap-2 ${isHe ? 'flex-row-reverse' : ''}`}>
+                    <code className="text-sm font-mono text-white">{order.trackingNumber}</code>
+                    {link && (
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold flex items-center gap-1"
+                        style={{ color: 'var(--gold)' }}
+                      >
+                        {isHe ? 'פתח אצל המוביל' : 'Open on carrier'}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
                 </div>
-              );
-            })}
+              ) : (
+                <p className="text-xs italic mb-4" style={{ color: 'var(--muted)' }}>
+                  {isHe
+                    ? 'מספר מעקב יופיע כאן כשנשלח את החבילה.'
+                    : 'Tracking number will appear here once your parcel ships.'}
+                </p>
+              )}
+
+              {/* Items */}
+              <div className="space-y-1.5">
+                {order.items.map((item, i) => (
+                  <div key={i} className={`flex items-center justify-between text-xs ${isHe ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-white">{item.teamName}</span>
+                    <span style={{ color: 'var(--muted)' }}>
+                      {isHe ? 'מידה' : 'Size'} {item.size} · ×{item.quantity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className="text-center text-xs" style={{ color: 'var(--muted)' }}>
               {isHe ? 'יש שאלה? ' : 'Got a question? '}
