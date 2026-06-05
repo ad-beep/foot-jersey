@@ -18,6 +18,7 @@ import { Reveal } from '@/components/ui/reveal';
 import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { summarizeCart, type CartSummary } from '@/lib/shipping-split';
+import { quantityDiscountPercent, quantityDiscountAmount, nextQuantityTier } from '@/lib/quantity-discount';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
 import { PayPalButton } from '@/components/payment/PayPalButton';
 import type { CartItem } from '@/types';
@@ -329,7 +330,15 @@ function CheckoutSection({ isHe, isRtl, split }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const discountAmount = discountApplied?.amount ?? 0;
+  // ── Discount resolution: ONE discount per order, the bigger of the entered
+  // code and the automatic quantity ladder (never both — best-of-one). ──
+  const codeDiscount = discountApplied?.amount ?? 0;
+  const qtyPercent = quantityDiscountPercent(itemCount);
+  const qtyDiscount = quantityDiscountAmount(itemCount, subtotal);
+  const useQty = qtyDiscount > 0 && qtyDiscount >= codeDiscount;
+  const discountAmount = Math.max(codeDiscount, qtyDiscount);
+  // What we send/store: blank code when the automatic volume discount wins.
+  const effectiveCode = useQty ? '' : (discountApplied?.code || '');
   // Guard against negative totals (e.g. large discount on free-shipping order)
   // and round to avoid floating-point display artifacts (e.g. 119.99999)
   const finalTotal = Math.max(0, Math.round((subtotal + shippingCost - discountAmount) * 100) / 100);
@@ -427,7 +436,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
             bitSenderDetails: options.bitSenderDetails,
             subtotal,
             shipping: shippingCost,
-            discountCode: discountApplied?.code || '',
+            discountCode: effectiveCode,
             discountAmount,
             total: finalTotal,
             currency: CURRENCY_CODE,
@@ -444,7 +453,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         throw error;
       }
     },
-    [items, form, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling]
+    [items, form, subtotal, shippingCost, discountAmount, effectiveCode, finalTotal, sameAsBilling]
   );
 
   const handleBitConfirm = useCallback(
@@ -513,7 +522,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
         paymentStatus: 'completed',
         subtotal,
         shipping: shippingCost,
-        discountCode: discountApplied?.code || '',
+        discountCode: effectiveCode,
         discountAmount,
         total: finalTotal,
         currency: CURRENCY_CODE,
@@ -545,7 +554,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
       setSubmitting(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, items, subtotal, shippingCost, discountApplied, discountAmount, finalTotal, sameAsBilling, locale, isHe]);
+  }, [form, items, subtotal, shippingCost, discountApplied, discountAmount, effectiveCode, finalTotal, sameAsBilling, locale, isHe]);
 
   // Official PayPal button success → save as a `paypal` order, then confirm.
   const handlePayPalSuccess = useCallback(async (paypalOrderId: string) => {
@@ -818,9 +827,16 @@ function CheckoutSection({ isHe, isRtl, split }: {
         {discountError && (
           <p className="text-xs" style={{ color: '#FF4D6D' }}>{discountError}</p>
         )}
-        {discountApplied && (
+        {discountApplied && !useQty && (
           <p className="text-xs" style={{ color: 'var(--gold)' }}>
             {isHe ? `קוד ${discountApplied.code} הוחל!` : `Code ${discountApplied.code} applied!`}
+          </p>
+        )}
+        {discountApplied && useQty && (
+          <p className="text-xs" style={{ color: 'var(--gold)' }}>
+            {isHe
+              ? `הנחת הכמות (${qtyPercent}%) משתלמת יותר מהקוד — היא הוחלה.`
+              : `Your ${qtyPercent}% volume discount beats the code — it's been applied instead.`}
           </p>
         )}
 
@@ -835,10 +851,12 @@ function CheckoutSection({ isHe, isRtl, split }: {
             </span>
             <span className="text-white font-semibold">{CURRENCY}{subtotal}</span>
           </div>
-          {discountApplied && (
+          {discountAmount > 0 && (
             <div className="flex justify-between text-sm">
               <span style={{ color: 'var(--gold)' }}>
-                {isHe ? 'הנחה' : 'Discount'} ({discountApplied.code})
+                {useQty
+                  ? (isHe ? `הנחת כמות (${qtyPercent}%)` : `Volume discount (${qtyPercent}%)`)
+                  : `${isHe ? 'הנחה' : 'Discount'} (${discountApplied?.code ?? ''})`}
               </span>
               <span style={{ color: 'var(--gold)' }}>-{CURRENCY}{discountAmount}</span>
             </div>
@@ -1106,6 +1124,34 @@ export function CartPageClient() {
                 </div>
               </Reveal>
             )}
+
+            {/* Quantity discount ladder nudge */}
+            {(() => {
+              const activePct = quantityDiscountPercent(itemCount);
+              const next = nextQuantityTier(itemCount);
+              if (activePct === 0 && !next) return null;
+              const need = next ? next.minItems - itemCount : 0;
+              const pct = next ? Math.min(100, Math.round((itemCount / next.minItems) * 100)) : 100;
+              return (
+                <Reveal>
+                  <div
+                    className="rounded-xl p-4 mb-6"
+                    style={{ backgroundColor: 'rgba(255,77,46,0.05)', border: '1px solid rgba(255,77,46,0.2)' }}
+                  >
+                    <p className="text-sm font-medium mb-2" style={{ color: activePct > 0 ? 'var(--cta)' : 'var(--text-secondary)' }}>
+                      {activePct > 0 && !next
+                        ? (isHe ? `🔥 ${activePct}% הנחת כמות הופעלה — ההנחה הגדולה ביותר!` : `🔥 ${activePct}% volume discount unlocked — top tier!`)
+                        : activePct > 0
+                        ? (isHe ? `🔥 ${activePct}% הנחה פעילה · הוסף עוד ${need} ל-${next!.percent}%` : `🔥 ${activePct}% off active · add ${need} more for ${next!.percent}%`)
+                        : (isHe ? `הוסף עוד ${need} חולצ${need === 1 ? 'ה' : 'ות'} וקבל ${next!.percent}% הנחה 🔥` : `Add ${need} more jersey${need === 1 ? '' : 's'} for ${next!.percent}% off 🔥`)}
+                    </p>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: 'var(--cta)' }} />
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })()}
 
             {/* Two-column layout */}
             <div className="lg:flex lg:gap-8">

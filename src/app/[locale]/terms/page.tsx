@@ -31,7 +31,7 @@ export default async function TermsPage({ params }: { params: { locale: string }
         },
         {
           title: 'משלוח',
-          body: 'משלוח לוקח 2-4 שבועות. עלות: ₪15 ל-1-2 פריטים. משלוח חינם בהזמנת 3 פריטים ומעלה. אנחנו לא אחראים לעיכובים של חברות השילוח, מכס, או גורמים חיצוניים אחרים.',
+          body: 'משלוח לוקח 2-3 שבועות. עלות: ₪15 ל-1-2 פריטים. משלוח חינם בהזמנת 3 פריטים ומעלה. אנחנו לא אחראים לעיכובים של חברות השילוח, מכס, או גורמים חיצוניים אחרים.',
         },
         {
           title: 'דיוק המוצרים',
@@ -57,7 +57,7 @@ export default async function TermsPage({ params }: { params: { locale: string }
         },
         {
           title: 'Shipping',
-          body: 'Shipping takes 2–4 weeks. Cost: ₪15 for 1–2 items. Free shipping on 3+ items. We are not responsible for delays caused by shipping carriers, customs, or other external factors.',
+          body: 'Shipping takes 2–3 weeks. Cost: ₪15 for 1–2 items. Free shipping on 3+ items. We are not responsible for delays caused by shipping carriers, customs, or other external factors.',
         },
         {
           title: 'Product Accuracy',

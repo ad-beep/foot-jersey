@@ -252,7 +252,7 @@ export function MysteryBoxTeaser() {
           {[
             { icon: '📦', en: 'New with tags', he: 'חדש עם תגיות' },
             { icon: '✓',  en: 'Always worth more', he: 'תמיד שווה יותר' },
-            { icon: '🚚', en: '2–4 weeks delivery', he: 'משלוח 2–4 שבועות' },
+            { icon: '🚚', en: '2–3 weeks delivery', he: 'משלוח 2–3 שבועות' },
           ].map((t) => (
             <span key={t.en} className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em]"
               style={{ color: 'rgba(255,255,255,0.3)' }}>

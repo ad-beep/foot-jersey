@@ -351,7 +351,7 @@ export default function LandingHero() {
               <span style={{ width: 1, height: 10, backgroundColor: 'var(--border)', display: 'inline-block' }} />
               <span className="flex items-center gap-1 font-mono text-[10px]" style={{ color: 'var(--muted)' }}>
                 <Truck className="w-2.5 h-2.5 shrink-0" style={{ color: 'rgba(200,162,75,0.65)' }} />
-                {isHe ? '2–4 שבועות' : '2–4 weeks'}
+                {isHe ? '2–3 שבועות' : '2–3 weeks'}
               </span>
             </div>
           </div>

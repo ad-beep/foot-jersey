@@ -137,8 +137,8 @@ export default function MysteryBoxPage({ params }: { params: { locale: string } 
               },
               {
                 num: '03', icon: '🎁',
-                en: { title: 'Unbox & enjoy', desc: 'Your surprise jersey arrives in 2–4 weeks. The reveal moment is half the experience.' },
-                he: { title: 'פתח ותהנה', desc: 'החולצה המפתיעה מגיעה תוך 2–4 שבועות. רגע החשיפה הוא חצי מהחוויה.' },
+                en: { title: 'Unbox & enjoy', desc: 'Your surprise jersey arrives in 2–3 weeks. The reveal moment is half the experience.' },
+                he: { title: 'פתח ותהנה', desc: 'החולצה המפתיעה מגיעה תוך 2–3 שבועות. רגע החשיפה הוא חצי מהחוויה.' },
               },
             ].map((step) => {
               const c = isHe ? step.he : step.en;

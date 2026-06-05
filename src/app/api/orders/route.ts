@@ -383,6 +383,18 @@ export async function POST(request: NextRequest) {
       if (Math.abs(computedTotal - body.total) > 1) {
         console.warn(`[orders] Total drift: client ${body.total}, server ${computedTotal}`);
       }
+
+      // Automatic quantity-discount sanity check. When NO code is present, the
+      // only legitimate discount is the volume ladder; flag if the client claims
+      // more than that. (Warn only — like the price drift above; orders are
+      // reviewed by hand, and a code-based discount is validated separately.)
+      if (!body.discountCode) {
+        const { quantityDiscountAmount } = await import('@/lib/quantity-discount');
+        const serverQtyDiscount = quantityDiscountAmount(serverSummary.itemCount, serverSummary.subtotal);
+        if ((body.discountAmount || 0) > serverQtyDiscount + 1) {
+          console.warn(`[orders] Quantity-discount drift: client ${body.discountAmount}, server max ${serverQtyDiscount} (items=${serverSummary.itemCount})`);
+        }
+      }
     } catch (priceCheckErr) {
       // Re-throw structural errors; price-drift warnings never reach here.
       throw priceCheckErr;

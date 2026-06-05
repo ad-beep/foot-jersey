@@ -556,7 +556,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
                 </span>
               </div>
               <span className="text-xs font-mono" style={{ color: 'var(--muted)' }}>
-                {isHe ? 'משלוח תוך 2–4 שבועות' : 'Ships in 2–4 weeks'}
+                {isHe ? 'משלוח תוך 2–3 שבועות' : 'Ships in 2–3 weeks'}
               </span>
             </div>
 

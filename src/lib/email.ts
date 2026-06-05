@@ -227,7 +227,7 @@ export async function sendAdminPaymentAlert(opts: {
 export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions): Promise<void> {
   const itemsHtml = renderItems(opts.items);
   const discountRow = opts.discountAmount && opts.discountAmount > 0
-    ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
+    ? `<div class="total-row accent"><span>${opts.discountCode ? `Discount (${esc(opts.discountCode)})` : 'Volume discount'}</span><span>-₪${opts.discountAmount}</span></div>`
     : '';
 
   const content = `
@@ -267,7 +267,7 @@ export async function sendOrderConfirmation(opts: SendOrderConfirmationOptions):
       </div>
 
       <div class="info-box success">
-        🚀 We typically ship within 2–4 weeks. You'll receive a shipping notification once your order is on its way.
+        🚀 We typically ship within 2–3 weeks. You'll receive a shipping notification once your order is on its way.
       </div>
 
       <a href="${SITE_URL}" class="cta-button">Continue Shopping</a>
@@ -293,7 +293,7 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
       </table>` : '';
 
   const discountRow = opts.discountAmount && opts.discountAmount > 0
-    ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
+    ? `<div class="total-row accent"><span>${opts.discountCode ? `Discount (${esc(opts.discountCode)})` : 'Volume discount'}</span><span>-₪${opts.discountAmount}</span></div>`
     : '';
 
   const totalsHtml = opts.subtotal !== undefined ? `
@@ -333,7 +333,7 @@ export async function sendBitPendingEmail(opts: SendBitPendingOptions): Promise<
         <strong>What happens next?</strong><br><br>
         1. We verify your BIT transfer manually (usually within a few hours).<br>
         2. Once confirmed, you'll receive a <strong>second email</strong> confirming your order is being prepared.<br>
-        3. Your jerseys will be shipped within 2–4 weeks after confirmation.
+        3. Your jerseys will be shipped within 2–3 weeks after confirmation.
       </div>
 
       <p style="font-size:13px;color:#666;margin-bottom:24px;">
@@ -374,7 +374,7 @@ export async function sendBitApprovedEmail(opts: {
       </table>` : '';
 
   const discountRow = opts.discountAmount && opts.discountAmount > 0
-    ? `<div class="total-row accent"><span>Discount (${opts.discountCode || ''})</span><span>-₪${opts.discountAmount}</span></div>`
+    ? `<div class="total-row accent"><span>${opts.discountCode ? `Discount (${esc(opts.discountCode)})` : 'Volume discount'}</span><span>-₪${opts.discountAmount}</span></div>`
     : '';
 
   const totalsHtml = opts.subtotal !== undefined ? `
@@ -411,7 +411,7 @@ export async function sendBitApprovedEmail(opts: {
       ${addressHtml}
 
       <div class="info-box success">
-        🚀 Your jerseys are being prepared and will be shipped within 2–4 weeks. You'll receive another email with tracking info once shipped!
+        🚀 Your jerseys are being prepared and will be shipped within 2–3 weeks. You'll receive another email with tracking info once shipped!
       </div>
 
       <a href="${SITE_URL}" class="cta-button">Continue Shopping</a>

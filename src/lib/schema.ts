@@ -168,8 +168,8 @@ export function productSchema(p: ProductSchemaInput) {
           },
           transitTime: {
             '@type': 'QuantitativeValue',
-            minValue: 14,
-            maxValue: 21,
+            minValue: 11,
+            maxValue: 18,
             unitCode: 'DAY',
           },
         },

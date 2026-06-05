@@ -41,15 +41,15 @@ export default function ShippingPage({ params }: { params: { locale: string } })
     },
     {
       num: '04',
-      en: { title: 'Delivered',      desc: 'Arrives at your door within 2–4 weeks. Unbox it, wear it, love it.' },
-      he: { title: 'נמסר',           desc: 'מגיע לדלת שלך תוך 2–4 שבועות. פתח, לבש, תהנה.' },
+      en: { title: 'Delivered',      desc: 'Arrives at your door within 2–3 weeks. Unbox it, wear it, love it.' },
+      he: { title: 'נמסר',           desc: 'מגיע לדלת שלך תוך 2–3 שבועות. פתח, לבש, תהנה.' },
     },
   ];
 
   const faqItems = [
     {
-      en: { q: 'Can I get faster shipping?',                    a: 'No — standard delivery from our international suppliers is 2–4 weeks. This is the nature of sourcing premium jerseys.' },
-      he: { q: 'האם ניתן לקבל משלוח מהיר יותר?',               a: 'לא — אספקה סטנדרטית מהספקים הבינלאומיים שלנו היא 2–4 שבועות. זה אופי מכירת חולצות פרמיום.' },
+      en: { q: 'Can I get faster shipping?',                    a: 'Standard delivery is 2–3 weeks. Each jersey is made to order and sourced specifically for you — that\'s what keeps the quality high and the price fair.' },
+      he: { q: 'האם ניתן לקבל משלוח מהיר יותר?',               a: 'אספקה סטנדרטית היא 2–3 שבועות. כל חולצה מיוצרת בהזמנה ונאספת במיוחד עבורך — זה מה ששומר על איכות גבוהה ומחיר הוגן.' },
     },
     {
       en: { q: 'What if my order never arrives?',               a: 'Contact us on WhatsApp immediately. We\'ll track it down and either locate the shipment or send a replacement — no questions asked.' },
@@ -95,7 +95,7 @@ export default function ShippingPage({ params }: { params: { locale: string } })
         <div className="max-w-[800px] mx-auto px-4 md:px-6 py-10">
           <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${isHe ? 'text-right' : ''}`}>
             {[
-              { en: 'Delivery time',        he: 'זמן אספקה',       value: isHe ? '2–4 שבועות' : '2–4 Weeks',    accent: 'var(--gold)' },
+              { en: 'Delivery time',        he: 'זמן אספקה',       value: isHe ? '2–3 שבועות' : '2–3 Weeks',    accent: 'var(--gold)' },
               { en: 'Shipping cost',        he: 'עלות משלוח',      value: '₪15',                                  accent: 'var(--gold)' },
               { en: 'Free on',              he: 'חינם על',         value: isHe ? '3+ חולצות' : '3+ jerseys',    accent: '#1A5C44' },
               { en: 'Damaged item?',        he: 'מוצר פגום?',      value: isHe ? 'החלפה חינם' : 'Free Replace', accent: '#1A5C44' },

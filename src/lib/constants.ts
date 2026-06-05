@@ -21,6 +21,18 @@ export const PRICES = {
   shippingFlat: 15,
 } as const;
 
+// ─── Automatic quantity discount ladder ──────────────────────
+// Applied by total jersey count, no code needed. 3 jerseys already earns free
+// shipping (see SHIPPING_POLICY.freeShippingMinItems); these add a % off on top
+// of larger carts. Only ONE discount applies per order — the bigger of this and
+// any entered code (never both). Tiers are ascending; the highest qualifying
+// tier wins.
+export const QUANTITY_DISCOUNT_TIERS = [
+  { minItems: 5,  percent: 15 },
+  { minItems: 7,  percent: 20 },
+  { minItems: 10, percent: 25 },
+] as const;
+
 // ─── Season Threshold ────────────────────────────────────────
 export const RETRO_SEASON_THRESHOLD = '24/25';
 export const CURRENT_SEASON = '2025/26';
@@ -122,20 +134,20 @@ export const KIDS_SIZES = ['16', '18', '20', '22', '24', '26', '28'] as const;
 
 // ─── Shipping & Returns Policy ──────────────────────────────
 export const SHIPPING_POLICY = {
-  deliveryTime: { min: 2, max: 4, unit: 'weeks' },
+  deliveryTime: { min: 2, max: 3, unit: 'weeks' },
   freeShippingMinItems: 3,
   returnWindowDays: 0,
   damagedGoodsReplacement: true,
   policy: {
     en: {
-      delivery: 'Delivery within 2–4 weeks',
+      delivery: 'Delivery within 2–3 weeks',
       freeShipping: 'Free shipping on 3+ jerseys',
       returns: 'Free replacement for damaged goods',
       damaged: 'Free replacement for damaged goods',
       secure: 'Secure payment',
     },
     he: {
-      delivery: 'משלוח תוך 2–4 שבועות',
+      delivery: 'משלוח תוך 2–3 שבועות',
       freeShipping: 'משלוח חינם על 3 חולצות ומעלה',
       returns: 'החלפה חינם על מוצרים פגומים',
       damaged: 'החלפה חינם על מוצרים פגומים',

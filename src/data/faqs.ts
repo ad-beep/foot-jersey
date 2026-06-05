@@ -85,8 +85,8 @@ export const FAQS: FaqEntry[] = [
       he: 'כמה זמן לוקח המשלוח?',
     },
     answer: {
-      en: 'Delivery typically takes 2–4 weeks from the time of your order. All jerseys are shipped directly from our suppliers to your door in Israel. You\'ll receive tracking information once your order ships.',
-      he: 'המשלוח בדרך כלל לוקח 2-4 שבועות מרגע ביצוע ההזמנה. כל החולצות נשלחות ישירות מהספקים שלנו לדלת שלך בישראל. תקבל מידע מעקב ברגע שההזמנה שלך תישלח.',
+      en: 'Delivery typically takes 2–3 weeks from the time of your order. Every jersey is made to order and sourced specifically for you, then shipped to your door in Israel. You\'ll receive tracking information once your order ships.',
+      he: 'המשלוח בדרך כלל לוקח 2-3 שבועות מרגע ביצוע ההזמנה. כל חולצה מיוצרת בהזמנה ונאספת במיוחד עבורך, ואז נשלחת לדלת שלך בישראל. תקבל מידע מעקב ברגע שההזמנה שלך תישלח.',
     },
   },
   {
@@ -299,8 +299,8 @@ export const FAQS: FaqEntry[] = [
       he: 'איפה אפשר לקנות חולצות כדורגל בישראל?',
     },
     answer: {
-      en: 'FootJersey (shopfootjersey.com) is Israel\'s dedicated online football jersey store. We ship to all cities across Israel with 2–4 week delivery. You\'ll find jerseys from all major leagues — Premier League, La Liga, Serie A, Bundesliga, Israeli Premier League, World Cup 2026, Retro Classics, and more. PayPal and BIT accepted.',
-      he: 'FootJersey (shopfootjersey.com) היא חנות חולצות הכדורגל הייעודית של ישראל. אנחנו שולחים לכל הערים ברחבי ישראל עם משלוח של 2-4 שבועות. תמצא חולצות מכל הליגות הגדולות — פרמייר ליג, לה ליגה, סרייה A, בונדסליגה, ליגת העל הישראלית, מונדיאל 2026, רטרו קלאסיק ועוד. מקבלים PayPal ו-BIT.',
+      en: 'FootJersey (shopfootjersey.com) is Israel\'s dedicated online football jersey store. We ship to all cities across Israel with 2–3 week delivery. You\'ll find jerseys from all major leagues — Premier League, La Liga, Serie A, Bundesliga, Israeli Premier League, World Cup 2026, Retro Classics, and more. PayPal and BIT accepted.',
+      he: 'FootJersey (shopfootjersey.com) היא חנות חולצות הכדורגל הייעודית של ישראל. אנחנו שולחים לכל הערים ברחבי ישראל עם משלוח של 2-3 שבועות. תמצא חולצות מכל הליגות הגדולות — פרמייר ליג, לה ליגה, סרייה A, בונדסליגה, ליגת העל הישראלית, מונדיאל 2026, רטרו קלאסיק ועוד. מקבלים PayPal ו-BIT.',
     },
   },
   {

@@ -33,34 +33,45 @@ export function ExitIntentPopup() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Desktop: exit-intent on mouse leaving viewport top
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY < 10) show();
+    // Don't interrupt anyone mid-purchase or who already claimed the code.
+    const path = window.location.pathname;
+    if (/\/(cart|checkout|order-confirmed)(\/|$)/.test(path)) return;
+    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (localStorage.getItem(STORAGE_KEY)) return;
+
+    const mountTime = Date.now();
+    let fired = false;
+
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      cleanup();
+      show();
     };
 
-    // Mobile: 30s inactivity timer
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-    let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+    // 1) Welcome timer — early enough to catch a quick bounce, late enough not
+    //    to interrupt someone still getting oriented.
+    const timer = setTimeout(fire, 6000);
 
-    const resetTimer = () => {
-      if (inactivityTimer) clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(show, 30_000);
+    // 2) Engagement signal — if they scroll past the hero (and at least ~2.5s
+    //    in), they're interested; show the offer now rather than waiting.
+    const onScroll = () => {
+      if (Date.now() - mountTime > 2500 && window.scrollY > window.innerHeight * 0.6) fire();
     };
 
-    if (isTouchDevice) {
-      resetTimer();
-      window.addEventListener('touchstart', resetTimer, { passive: true });
-      window.addEventListener('scroll', resetTimer, { passive: true });
-    } else {
-      document.addEventListener('mouseleave', handleMouseLeave);
+    // 3) Desktop fallback — classic exit-intent if they reach for the tab bar.
+    const onMouseLeave = (e: MouseEvent) => { if (e.clientY < 10) fire(); };
+
+    function cleanup() {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('mouseleave', onMouseLeave);
     }
 
-    return () => {
-      document.removeEventListener('mouseleave', handleMouseLeave);
-      if (inactivityTimer) clearTimeout(inactivityTimer);
-      window.removeEventListener('touchstart', resetTimer);
-      window.removeEventListener('scroll', resetTimer);
-    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('mouseleave', onMouseLeave);
+
+    return cleanup;
   }, [show]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,12 +163,12 @@ export function ExitIntentPopup() {
               className="font-playfair font-bold text-white mb-2"
               style={{ fontSize: 'clamp(1.5rem, 4vw, 1.9rem)', letterSpacing: '-0.03em' }}
             >
-              {isHe ? 'רגע — לפני שתעזוב' : 'Wait — before you go'}
+              {isHe ? 'ברוך הבא — קבל 10% הנחה' : 'Welcome — here\'s 10% off'}
             </h2>
             <p className="text-sm mb-2" style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
               {isHe
-                ? 'ללקוחות חדשים בלבד — 10% הנחה על ההזמנה הראשונה שלך. הזן את האימייל שלך למטה.'
-                : 'New customers only — 10% off your first order. Enter your email below to claim it.'}
+                ? 'מתנת הצטרפות ללקוחות חדשים — 10% הנחה על ההזמנה הראשונה שלך. הזן אימייל וקבל את הקוד.'
+                : 'A welcome gift for new customers — 10% off your first order. Drop your email and grab the code.'}
             </p>
             <p className="text-xs mb-6" style={{ color: 'var(--muted)', opacity: 0.7 }}>
               {isHe
