@@ -42,9 +42,14 @@ export default function imageLoader({
   // Local static files — served from Vercel edge as-is
   if (src.startsWith('/')) return src;
 
-  // Shopify CDN — optimise via Cloudinary fetch when configured, else serve direct.
+  // Shopify CDN — optimise via Cloudinary fetch when configured, otherwise go
+  // through the /api/img proxy (the path that's worked for months — it bypasses
+  // Shopify's hotlink protection by fetching server-side). The proxy now fails
+  // open, so a load spike can't 5xx it. We do NOT serve Shopify images directly,
+  // because the browser's Referer gets them hotlink-blocked.
   if (src.includes('cdn.shopify.com')) {
-    return CLOUDINARY_CLOUD ? cloudinaryFetch(src, width) : src;
+    if (CLOUDINARY_CLOUD) return cloudinaryFetch(src, width);
+    return `/api/img?url=${encodeURIComponent(src)}&w=${width}`;
   }
 
   // Firebase Storage — public and already reasonably sized; serve directly.
