@@ -8,6 +8,7 @@ import type { Jersey, Locale } from '@/types';
 import LandingHero from '@/components/home/LandingHero';
 
 // Below-fold sections — lazy-loaded to reduce initial bundle
+const QuickRoute       = dynamic(() => import('@/components/home/QuickRoute').then(m => ({ default: m.QuickRoute })));
 const TrustBar         = dynamic(() => import('@/components/home/TrustBar').then(m => ({ default: m.TrustBar })));
 const WhatsHot         = dynamic(() => import('@/components/home/WhatsHot').then(m => ({ default: m.WhatsHot })));
 const MysteryBoxTeaser = dynamic(() => import('@/components/home/MysteryBoxTeaser').then(m => ({ default: m.MysteryBoxTeaser })));
@@ -36,10 +37,13 @@ export default function HomeClient({ locale, hotJerseys }: HomeClientProps) {
 
   return (
     <div className="overflow-x-hidden">
-      {/* 1. Hero — "The Cathedral" */}
+      {/* 1. Hero — big centred brand moment */}
       <LandingHero />
 
-      {/* 2. Trust bar — quick trust signals */}
+      {/* 2. Quick-route band — one-tap routing for cold visitors */}
+      <QuickRoute />
+
+      {/* 3. Trust bar — quick trust signals */}
       <TrustBar />
 
       {/* 3. What's Hot — featured products */}
