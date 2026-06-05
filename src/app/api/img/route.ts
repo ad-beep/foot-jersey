@@ -4,13 +4,6 @@ import sharp from 'sharp';
 // Node.js runtime required — sharp is a native C++ module
 export const runtime = 'nodejs';
 
-// Keep sharp's memory footprint low so many concurrent invocations (e.g. an ad
-// traffic spike) don't OOM the function. Disable libvips' internal cache and
-// cap the thread pool to 1 — this proxy is only the fallback path now (most
-// images are served straight from their CDN by the image-loader).
-sharp.cache(false);
-sharp.concurrency(1);
-
 // Images served through this proxy are immutable per (url, width) pair.
 // Vercel CDN caches based on s-maxage; stale-while-revalidate allows
 // background refresh without blocking the user.
@@ -39,14 +32,13 @@ export async function GET(request: NextRequest) {
     return new NextResponse('url required', { status: 400 });
   }
 
-  // Decode and validate URL. Only https is allowed — the allowlisted CDNs all
-  // serve over TLS, so plaintext http (and file:// / ftp:// SSRF vectors) are
-  // rejected outright, before the hostname check.
+  // Decode and validate URL — reject anything that isn't http(s) to prevent
+  // file:// / ftp:// SSRF vectors even before the hostname check.
   let src: string;
   try {
     src = decodeURIComponent(rawUrl);
     const parsed = new URL(src);
-    if (parsed.protocol !== 'https:') {
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       return new NextResponse('Invalid URL scheme', { status: 400 });
     }
     const { hostname } = parsed;
@@ -56,12 +48,6 @@ export async function GET(request: NextRequest) {
   } catch {
     return new NextResponse('Invalid URL', { status: 400 });
   }
-
-  // Fail OPEN: on ANY problem (upstream error, too large, sharp failure,
-  // timeout) we 302 to the original image so the browser still loads it from
-  // the source CDN. The proxy can never break an image or return a 5xx now.
-  const passthrough = () =>
-    NextResponse.redirect(src, { status: 302, headers: { 'Cache-Control': 'public, max-age=3600' } });
 
   try {
     // Fetch the original image from the upstream CDN (server-side — no browser Referer).
@@ -75,16 +61,22 @@ export async function GET(request: NextRequest) {
     });
     clearTimeout(timeoutId);
 
-    if (!upstream.ok) return passthrough();
+    if (!upstream.ok) {
+      return new NextResponse(`Upstream ${upstream.status}`, { status: 502 });
+    }
 
     const contentType = upstream.headers.get('content-type') ?? '';
 
-    // Too large to safely process — just let the browser load the original.
+    // Guard against absurdly large upstream payloads that could OOM the lambda
     const contentLength = parseInt(upstream.headers.get('content-length') ?? '0', 10);
-    if (contentLength > MAX_UPSTREAM_BYTES) return passthrough();
+    if (contentLength > MAX_UPSTREAM_BYTES) {
+      return new NextResponse('Upstream image too large', { status: 413 });
+    }
 
     const rawBuffer = await upstream.arrayBuffer();
-    if (rawBuffer.byteLength > MAX_UPSTREAM_BYTES) return passthrough();
+    if (rawBuffer.byteLength > MAX_UPSTREAM_BYTES) {
+      return new NextResponse('Upstream image too large', { status: 413 });
+    }
     const buffer = Buffer.from(rawBuffer);
 
     // For SVG: pass through as-is (sharp can't convert SVG reliably)
@@ -97,7 +89,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Resize + convert to WebP using sharp.
+    // Resize + convert to WebP using sharp (quality 82 = visually lossless for product photos)
     const webp = await sharp(buffer)
       .resize(width, null, { withoutEnlargement: true, fit: 'inside' })
       .webp({ quality: 88 })
@@ -111,7 +103,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('[/api/img] Processing error — falling back to original:', err);
-    return passthrough();
+    console.error('[/api/img] Processing error:', err);
+    return new NextResponse('Image processing failed', { status: 500 });
   }
 }

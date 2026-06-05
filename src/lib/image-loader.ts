@@ -1,37 +1,16 @@
 /**
  * Custom Next.js image loader.
  *
- * Image delivery strategy (see project_images memory / the /api/img outage):
+ * Routes Shopify CDN and Yupoo images through /api/img — a server-side
+ * proxy that fetches without a browser Referer header (bypasses hotlink
+ * protection), resizes with sharp, converts to WebP, and caches on Vercel
+ * CDN for 30 days. Uses regular bandwidth, not image-optimization credits.
  *
- *  • Shopify images are ~400KB JPEGs on a "Files" upload path that Shopify
- *    CANNOT resize via URL params. To get resized WebP/AVIF without a per-request
- *    serverless proxy (which OOM'd under ad traffic → 5xx → broken images), we
- *    route them through CLOUDINARY FETCH when configured. Cloudinary fetches the
- *    Shopify image once, resizes + converts it (f_auto,q_auto), caches it on its
- *    global CDN, and scales effortlessly. If no Cloudinary cloud name is set, we
- *    fall back to serving the Shopify image DIRECTLY (reliable, just heavier).
+ * Firebase Storage URLs are publicly accessible and do not need hotlink bypass,
+ * so they are served directly.
  *
- *  • Firebase Storage images are already reasonably sized and public — served
- *    directly.
- *
- *  • Yupoo images are hotlink-protected, so they still use the /api/img proxy
- *    (which now fails open / redirects to the original on any error).
- *
- *  • Local static files are returned as-is.
+ * Local static files are returned as-is (already optimized).
  */
-
-// Public — the loader runs in the browser, and a Cloudinary cloud name isn't a
-// secret. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME in Vercel to enable optimisation.
-const CLOUDINARY_CLOUD = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
-/** Build a Cloudinary fetch URL: resized, auto-format (WebP/AVIF), auto-quality. */
-function cloudinaryFetch(src: string, width: number): string {
-  const w = Math.min(Math.max(Math.round(width), 16), 1600);
-  // c_limit = never upscale beyond the source; f_auto/q_auto = best format & quality.
-  const transform = `f_auto,q_auto,c_limit,w_${w}`;
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/fetch/${transform}/${encodeURIComponent(src)}`;
-}
-
 export default function imageLoader({
   src,
   width,
@@ -42,21 +21,17 @@ export default function imageLoader({
   // Local static files — served from Vercel edge as-is
   if (src.startsWith('/')) return src;
 
-  // Shopify CDN — optimise via Cloudinary fetch when configured, otherwise go
-  // through the /api/img proxy (the path that's worked for months — it bypasses
-  // Shopify's hotlink protection by fetching server-side). The proxy now fails
-  // open, so a load spike can't 5xx it. We do NOT serve Shopify images directly,
-  // because the browser's Referer gets them hotlink-blocked.
+  // Firebase Storage URLs are publicly accessible — serve directly, no proxy needed
+  if (src.includes('firebasestorage.googleapis.com')) {
+    return src;
+  }
+
+  // Shopify CDN — route through proxy to bypass hotlink protection + WebP optimisation
   if (src.includes('cdn.shopify.com')) {
-    if (CLOUDINARY_CLOUD) return cloudinaryFetch(src, width);
     return `/api/img?url=${encodeURIComponent(src)}&w=${width}`;
   }
 
-  // Firebase Storage — public and already reasonably sized; serve directly.
-  if (src.includes('firebasestorage.googleapis.com')) return src;
-
-  // Yupoo CDN — hotlink-protected, so it needs the server proxy (which now
-  // redirects to the original on any failure instead of erroring).
+  // Yupoo CDN — route through proxy to bypass hotlink protection + WebP optimisation
   if (src.includes('photo.yupoo.com') || src.includes('yupoo.com')) {
     return `/api/img?url=${encodeURIComponent(src)}&w=${width}`;
   }
