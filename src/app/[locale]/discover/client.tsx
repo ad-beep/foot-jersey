@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, X, SearchX } from 'lucide-react';
+import { Search, X, SearchX, SlidersHorizontal } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { useAnalyticsStore } from '@/stores/analytics-store';
 import { ProductCard } from '@/components/product/ProductCard';
@@ -243,6 +243,7 @@ export function DiscoverClient({ initialJerseys }: { initialJerseys: Jersey[] })
   const [loading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [transitioning, setTransitioning] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const urlUpdateTimer = useRef<NodeJS.Timeout>();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -509,6 +510,53 @@ export function DiscoverClient({ initialJerseys }: { initialJerseys: Jersey[] })
     return typeof val === 'function' ? '' : val;
   };
 
+  const activeFilterCount = selectedLeagues.length + selectedCollections.length;
+
+  // Lock body scroll while the mobile filter drawer is open.
+  useEffect(() => {
+    if (filtersOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [filtersOpen]);
+
+  // Shared pill renderer — scrolls horizontally inline, wraps inside the drawer.
+  const pillRow = (
+    pills: Pill[],
+    selected: string[],
+    toggle: (id: string) => void,
+    ariaLabel: string,
+    wrap = false,
+  ) => (
+    <div
+      className={wrap ? 'flex flex-wrap gap-1.5' : 'flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide pb-0.5'}
+      role="group"
+      aria-label={ariaLabel}
+      style={{ direction: isRtl ? 'rtl' : 'ltr' }}
+    >
+      {pills.map((pill) => {
+        const active = selected.includes(pill.id);
+        return (
+          <button
+            key={pill.id}
+            onClick={() => toggle(pill.id)}
+            aria-pressed={active}
+            className="shrink-0 rounded-lg px-3.5 font-mono text-[11px] uppercase tracking-wide transition-all duration-200"
+            style={{
+              height: 34,
+              backgroundColor: active ? 'rgba(200,162,75,0.12)' : 'rgba(255,255,255,0.04)',
+              color: active ? 'var(--gold)' : 'rgba(255,255,255,0.45)',
+              border: active ? '1px solid rgba(200,162,75,0.45)' : '1px solid rgba(255,255,255,0.07)',
+              fontWeight: active ? 600 : 400,
+            }}
+          >
+            {getPillLabel(pill)}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--ink)' }}>
@@ -608,84 +656,40 @@ export function DiscoverClient({ initialJerseys }: { initialJerseys: Jersey[] })
             )}
           </div>
 
-          {/* ── Filter pills ── */}
-          <div className="space-y-3">
-            {/* League group */}
+          {/* ── Filters ── */}
+          {/* Desktop: full league + collection groups (room to show everything) */}
+          <div className="hidden md:block space-y-3">
             <div>
-              <p
-                className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2"
-                style={{ color: 'rgba(200,162,75,0.5)' }}
-              >
+              <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2" style={{ color: 'rgba(200,162,75,0.5)' }}>
                 {t.leagues}
               </p>
-              <div
-                className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide pb-0.5"
-                role="group"
-                aria-label={t.leagues}
-                style={{ direction: isRtl ? 'rtl' : 'ltr' }}
-              >
-                {LEAGUE_PILLS.map((pill) => {
-                  const active = selectedLeagues.includes(pill.id);
-                  return (
-                    <button
-                      key={pill.id}
-                      onClick={() => toggleLeague(pill.id)}
-                      aria-pressed={active}
-                      className="shrink-0 rounded-lg px-3.5 font-mono text-[11px] uppercase tracking-wide transition-all duration-200"
-                      style={{
-                        height: 34,
-                        backgroundColor: active ? 'rgba(200,162,75,0.12)' : 'rgba(255,255,255,0.04)',
-                        color: active ? 'var(--gold)' : 'rgba(255,255,255,0.45)',
-                        border: active
-                          ? '1px solid rgba(200,162,75,0.45)'
-                          : '1px solid rgba(255,255,255,0.07)',
-                        fontWeight: active ? 600 : 400,
-                      }}
-                    >
-                      {getPillLabel(pill)}
-                    </button>
-                  );
-                })}
-              </div>
+              {pillRow(LEAGUE_PILLS, selectedLeagues, toggleLeague, t.leagues)}
             </div>
-
-            {/* Collection group */}
             <div>
-              <p
-                className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2"
-                style={{ color: 'rgba(200,162,75,0.5)' }}
-              >
+              <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2" style={{ color: 'rgba(200,162,75,0.5)' }}>
                 {t.collections}
               </p>
-              <div
-                className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide pb-0.5"
-                role="group"
-                aria-label={t.collections}
-                style={{ direction: isRtl ? 'rtl' : 'ltr' }}
-              >
-                {COLLECTION_PILLS.map((pill) => {
-                  const active = selectedCollections.includes(pill.id);
-                  return (
-                    <button
-                      key={pill.id}
-                      onClick={() => toggleCollection(pill.id)}
-                      aria-pressed={active}
-                      className="shrink-0 rounded-lg px-3.5 font-mono text-[11px] uppercase tracking-wide transition-all duration-200"
-                      style={{
-                        height: 34,
-                        backgroundColor: active ? 'rgba(200,162,75,0.12)' : 'rgba(255,255,255,0.04)',
-                        color: active ? 'var(--gold)' : 'rgba(255,255,255,0.45)',
-                        border: active
-                          ? '1px solid rgba(200,162,75,0.45)'
-                          : '1px solid rgba(255,255,255,0.07)',
-                        fontWeight: active ? 600 : 400,
-                      }}
-                    >
-                      {getPillLabel(pill)}
-                    </button>
-                  );
-                })}
-              </div>
+              {pillRow(COLLECTION_PILLS, selectedCollections, toggleCollection, t.collections)}
+            </div>
+          </div>
+
+          {/* Mobile: a single Filters button + a scroll of collection chips.
+              Leagues + the full set live in the drawer so the toolbar stays short. */}
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => setFiltersOpen(true)}
+              className="shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-lg font-mono text-[11px] uppercase tracking-wide transition-colors"
+              style={{
+                backgroundColor: activeFilterCount > 0 ? 'rgba(200,162,75,0.12)' : 'rgba(255,255,255,0.04)',
+                color: activeFilterCount > 0 ? 'var(--gold)' : 'rgba(255,255,255,0.55)',
+                border: activeFilterCount > 0 ? '1px solid rgba(200,162,75,0.45)' : '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              {isHe ? 'מסננים' : 'Filters'}{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}
+            </button>
+            <div className="flex-1 min-w-0">
+              {pillRow(COLLECTION_PILLS, selectedCollections, toggleCollection, t.collections)}
             </div>
           </div>
         </div>
@@ -824,6 +828,59 @@ export function DiscoverClient({ initialJerseys }: { initialJerseys: Jersey[] })
           </>
         )}
       </div>
+
+      {/* ── Mobile filter drawer ── */}
+      {filtersOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-[70] flex flex-col justify-end"
+          onClick={(e) => { if (e.target === e.currentTarget) setFiltersOpen(false); }}
+        >
+          <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }} />
+          <div
+            className="relative rounded-t-2xl p-5 pb-7 max-h-[82vh] overflow-y-auto"
+            style={{ backgroundColor: 'var(--ink)', borderTop: '1px solid var(--border)', animation: 'slideUp 0.25s ease both' }}
+            dir={isRtl ? 'rtl' : 'ltr'}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-playfair font-bold text-white text-lg">{isHe ? 'מסננים' : 'Filters'}</h3>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                aria-label={isHe ? 'סגור' : 'Close'}
+                className="w-8 h-8 flex items-center justify-center rounded-lg"
+                style={{ color: 'var(--muted)', backgroundColor: 'rgba(255,255,255,0.05)' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-5">
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2.5" style={{ color: 'rgba(200,162,75,0.5)' }}>{t.leagues}</p>
+                {pillRow(LEAGUE_PILLS, selectedLeagues, toggleLeague, t.leagues, true)}
+              </div>
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] mb-2.5" style={{ color: 'rgba(200,162,75,0.5)' }}>{t.collections}</p>
+                {pillRow(COLLECTION_PILLS, selectedCollections, toggleCollection, t.collections, true)}
+              </div>
+            </div>
+            <div className="flex gap-3 mt-7">
+              <button
+                onClick={clearAll}
+                className="flex-1 h-12 rounded-xl text-sm font-bold transition-colors"
+                style={{ color: 'var(--muted)', border: '1px solid var(--border)' }}
+              >
+                {t.clearAll}
+              </button>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="flex-[2] h-12 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: 'var(--flare)' }}
+              >
+                {isHe ? `הצג ${resultCount} תוצאות` : `Show ${resultCount} result${resultCount === 1 ? '' : 's'}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
