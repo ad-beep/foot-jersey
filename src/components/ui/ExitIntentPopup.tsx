@@ -49,14 +49,15 @@ export function ExitIntentPopup() {
       show();
     };
 
-    // 1) Welcome timer — early enough to catch a quick bounce, late enough not
-    //    to interrupt someone still getting oriented.
-    const timer = setTimeout(fire, 6000);
+    // 1) Welcome timer — late enough that it never interrupts someone still
+    //    getting oriented (it used to feel like it popped instantly).
+    const timer = setTimeout(fire, 12000);
 
-    // 2) Engagement signal — if they scroll past the hero (and at least ~2.5s
-    //    in), they're interested; show the offer now rather than waiting.
+    // 2) Engagement signal — only after real, deep browsing (well past the hero
+    //    and the router band, and at least 8s in), so a casual scroll doesn't
+    //    trigger it.
     const onScroll = () => {
-      if (Date.now() - mountTime > 2500 && window.scrollY > window.innerHeight * 0.6) fire();
+      if (Date.now() - mountTime > 8000 && window.scrollY > window.innerHeight * 1.5) fire();
     };
 
     // 3) Desktop fallback — classic exit-intent if they reach for the tab bar.
@@ -102,7 +103,7 @@ export function ExitIntentPopup() {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', animation: 'fadeIn 0.5s ease both' }}
       onClick={(e) => { if (e.target === e.currentTarget) hide(); }}
     >
       <div
@@ -111,6 +112,7 @@ export function ExitIntentPopup() {
           backgroundColor: 'var(--ink)',
           border: '1px solid var(--border)',
           boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+          animation: 'popIn 0.5s cubic-bezier(0.22,1,0.36,1) both',
         }}
         dir={isHe ? 'rtl' : 'ltr'}
       >

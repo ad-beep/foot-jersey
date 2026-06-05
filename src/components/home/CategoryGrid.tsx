@@ -245,6 +245,16 @@ const CATEGORIES: CategoryDef[] = [
   },
 ];
 
+// Reading order for the uniform grid: marquee collections → leagues → style.
+const DISPLAY_ORDER = [
+  'world-cup-2026', 'season-2526', 'retro', 'special',
+  'england', 'spain', 'italy', 'germany', 'france', 'israeli_league', 'national_teams', 'rest_of_world',
+  'drip', 'stussy-edition', 'kids', 'long-sleeve', 'other-products',
+];
+const ORDERED_CATEGORIES = [...CATEGORIES].sort(
+  (a, b) => DISPLAY_ORDER.indexOf(a.slug) - DISPLAY_ORDER.indexOf(b.slug),
+);
+
 const LEAGUE_SLUGS = new Set(['england', 'spain', 'italy', 'germany', 'france', 'rest_of_world', 'national_teams', 'israeli_league']);
 const COLLECTION_SLUG_MAP: Record<string, string> = {
   'retro': 'retro',
@@ -280,24 +290,6 @@ function CornerArc({ accent }: { accent: string }) {
     >
       <path d="M52 0 A52 52 0 0 0 0 52" stroke={color} strokeWidth="1" fill="none" />
       <path d="M52 12 A40 40 0 0 0 12 52" stroke={color.replace(/[\d.]+\)$/, '0.07)')} strokeWidth="0.75" fill="none" />
-    </svg>
-  );
-}
-
-/** Center circle fragment — used only on lg tiles */
-function CenterCircle({ accent }: { accent: string }) {
-  const color = accent.replace(/[\d.]+\)$/, '0.1)');
-  return (
-    <svg
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-      width="110"
-      height="110"
-      viewBox="0 0 110 110"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="55" cy="55" r="50" stroke={color} strokeWidth="1" strokeDasharray="4 6" />
-      <circle cx="55" cy="55" r="3" fill={color} />
     </svg>
   );
 }
@@ -352,22 +344,19 @@ export function CategoryGrid() {
           </div>
         </Reveal>
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 lg:auto-rows-[130px]">
-          {CATEGORIES.map((cat, i) => {
+        {/* Uniform responsive grid — mobile-first 2 cols, scaling to 4 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {ORDERED_CATEGORIES.map((cat, i) => {
             const num = String(i + 1).padStart(2, '0');
             const accentFaint = cat.accent.replace(/[\d.]+\)$/, '0.12)');
-            const accentMid   = cat.accent.replace(/[\d.]+\)$/, '0.55)');
             const accentFill  = cat.accent.replace(/[\d.]+\)$/, '0.28)');
             const accentSplit = cat.accent.replace(/[\d.]+\)$/, '0.22)');
             const accentEdge  = cat.accent.replace(/[\d.]+\)$/, '0.38)');
-            const symbolSize  = cat.size === 'lg'
-              ? 'clamp(6.5rem, 20vw, 11.5rem)'
-              : 'clamp(4.2rem, 12vw, 7.5rem)';
+            const symbolSize  = 'clamp(3.4rem, 13vw, 5.4rem)';
             const isItalic = cat.slug === 'retro';
 
             return (
-              <Reveal key={cat.slug} delay={i * 30} className={cat.grid}>
+              <Reveal key={cat.slug} delay={Math.min(i, 8) * 35} className="aspect-[4/3]">
                 <Link
                   href={getCategoryHref(locale, cat.slug)}
                   className="group relative flex flex-col justify-end rounded-xl overflow-hidden h-full transition-all duration-300 grain"
@@ -459,7 +448,7 @@ export function CategoryGrid() {
                       style={{
                         writingMode: 'vertical-rl',
                         transform: 'rotate(180deg)',
-                        fontSize: cat.size === 'lg' ? '9px' : '8px',
+                        fontSize: '8px',
                         letterSpacing: '0.28em',
                         color: accentEdge,
                         textShadow: `0 0 12px ${cat.accent.replace(/[\d.]+\)$/, '0.18)')}`,
@@ -482,20 +471,6 @@ export function CategoryGrid() {
                     <path d="M0 0 A28 28 0 0 1 28 28" stroke={cat.accent.replace(/[\d.]+\)$/, '0.08)')} strokeWidth="0.75" fill="none" />
                   </svg>
 
-                  {/* ⑥ Centre-circle fragment — lg tiles only */}
-                  {cat.size === 'lg' && <CenterCircle accent={cat.accent} />}
-
-                  {/* ⑦ Gold hairline top edge on lg tiles */}
-                  {cat.size === 'lg' && (
-                    <div
-                      className="absolute top-0 left-4 right-4 pointer-events-none"
-                      style={{
-                        height: '1px',
-                        background: `linear-gradient(to right, transparent, ${cat.accent.replace(/[\d.]+\)$/, '0.45)')}, transparent)`,
-                      }}
-                    />
-                  )}
-
                   {/* ⑧ Bottom gradient for label readability */}
                   <div
                     className="absolute inset-0 pointer-events-none"
@@ -513,17 +488,6 @@ export function CategoryGrid() {
                     {num}
                   </span>
 
-                  {/* ⑩ Sub-text on lg tiles */}
-                  {cat.size === 'lg' && cat.sub && (
-                    <div className={`relative z-10 px-3.5 mb-1 ${isHe ? 'pe-9' : 'ps-9'}`}>
-                      <p
-                        className="font-mono uppercase"
-                        style={{ fontSize: '8px', letterSpacing: '0.18em', color: cat.accent.replace(/[\d.]+\)$/, '0.55)') }}
-                      >
-                        {isHe ? cat.sub.he : cat.sub.en}
-                      </p>
-                    </div>
-                  )}
 
                   {/* ⑪ Label row with metadata kicker */}
                   <div className={`relative z-10 p-3.5 pt-0 ${isHe ? 'text-right pe-9' : 'ps-9'}`}>
@@ -547,11 +511,7 @@ export function CategoryGrid() {
                       />
                       {cat.meta}
                     </p>
-                    <p
-                      className={`font-bold leading-tight text-white ${
-                        cat.size === 'lg' ? 'text-base md:text-lg' : 'text-sm'
-                      }`}
-                    >
+                    <p className="font-bold leading-tight text-white text-sm md:text-[15px]">
                       {isHe ? cat.he : cat.en}
                     </p>
                     {cat.priceLabel && (
