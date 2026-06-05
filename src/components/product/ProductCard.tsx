@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, getJerseyName } from '@/lib/utils';
 import { CURRENCY, KIDS_SIZES } from '@/lib/constants';
+import { trackAddToCart } from '@/lib/analytics-events';
 import { AGGREGATE_RATING } from '@/data/reviews';
 import { MYSTERY_ACCENT } from '@/lib/mystery-jerseys';
 import type { Jersey, JerseyType, Size, KidsSize } from '@/types';
@@ -157,6 +158,7 @@ export const ProductCard = React.memo(function ProductCard({
     try {
       recordCartAdd(jersey.id);
       recordInteraction(jersey.id, 'cart');
+      trackAddToCart(jersey, 1, jersey.price);
     } catch {}
   }, [jersey, addItem, recordCartAdd, recordInteraction, toast, isHe, displayName]);
 

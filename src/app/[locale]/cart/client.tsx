@@ -19,6 +19,7 @@ import { getJerseyName } from '@/lib/utils';
 import { CURRENCY, SHIPPING_POLICY, CURRENCY_CODE, PRICES } from '@/lib/constants';
 import { summarizeCart, type CartSummary } from '@/lib/shipping-split';
 import { quantityDiscountPercent, quantityDiscountAmount, nextQuantityTier } from '@/lib/quantity-discount';
+import { trackBeginCheckout, trackAddPaymentInfo } from '@/lib/analytics-events';
 import { BitPayment, type BitSenderDetails } from '@/components/payment/BitPayment';
 import { PayPalButton } from '@/components/payment/PayPalButton';
 import type { CartItem } from '@/types';
@@ -487,9 +488,10 @@ function CheckoutSection({ isHe, isRtl, split }: {
       return;
     }
     setPaymentError('');
+    trackAddPaymentInfo(finalTotal, 'BIT', items);
     setShowBitFlow(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, isHe]);
+  }, [form, isHe, finalTotal, items]);
 
   // Credit / debit card button. Routes the buyer straight to PayPal's hosted
   // card-entry form (guest checkout) via the redirect flow, then captures + saves
@@ -505,6 +507,7 @@ function CheckoutSection({ isHe, isRtl, split }: {
     }
     setSubmitting(true);
     setPaymentError('');
+    trackAddPaymentInfo(finalTotal, 'Card', items);
     try {
       const payload = {
         items,
@@ -1033,6 +1036,15 @@ export function CartPageClient() {
   const split = useMemo(() => summarizeCart(hydrated ? items : []), [items, hydrated]);
   const { itemCount, freeShipping } = split;
   const remaining = SHIPPING_POLICY.freeShippingMinItems - itemCount;
+
+  // GA4: fire begin_checkout once when the cart page loads with items.
+  const beginCheckoutFired = useRef(false);
+  useEffect(() => {
+    if (hasItems && !beginCheckoutFired.current) {
+      beginCheckoutFired.current = true;
+      trackBeginCheckout(items, split.subtotal + split.shipping);
+    }
+  }, [hasItems, items, split.subtotal, split.shipping]);
 
   const BackArrow = isRtl ? ArrowRight : ArrowLeft;
 

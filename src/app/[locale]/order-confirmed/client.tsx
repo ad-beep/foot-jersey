@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale } from '@/hooks/useLocale';
 import { SITE_NAME } from '@/lib/constants';
+import { trackPurchase } from '@/lib/analytics-events';
 import { Loader2, CheckCircle2, Clock, ShoppingBag } from 'lucide-react';
 import { Recommendations } from '@/components/product/Recommendations';
 import type { Jersey } from '@/types';
@@ -126,6 +127,26 @@ export function OrderConfirmedClient({ allJerseys = [] }: { allJerseys?: Jersey[
       cancelled = true;
     };
   }, [orderId, locale, router]);
+
+  // GA4: fire the purchase event once per order (dedup across retries/re-mounts).
+  useEffect(() => {
+    if (!order || !orderId) return;
+    const key = `purchase_tracked_${orderId}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    trackPurchase({
+      orderId,
+      value: order.total,
+      shipping: order.shipping,
+      coupon: order.discountCode || undefined,
+      items: (order.items || []).map((it) => ({
+        item_id: it.jerseyId,
+        item_name: it.teamName || it.jerseyId,
+        price: it.totalPrice,
+        quantity: it.quantity,
+      })),
+    });
+  }, [order, orderId]);
 
   if (loading) {
     return (

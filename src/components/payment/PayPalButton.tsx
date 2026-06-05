@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
+import { trackAddPaymentInfo } from '@/lib/analytics-events';
 
 interface ShippingAddress {
   firstName: string;
@@ -48,6 +49,7 @@ export function PayPalButton({
     if (onValidate && !onValidate()) {
       throw new Error(VALIDATION_ABORT);
     }
+    trackAddPaymentInfo(amount, 'PayPal');
     const res = await fetch('/api/paypal/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

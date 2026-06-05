@@ -24,6 +24,7 @@ import { StockAlertModal } from '@/components/product/StockAlertModal';
 import { ReviewList } from '@/components/product/ReviewList';
 import { getJerseyName, calculateCustomizationPrice } from '@/lib/utils';
 import { CURRENCY, CATEGORIES, SPECIAL_SECTIONS, SHIPPING_POLICY } from '@/lib/constants';
+import { trackViewItem, trackAddToCart } from '@/lib/analytics-events';
 import { MYSTERY_ACCENT } from '@/lib/mystery-jerseys';
 import type { Jersey, Size, CartCustomization, JerseyType } from '@/types';
 
@@ -229,6 +230,7 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
     if (jersey) {
       recordView(jersey.id, 0);
       recordInteraction(jersey.id, 'view');
+      trackViewItem(jersey, jersey.price);
     }
   }, [jersey?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -285,9 +287,10 @@ export function ProductPageClient({ productId, initialJersey, initialJerseys }: 
     addItem(jersey, selectedSize, cartCustomization);
     recordCartAdd(jersey.id);
     recordInteraction(jersey.id, 'cart');
+    trackAddToCart(jersey, 1, totalPrice);
     const displayName = getJerseyName(jersey, locale);
     toast({ title: isHe ? 'נוסף לסל!' : 'Added to cart!', description: displayName, variant: 'success' });
-  }, [jersey, selectedSize, customization, nameNumberOpen, isMystery, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
+  }, [jersey, selectedSize, customization, nameNumberOpen, isMystery, totalPrice, addItem, recordCartAdd, recordInteraction, toast, isHe, locale]);
 
   // From the sticky bar: if no size is chosen, bring the size picker into view
   // (it's scrolled off-screen) before running the normal add-to-cart flow.
