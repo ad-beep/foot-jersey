@@ -4,6 +4,13 @@ import sharp from 'sharp';
 // Node.js runtime required — sharp is a native C++ module
 export const runtime = 'nodejs';
 
+// Cap sharp's memory footprint so a traffic burst can't OOM the lambda.
+// concurrency(1): one libvips thread per invocation (less RAM per request).
+// cache(false): don't retain decoded images between requests.
+// This is the difference between "survives an ad spike" and the 5xx outage.
+sharp.cache(false);
+sharp.concurrency(1);
+
 // Images served through this proxy are immutable per (url, width) pair.
 // Vercel CDN caches based on s-maxage; stale-while-revalidate allows
 // background refresh without blocking the user.
@@ -49,6 +56,17 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Invalid URL', { status: 400 });
   }
 
+  // Fail open: a real image must NEVER produce a 5xx. If anything downstream
+  // goes wrong (slow upstream, oversize payload, sharp error), redirect the
+  // browser to the original image instead of breaking it or alerting Vercel.
+  // Short cache so a transiently-failing image isn't retried on every paint
+  // but still recovers within minutes.
+  const failOpen = () =>
+    new NextResponse(null, {
+      status: 302,
+      headers: { Location: src, 'Cache-Control': 'public, max-age=300' },
+    });
+
   try {
     // Fetch the original image from the upstream CDN (server-side — no browser Referer).
     // AbortController ensures we don't hang forever on a slow upstream.
@@ -62,7 +80,7 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeoutId);
 
     if (!upstream.ok) {
-      return new NextResponse(`Upstream ${upstream.status}`, { status: 502 });
+      return failOpen();
     }
 
     const contentType = upstream.headers.get('content-type') ?? '';
@@ -70,12 +88,12 @@ export async function GET(request: NextRequest) {
     // Guard against absurdly large upstream payloads that could OOM the lambda
     const contentLength = parseInt(upstream.headers.get('content-length') ?? '0', 10);
     if (contentLength > MAX_UPSTREAM_BYTES) {
-      return new NextResponse('Upstream image too large', { status: 413 });
+      return failOpen();
     }
 
     const rawBuffer = await upstream.arrayBuffer();
     if (rawBuffer.byteLength > MAX_UPSTREAM_BYTES) {
-      return new NextResponse('Upstream image too large', { status: 413 });
+      return failOpen();
     }
     const buffer = Buffer.from(rawBuffer);
 
@@ -89,8 +107,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Resize + convert to WebP using sharp (quality 82 = visually lossless for product photos)
-    const webp = await sharp(buffer)
+    // Resize + convert to WebP using sharp (quality 88 = visually lossless for product photos).
+    // failOn: 'none' — tolerate slightly truncated/odd source files instead of throwing.
+    const webp = await sharp(buffer, { failOn: 'none' })
       .resize(width, null, { withoutEnlargement: true, fit: 'inside' })
       .webp({ quality: 88 })
       .toBuffer();
@@ -103,7 +122,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('[/api/img] Processing error:', err);
-    return new NextResponse('Image processing failed', { status: 500 });
+    console.error('[/api/img] Processing error (failing open to original):', err);
+    return failOpen();
   }
 }
