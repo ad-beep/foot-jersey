@@ -2,7 +2,7 @@
 // Used by admin dashboard and order detail page to calculate profit/cost.
 
 export const USD_TO_ILS = 3.0;
-export const MARKETING_PER_JERSEY = 20;   // ₪20 per jersey sold (paid to marketing person)
+export const MARKETING_PER_JERSEY = 15;   // ₪15 per jersey sold (paid to marketing person)
 export const PAYPAL_RATE = 0.05;           // 5% PayPal commission
 export const SHIPPING_COST_USD = 5;        // $5 per order
 export const FREE_SHIPPING_MIN_ITEMS = 3;  // Free shipping when ≥3 jerseys ordered
