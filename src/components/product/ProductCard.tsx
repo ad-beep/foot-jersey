@@ -62,15 +62,19 @@ export const ProductCard = React.memo(function ProductCard({
 
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [imgRetry, setImgRetry] = useState(0);
   const [heartPulse, setHeartPulse] = useState(false);
   const [sizePickerOpen, setSizePickerOpen] = useState(false);
   const sizePickerRef = useRef<HTMLDivElement>(null);
   const heartPulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imgRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCountRef = useRef(0);
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (heartPulseTimerRef.current) clearTimeout(heartPulseTimerRef.current);
+      if (imgRetryTimerRef.current) clearTimeout(imgRetryTimerRef.current);
     };
   }, []);
 
@@ -87,26 +91,50 @@ export const ProductCard = React.memo(function ProductCard({
     ? (KIDS_SIZES as readonly string[])
     : (jersey.availableSizes.length > 0 ? jersey.availableSizes : ['S', 'M', 'L', 'XL', 'XXL']);
 
-  // Timeout fallback: if image hasn't loaded or errored after 8s, force placeholder
+  // Timeout fallback: if image hasn't loaded or errored after 8s, force placeholder.
+  // Includes imgRetry so each retry attempt restarts the 8s window rather than
+  // flipping to the placeholder while a retry is still in flight.
   useEffect(() => {
     if (isMysteryBox) return;
     const timer = setTimeout(() => {
       if (!imgLoaded) setImgError(true);
     }, 8000);
     return () => clearTimeout(timer);
-  }, [isMysteryBox, jersey.imageUrl, imgLoaded]);
+  }, [isMysteryBox, jersey.imageUrl, imgLoaded, imgRetry]);
 
   // Retry images when the browser regains connectivity so users don't have to
   // reload the page after a brief offline blip.
   useEffect(() => {
     if (isMysteryBox) return;
     const handleOnline = () => {
+      retryCountRef.current = 0;
+      setImgRetry(0);
       setImgError(false);
       setImgLoaded(false);
     };
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [isMysteryBox]);
+
+  // Bounded retry on image load failure. A failed <img> never retries on its
+  // own, so without this a transient hiccup leaves a broken image until the
+  // card remounts. We re-request through the same loader (which proxies via
+  // /api/img, bypassing Shopify hotlink protection) with a cache-busting param.
+  // Capped at 2 attempts with backoff — an unbounded retry under ad traffic
+  // would hammer /api/img and risk recreating the 5xx outage.
+  const handleImgError = useCallback(() => {
+    if (retryCountRef.current >= 2) {
+      setImgError(true);
+      return;
+    }
+    const next = retryCountRef.current + 1;
+    retryCountRef.current = next;
+    if (imgRetryTimerRef.current) clearTimeout(imgRetryTimerRef.current);
+    imgRetryTimerRef.current = setTimeout(() => {
+      setImgLoaded(false);
+      setImgRetry(next); // changes src → Next/Image refetches
+    }, 400 * next);
+  }, []);
 
   // Close size picker on click outside
   useEffect(() => {
@@ -216,7 +244,9 @@ export const ProductCard = React.memo(function ProductCard({
               <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: 'var(--steel)' }} />
             )}
             <Image
-              src={jersey.imageUrl}
+              src={imgRetry > 0
+                ? `${jersey.imageUrl}${jersey.imageUrl.includes('?') ? '&' : '?'}r=${imgRetry}`
+                : jersey.imageUrl}
               alt={displayName}
               fill
               sizes={imageSizes ?? '(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px'}
@@ -224,7 +254,7 @@ export const ProductCard = React.memo(function ProductCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               onLoad={() => setImgLoaded(true)}
-              onError={() => setImgError(true)}
+              onError={handleImgError}
             />
           </>
         )}

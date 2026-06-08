@@ -73,7 +73,12 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
       );
     }
     const retry = retryCounts[idx] ?? 0;
-    const imgSrc = retry > 0 ? `${src}?retry=${retry}` : src;
+    // Use the correct separator — src usually already has a query string
+    // (Shopify's ?v=, Firebase's ?alt=media), so a bare `?retry=` would build a
+    // malformed double-`?` URL (the ERR_BLOCKED_BY_ORB bug from commit 7309c61).
+    const imgSrc = retry > 0
+      ? `${src}${src.includes('?') ? '&' : '?'}retry=${retry}`
+      : src;
     const isLoaded = loadedSet.has(idx);
     const sizesAttr = fill
       ? (thumbnail ? '64px' : '(max-width: 1024px) 100vw, 55vw')

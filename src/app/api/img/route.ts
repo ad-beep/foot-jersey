@@ -59,12 +59,13 @@ export async function GET(request: NextRequest) {
   // Fail open: a real image must NEVER produce a 5xx. If anything downstream
   // goes wrong (slow upstream, oversize payload, sharp error), redirect the
   // browser to the original image instead of breaking it or alerting Vercel.
-  // Short cache so a transiently-failing image isn't retried on every paint
-  // but still recovers within minutes.
+  // no-store: do NOT cache the failure, so a page refresh (or the client-side
+  // retry in ProductCard/ProductGallery) re-requests and gets a fresh attempt
+  // instead of being stuck with a cached broken redirect.
   const failOpen = () =>
     new NextResponse(null, {
       status: 302,
-      headers: { Location: src, 'Cache-Control': 'public, max-age=300' },
+      headers: { Location: src, 'Cache-Control': 'no-store' },
     });
 
   try {
