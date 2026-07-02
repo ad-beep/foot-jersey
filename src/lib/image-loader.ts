@@ -26,6 +26,14 @@ export default function imageLoader({
     return src;
   }
 
+  // images.weserv.nl is itself an image proxy/CDN — serve directly. Must be
+  // checked before the yupoo rule: weserv URLs embed the supplier hostname
+  // (soccer-jersey-yupoo.com) in their query string.
+  if (src.includes('images.weserv.nl')) {
+    const sep = src.includes('?') ? '&' : '?';
+    return `${src}${sep}w=${width}`;
+  }
+
   // Shopify CDN — route through proxy to bypass hotlink protection + WebP optimisation
   if (src.includes('cdn.shopify.com')) {
     return `/api/img?url=${encodeURIComponent(src)}&w=${width}`;
