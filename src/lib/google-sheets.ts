@@ -56,7 +56,7 @@ export async function fetchJerseys(): Promise<Jersey[]> {
   try {
     const rows = await fetchRawRows();
     const jerseys = rows
-      .filter((row) => row.id && row.team_name && row.image_url)
+      .filter((row) => row.id && row.team_name)
       .map(mapSheetRowToJersey);
 
     const allJerseys = [...ALL_MYSTERY_JERSEYS, ...jerseys];
