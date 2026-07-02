@@ -57,7 +57,9 @@ export async function fetchJerseys(): Promise<Jersey[]> {
     const rows = await fetchRawRows();
     const jerseys = rows
       .filter((row) => row.id && row.team_name)
-      .map(mapSheetRowToJersey);
+      .map(mapSheetRowToJersey)
+      // Drip temporarily hidden site-wide (2026-07-02) until images are re-added
+      .filter((j) => j.type !== 'drip');
 
     const allJerseys = [...ALL_MYSTERY_JERSEYS, ...jerseys];
     cache.set(CACHE_KEY, allJerseys);
